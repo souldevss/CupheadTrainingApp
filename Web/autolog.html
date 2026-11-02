@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cuphead Training Table — Attempt Log</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/host-bridge.css">
+</head>
+<body data-page="attempt-log">
+
+<div class="pages">
+    <img id="bigtitle" src="assets/bigtitle.png" alt="Cuphead Training Table">
+    <a href="info.html" class="info-nav-btn" data-i18n-aria-label="ui.info-aria" aria-label="How it works">&#9432;</a>
+    <button id="lang-toggle-btn" class="lang-toggle-btn-inline" type="button" onclick="setActiveLanguage(getActiveLanguage() === 'pt-BR' ? 'en' : 'pt-BR')" data-i18n-aria-label="ui.language-aria" aria-label="Toggle language">
+        <img src="https://flagcdn.com/w40/us.png" srcset="https://flagcdn.com/w80/us.png 2x" alt="English" width="28" height="21">
+    </button>
+</div>
+
+<div class="nav-row">
+    <div class="page-tabs">
+        <a href="index.html" data-i18n="nav.training">Training</a>
+        <a href="index2.html" data-i18n="nav.time-table">Time Table</a>
+        <a href="autolog.html" class="active" data-i18n="nav.attempt-log">Attempt Log</a>
+    </div>
+    <button id="compact-mode-toggle" class="compact-mode-toggle" type="button" aria-pressed="false" data-i18n="ui.compact">Compact mode</button>
+</div>
+
+<div id="category-tabs" class="category-tabs"></div>
+
+<main class="attempt-log-page">
+    <header class="attempt-log-heading">
+        <div><p class="attempt-eyebrow">CUPHEAD</p><h1 data-i18n="autolog.title">Attempt Log</h1>
+        <p data-i18n="autolog.subtitle">Choose a boss to see how your clear times and deaths change over attempts.</p></div>
+        <button id="clear-all-attempts" class="clear-all-attempts" type="button" data-i18n="autolog.clear-all">Clear all records</button>
+    </header>
+    <section id="autolog-list-view">
+        <div id="autolog-summary" class="boss-stat-grid"></div>
+        <h2 class="attempt-section-title" data-i18n="autolog.recent">Recent attempts</h2>
+        <div id="autolog-recent" class="recent-attempt-list"></div>
+    </section>
+    <section id="autolog-detail-view" class="boss-detail-view" hidden></section>
+</main>
+
+<script src="js/sound-effects.js"></script>
+<script src="data.js"></script>
+<script src="js/state.js"></script>
+<script src="js/time.js"></script>
+<script src="js/category.js"></script>
+<script src="js/language.js"></script>
+<script src="js/host-bridge.js"></script>
+<script src="js/compact-mode.js"></script>
+<script src="js/wr-times.js"></script>
+<script>
+let autologRows = [];
+let selectedLogCategory = localStorage.getItem("cupheadLogCategory") || "1-1";
+if (!["1-1", "DLC:lobber", "DLC:charge"].includes(selectedLogCategory)) selectedLogCategory = "1-1";
+let selectedBossName = null;
+let selectedDetailTab = "progress";
+let selectedAverageWindow = 10;
+let lastBossDetailSignature = null;
+const chartZoomLevels = new Map();
+const chartAnimationFrames = new Map();
+const timeTrendCache = new WeakMap();
+let timeChartResizeObserver = null;
+let disposeTimeChart = null;
+let pendingSmoothingFrame = null;
+window.stopAutologWork = function () {
+    disposeTimeChart?.();
+    disposeTimeChart = null;
+    timeChartResizeObserver?.disconnect();
+    timeChartResizeObserver = null;
+    for (const frame of chartAnimationFrames.values()) cancelAnimationFrame(frame);
+    chartAnimationFrames.clear();
+    if (pendingSmoothingFrame !== null) cancelAnimationFrame(pendingSmoothingFrame);
+    pendingSmoothingFrame = null;
+};
+window.releaseAutologPage = function () {
+    window.stopAutologWork();
+    document.getElementById("autolog-detail-view").replaceChildren();
+    document.getElementById("autolog-summary").replaceChildren();
+    document.getElementById("autolog-recent").replaceChildren();
+    autologRows = [];
+    autologRecentRows = [];
+    lastBossDetailSignature = null;
+};
+const bossArt = new Map();
+function getLogCategoryData() {
+    const category = categories.find(category => category.id === (selectedLogCategory === "1-1" ? "1-1" : "DLC"));
+    return category?.subOptions?.find(option => option.id === selectedLogCategory.split(":")[1]) || category;
+}
+function refreshBossArt() {
+    bossArt.clear();
+    (getLogCategoryData()?.islands || []).flatMap(island => island.levels).forEach(boss => bossArt.set(boss.name, boss));
+}
+refreshBossArt();
+
+function safeText(value) {
+    return String(value ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+}
+
+function completeAverage(value, clearCount, requiredCount) {
+    return clearCount >= requiredCount ? value : "—";
+}
+
+function maxSmoothing(clearCount) {
+    return clearCount <= 1 ? 1 : Math.floor(clearCount / 2) + 1;
+}
+
+function trendPointCount(clearCount, strength) {
+    if (clearCount <= 1) return clearCount;
+    const progress = Math.min(1, Math.max(0, (strength - 1) / (maxSmoothing(clearCount) - 1)));
+    return Math.max(2, Math.round(clearCount - (clearCount - 2) * progress));
+}
+
+function gaussianTrend(clears, intervals, strength) {
+    // Strength 1 is the original data. Higher values widen a symmetric bell
+    // curve, truncated at three standard deviations on either side.
+    const sigma = (strength - 1) / 6;
+    const radius = Math.ceil((strength - 1) / 2);
+    const pointCount = trendPointCount(clears.length, strength);
+    return Array.from({ length: pointCount }, (_, point) => {
+        const center = pointCount <= 1 ? 0 : point * (clears.length - 1) / (pointCount - 1);
+        const start = Math.max(0, Math.ceil(center - radius));
+        const end = Math.min(clears.length - 1, Math.floor(center + radius));
+        let weightedTime = 0, weightTotal = 0, weightedDeaths = 0, weightedAttempts = 0;
+        for (let index = start; index <= end; index++) {
+            const weight = sigma > 0 ? Math.exp(-0.5 * ((index - center) / sigma) ** 2) : 1;
+            weightedTime += clears[index].timeSeconds * weight;
+            weightTotal += weight;
+            weightedDeaths += (intervals[index]?.deaths || 0) * weight;
+            weightedAttempts += (intervals[index]?.attempts || 0) * weight;
+        }
+        // Renormalize at the ends instead of padding with invented samples.
+        return {
+            timeSeconds: weightedTime / weightTotal,
+            deathRate: weightedAttempts ? weightedDeaths * 100 / weightedAttempts : 0,
+            runStart: start + 1, runEnd: end + 1
+        };
+    });
+}
+
+function chartViewport(total, state) {
+    const zoom = Math.max(1, Math.min(Math.max(1, total - 1), state.zoom || 1));
+    const span = total <= 1 ? 0 : (total - 1) / zoom;
+    const offset = Math.max(0, Math.min(total - 1 - span, state.offset || 0));
+    return { zoom, span, offset, start: Math.max(0, total - 1 - span - offset) };
+}
+
+const EMPTY_OUTCOMES = [];
+function getCachedTimeTrend(history, outcomes, strength) {
+    let cached = timeTrendCache.get(history);
+    if (!cached || cached.outcomes !== outcomes) {
+        const clears = history.filter(attempt => attempt.cleared);
+        const intervals = [];
+        let deaths = 0, attempts = 0;
+        for (const outcome of outcomes) {
+            attempts++;
+            if (outcome.isDeath) deaths++;
+            if (outcome.isClear) {
+                intervals.push({ deaths, attempts });
+                deaths = 0; attempts = 0;
+            }
+        }
+        if (intervals.length && attempts) {
+            intervals[intervals.length - 1].deaths += deaths;
+            intervals[intervals.length - 1].attempts += attempts;
+        }
+        let originalMin = Infinity, originalMax = -Infinity;
+        for (const clear of clears) {
+            originalMin = Math.min(originalMin, clear.timeSeconds);
+            originalMax = Math.max(originalMax, clear.timeSeconds);
+        }
+        cached = { outcomes, clears, intervals, originalMin, originalMax, trends: new Map() };
+        timeTrendCache.set(history, cached);
+    }
+    let trend = cached.trends.get(strength);
+    if (!trend) {
+        const averages = gaussianTrend(cached.clears, cached.intervals, strength);
+        let trendMin = Infinity, trendMax = -Infinity;
+        for (const point of averages) {
+            trendMin = Math.min(trendMin, point.timeSeconds);
+            trendMax = Math.max(trendMax, point.timeSeconds);
+        }
+        trend = { averages, trendMin, trendMax };
+    }
+    cached.trends.delete(strength);
+    cached.trends.set(strength, trend);
+    // Bounded cache: repeated slider positions reuse work without keeping every
+    // possible smoothing value in memory.
+    if (cached.trends.size > 4) cached.trends.delete(cached.trends.keys().next().value);
+    return { ...trend, clears: cached.clears, originalMin: cached.originalMin, originalMax: cached.originalMax };
+}
+
+function deathBarPath(bars) {
+    return bars.map(bar => `M${bar.x},92v${-bar.height}h${bar.width}v${bar.height}Z`).join(" ");
+}
+
+function readDeathBars(svg) {
+    if (!svg) return [];
+    const layer = svg.querySelector(".death-animation-layer");
+    const path = layer || svg.querySelector(".combined-death-bar");
+    if (!path) return [];
+    const scale = path.coordinateScale || 1;
+    const data = layer ? layer.barState : JSON.parse(path.dataset.bars || "[]");
+    return data.map(bar => ({ x: bar.x * scale, width: bar.width * scale, height: bar.height }));
+}
+
+function nearestChartPoint(svg, clientX) {
+    const bounds = svg.getBoundingClientRect();
+    if (!bounds.width) return null;
+    const fraction = (clientX - bounds.left) / bounds.width;
+    const points = svg.hoverPoints ||= Array.from(svg.querySelectorAll("circle[data-point]"), element => ({
+        element, fraction: Number(element.getAttribute("cx")) / svg.viewBox.baseVal.width
+    }));
+    if (!points.length) return null;
+    let left = 0, right = points.length - 1;
+    while (right - left > 1) {
+        const middle = (left + right) >> 1;
+        if (points[middle].fraction <= fraction) left = middle; else right = middle;
+    }
+    return (Math.abs(points[left].fraction - fraction) <= Math.abs(points[right].fraction - fraction) ? points[left] : points[right]).element;
+}
+
+function drawTimeChart(history, art, limit, zoom = 1) {
+    const outcomes = autologRows.find(boss => boss.level === selectedBossName)?.outcomeHistory || EMPTY_OUTCOMES;
+    const { clears, averages, originalMin, originalMax, trendMin, trendMax } = getCachedTimeTrend(history, outcomes, limit);
+    if (!clears.length) return `<div class="history-empty">${t("autolog.no-clear-times")}</div>`;
+    const key = `${selectedBossName}:trend`;
+    const zoomState = chartZoomLevels.get(key) || { zoom: 1, offset: 0 };
+    const viewport = chartViewport(averages.length, { zoom, offset: zoomState.offset });
+    const start = Math.floor(viewport.start);
+    const end = Math.min(averages.length, Math.ceil(viewport.start + viewport.span) + 1);
+    const visible = averages.slice(start, end);
+    zoom = viewport.zoom;
+    chartZoomLevels.set(key, { zoom, offset: viewport.offset });
+
+    const category = getLogCategoryData();
+    const multipliers = category?.rankMultipliers || defaultRankMultipliers;
+    const thresholds = art.fRankTime ? generateRankTimes(art.fRankTime, {
+        wrTime: art.wrTime,
+        fallbackMultipliers: multipliers
+    }) : [];
+    const rankIndexForTime = seconds => {
+        const index = thresholds.findIndex(threshold => seconds <= threshold);
+        return index < 0 ? ranks.length - 1 : index;
+    };
+    const rankColorForTime = seconds => ranksStyles[rankIndexForTime(seconds)]?.background || "#8993a0";
+    // Blend the original range with the current trend for partial auto-scaling.
+    const minValue = (originalMin + trendMin) / 2;
+    const maxValue = (originalMax + trendMax) / 2;
+    const padding = Math.max((maxValue - minValue) * 0.1, 0.25);
+    const low = minValue - padding;
+    const high = maxValue + padding;
+    const range = Math.max(high - low, 0.1);
+    const y = value => 92 - ((value - low) / range) * 84;
+    const x = index => viewport.span === 0 ? 125 : 20 + (start + index - viewport.start) * 210 / viewport.span;
+    // Choose markers on the full data timeline, not on the visible viewport.
+    // Panning and zooming must not move a circle to a different run.
+    const markerCount = averages.length === 1 ? 1 : Math.ceil((averages.length - 1) / limit) + 1;
+    const markers = Array.from({ length: markerCount }, (_, index) => {
+        const dataPosition = markerCount === 1 ? 0 : index * (averages.length - 1) / (markerCount - 1);
+        if (dataPosition < viewport.start || dataPosition > viewport.start + viewport.span) return "";
+        const position = dataPosition - start;
+        const left = Math.floor(position);
+        const right = Math.min(left + 1, visible.length - 1);
+        const fraction = position - left;
+        const time = visible[left].timeSeconds + (visible[right].timeSeconds - visible[left].timeSeconds) * fraction;
+        return `<circle class="trend-marker" cx="${x(position)}" cy="${y(time)}" r="2.7" style="fill:${rankColorForTime(time)}" data-position="${dataPosition}"/>`;
+    }).join("");
+    const rankLines = thresholds.map((time, i) => {
+        if (time < low || time > high) return "";
+        const color = ranksStyles[i]?.background || "#8993a0";
+        return `<g class="rank-reference"><line x1="20" y1="${y(time)}" x2="230" y2="${y(time)}" style="stroke:${color}"><title>${safeText(ranks[i] || "Rank")}: ${safeText(formatTime(time))}</title></line><text x="1" y="${y(time) - 1}" style="fill:${color}">${safeText(ranks[i] || "")}</text></g>`;
+    }).join("");
+    const timeAxis = [high, (high + low) / 2, low].map(value => `<g class="time-axis-mark"><line x1="20" y1="${y(value)}" x2="230" y2="${y(value)}"/><text x="249" y="${y(value) + 1.5}" text-anchor="end">${safeText(formatTime(value))}</text></g>`).join("");
+    const segmentColors = [];
+    const rankPaths = new Map();
+    visible.slice(1).forEach((run, index) => {
+        const previous = visible[index];
+        const color = rankColorForTime((previous.timeSeconds + run.timeSeconds) / 2);
+        segmentColors[index] = color;
+        const segments = rankPaths.get(color) || [];
+        segments.push(`M${x(index)},${y(previous.timeSeconds)}L${x(index + 1)},${y(run.timeSeconds)}`);
+        rankPaths.set(color, segments);
+    });
+    const runLines = [...rankPaths].map(([color, segments]) => `<path class="ranked-run-line" d="${segments.join(" ")}" style="stroke:${color}"/>`).join("");
+    const barWidth = viewport.span === 0 ? 14 : 210 / viewport.span;
+    const deathBarData = visible.map((point, index) => {
+        const left = Math.max(20, x(index) - barWidth / 2);
+        const right = Math.min(230, x(index) + barWidth / 2);
+        if (right <= left || point.deathRate <= 0) return null;
+        const height = point.deathRate * .84;
+        return { x: left, width: right - left, height };
+    }).filter(Boolean);
+    const deathBars = `<path class="combined-death-bar" data-bars="${safeText(JSON.stringify(deathBarData))}" d="${deathBarPath(deathBarData)}"/>`;
+    return `<div class="history-chart-wrap">
+        <div class="combined-chart-legend"><span>${t("autolog.clear-times")}</span><span>${t("autolog.death-bars")}</span></div>
+        <div class="chart-controls"><span>${limit === 1 ? t("autolog.individual-clear-times") : tf("autolog.gaussian-label", { count: limit })}</span><span><button class="chart-zoom" type="button" data-direction="out" aria-label="${t("autolog.zoom-out")}" ${zoom <= 1 ? "disabled" : ""}>−</button><button class="chart-zoom" type="button" data-direction="in" aria-label="${t("autolog.zoom-in")}" ${zoom >= Math.max(1, averages.length - 1) ? "disabled" : ""}>+</button></span></div>
+        <div class="history-svg-wrap"><svg class="history-chart time-history-chart" viewBox="0 0 250 100" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${t("autolog.gaussian-aria")}">
+            <defs><clipPath id="time-plot-clip"><rect x="20" y="0" width="210" height="100"/></clipPath></defs>
+            ${timeAxis}${rankLines}<g class="time-plot" clip-path="url(#time-plot-clip)">${deathBars}${runLines}
+            ${visible.map((a, i) => `<circle cx="${x(i)}" cy="${y(a.timeSeconds)}" r="0" data-point="${i}" data-next-color="${segmentColors[i] || rankColorForTime(a.timeSeconds)}" data-average="${a.timeSeconds}" data-run-start="${a.runStart}" data-run-end="${a.runEnd}" data-death-rate="${a.deathRate.toFixed(1)}"/>`).join("")}
+            ${markers}</g>
+        </svg><div class="chart-hover-tooltip" hidden></div></div><div class="history-axis"><span>${tf("autolog.clears-range", { start: visible[0].runStart, end: visible[0].runEnd })}</span><span>${tf("autolog.clears-range", { start: visible[visible.length - 1].runStart, end: visible[visible.length - 1].runEnd })}</span></div>
+    </div>`;
+}
+
+function sampleTrendAtX(points, x) {
+    if (x <= points[0].x) return points[0].y;
+    if (x >= points[points.length - 1].x) return points[points.length - 1].y;
+    let left = 0, right = points.length - 1;
+    while (right - left > 1) {
+        const middle = (left + right) >> 1;
+        if (points[middle].x <= x) left = middle; else right = middle;
+    }
+    const fraction = (x - points[left].x) / (points[right].x - points[left].x);
+    return points[left].y + (points[right].y - points[left].y) * fraction;
+}
+
+function animationCoordinates(values) {
+    const coordinates = [...new Set(values)].sort((a, b) => a - b);
+    // Bound repeated retargeting to subpixel detail instead of accumulating
+    // every old grid indefinitely while the slider is dragged.
+    if (coordinates.length <= 2048) return coordinates;
+    const left = coordinates[0], right = coordinates[coordinates.length - 1];
+    return Array.from({ length: 2048 }, (_, index) => left + (right - left) * index / 2047);
+}
+
+function buildTrendTween(source, target) {
+    // Keep every bend of both curves until the transition finishes. Replacing
+    // a detailed curve with two points immediately would discard its shape.
+    return animationCoordinates([...source, ...target].map(point => point.x))
+        .map(x => ({ x, fromY: sampleTrendAtX(source, x), toY: sampleTrendAtX(target, x) }));
+}
+
+function bindTimeChartControls(holder, history, art) {
+    const key = `${holder.dataset.boss}:trend`;
+    const previousAnimation = chartAnimationFrames.get(key);
+    if (previousAnimation) cancelAnimationFrame(previousAnimation);
+    chartAnimationFrames.delete(key);
+    let animationVersion = 0;
+    let navigationFrame = null;
+    let navigationTarget = null;
+    let navigationImmediate = false;
+    let lastNavigationTime = 0;
+    const stopNavigation = () => {
+        if (navigationFrame !== null) cancelAnimationFrame(navigationFrame);
+        navigationFrame = null;
+        navigationTarget = null;
+    };
+    disposeTimeChart = () => {
+        stopNavigation();
+        animationVersion++;
+        const frame = chartAnimationFrames.get(key);
+        if (frame) cancelAnimationFrame(frame);
+        chartAnimationFrames.delete(key);
+    };
+    const fitChart = () => {
+        const svg = holder.querySelector(".time-history-chart");
+        if (!svg) return;
+        const bounds = svg.getBoundingClientRect();
+        if (!bounds.width || !bounds.height) return;
+        const width = bounds.width / bounds.height * 100;
+        const previousWidth = svg.viewBox.baseVal.width;
+        const factor = width / previousWidth;
+        if (Math.abs(factor - 1) < 0.0001) return;
+        svg.querySelectorAll("[x], [cx], [x1], [x2], rect[width]").forEach(element => {
+            for (const attribute of ["x", "cx", "x1", "x2", "width"]) {
+                if (element.hasAttribute(attribute)) element.setAttribute(attribute, Number(element.getAttribute(attribute)) * factor);
+            }
+        });
+        svg.querySelectorAll("path.ranked-run-line, path.combined-death-bar").forEach(path => {
+            path.coordinateScale = (path.coordinateScale || 1) * factor;
+            path.setAttribute("transform", `scale(${path.coordinateScale},1)`);
+        });
+        const animationLayer = svg.querySelector(".curve-animation-layer");
+        if (animationLayer) animationLayer.coordinateScale = (animationLayer.coordinateScale || 1) * factor;
+        const deathLayer = svg.querySelector(".death-animation-layer");
+        if (deathLayer) deathLayer.coordinateScale = (deathLayer.coordinateScale || 1) * factor;
+        svg.setAttribute("viewBox", `0 0 ${width} 100`);
+    };
+    timeChartResizeObserver?.disconnect();
+    timeChartResizeObserver = new ResizeObserver(fitChart);
+    timeChartResizeObserver.observe(holder);
+    fitChart();
+    const getCounts = (stateOverride = null) => {
+        const clearCount = history.filter(a => a.cleared).length;
+        const total = Math.max(1, trendPointCount(clearCount, Number(holder.dataset.limit)));
+        const state = stateOverride || chartZoomLevels.get(key) || { zoom: 1, offset: 0 };
+        const viewport = chartViewport(total, state);
+        return { total, count: viewport.span + 1, ...viewport };
+    };
+    const update = (next, animate = false) => {
+        if (animate) stopNavigation();
+        const version = ++animationVersion;
+        const svg = holder.querySelector(".time-history-chart");
+        const oldCurve = svg?.querySelector(".curve-animation-layer");
+        const startBars = animate ? readDeathBars(svg) : [];
+        const startMarkers = animate && svg ? Array.from(svg.querySelectorAll(".trend-marker"), marker => ({
+            x: Number(marker.getAttribute("cx")), y: Number(marker.getAttribute("cy")),
+            radius: Number(marker.getAttribute("r")), opacity: Number(marker.getAttribute("opacity") ?? 1),
+            fill: marker.style.fill
+        })).sort((a, b) => a.x - b.x) : [];
+        const startPoints = animate && oldCurve?.curveState ? oldCurve.curveState.map(point => ({
+            x: point.x * (oldCurve.coordinateScale || 1), y: point.y
+        })) : animate && svg ? Array.from(svg.querySelectorAll("circle[data-point]"), point => ({
+            x: Number(point.getAttribute("cx")), y: Number(point.getAttribute("cy"))
+        })) : null;
+        const previousFrame = chartAnimationFrames.get(key);
+        if (previousFrame) cancelAnimationFrame(previousFrame);
+        chartAnimationFrames.delete(key);
+        chartZoomLevels.set(key, next);
+        holder.dataset.zoom = String(next.zoom);
+        holder.innerHTML = drawTimeChart(history, art, Number(holder.dataset.limit), next.zoom);
+        fitChart();
+        if (!startPoints?.length) return;
+        const newSvg = holder.querySelector(".time-history-chart");
+        const points = Array.from(newSvg?.querySelectorAll("circle[data-point]") || []);
+        if (!points.length) return;
+        const targets = points.map(point => ({ x: Number(point.getAttribute("cx")), y: Number(point.getAttribute("cy")), color: point.dataset.nextColor }));
+        const curveTween = buildTrendTween(startPoints, targets);
+        const lines = Array.from(newSvg.querySelectorAll(".ranked-run-line"));
+        const markers = Array.from(newSvg.querySelectorAll(".trend-marker"));
+        const markerTargets = markers.map(marker => ({
+            x: Number(marker.getAttribute("cx")), y: Number(marker.getAttribute("cy")), radius: 2.7, opacity: 1
+        }));
+        const markerMatches = new Map();
+        const usedMarkers = new Set();
+        // Match circles in order, distributing matches across the whole curve.
+        // Extra circles grow from, or shrink into, their nearest surviving circle.
+        if (startMarkers.length <= markers.length) {
+            startMarkers.forEach((marker, index) => {
+                const target = Math.round(index * (markers.length - 1) / Math.max(1, startMarkers.length - 1));
+                markerMatches.set(target, marker);
+                usedMarkers.add(index);
+            });
+        } else {
+            markers.forEach((marker, index) => {
+                const source = Math.round(index * (startMarkers.length - 1) / Math.max(1, markers.length - 1));
+                markerMatches.set(index, startMarkers[source]);
+                usedMarkers.add(source);
+            });
+        }
+        const nearest = (items, x) => items.reduce((best, item) =>
+            !best || Math.abs(item.x - x) < Math.abs(best.x - x) ? item : best, null);
+        const markerTransitions = markers.map((element, index) => {
+            const target = markerTargets[index];
+            const source = markerMatches.get(index)
+                || { ...(nearest(startMarkers, target.x) || target), radius: 0, opacity: 0 };
+            return { element, source, target, exiting: false };
+        });
+        startMarkers.forEach((source, index) => {
+            if (usedMarkers.has(index)) return;
+            const element = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            element.setAttribute("class", "trend-marker");
+            element.style.fill = source.fill;
+            element.style.pointerEvents = "none";
+            newSvg.appendChild(element);
+            markerTransitions.push({ element, source,
+                target: { ...(nearest(markerTargets, source.x) || source), radius: 0, opacity: 0 }, exiting: true });
+        });
+        const bars = Array.from(newSvg.querySelectorAll(".combined-death-bar"));
+        const targetBars = readDeathBars(newSvg);
+        const makeSvg = (tag, attributes) => {
+            const element = document.createElementNS("http://www.w3.org/2000/svg", tag);
+            Object.entries(attributes).forEach(([name, value]) => element.setAttribute(name, value));
+            return element;
+        };
+        const curveLayer = makeSvg("g", { class: "curve-animation-layer", "pointer-events": "none" });
+        const plot = newSvg.querySelector(".time-plot") || newSvg;
+        plot.insertBefore(curveLayer, lines[0] || points[0]);
+        curveLayer.curveState = curveTween.map(point => ({ x: point.x, y: point.fromY }));
+        const curvePaths = new Map();
+        curveTween.slice(1).forEach((point, index) => {
+            const middleX = (curveTween[index].x + point.x) / 2;
+            let left = 0, right = targets.length - 1;
+            while (right - left > 1) {
+                const middle = (left + right) >> 1;
+                if (targets[middle].x <= middleX) left = middle; else right = middle;
+            }
+            const color = targets[left].color || "#8993a0";
+            let group = curvePaths.get(color);
+            if (!group) {
+                const element = makeSvg("path", { class: "ranked-run-line" });
+                element.style.stroke = color;
+                curveLayer.appendChild(element);
+                group = { element, segments: [] };
+                curvePaths.set(color, group);
+            }
+            group.segments.push(index);
+        });
+        const barLayer = makeSvg("g", { class: "death-animation-layer", "pointer-events": "none" });
+        plot.insertBefore(barLayer, plot.firstChild);
+        const barEdges = animationCoordinates([...startBars, ...targetBars].flatMap(bar => [bar.x, bar.x + bar.width]));
+        const heightAt = (rects, x) => {
+            let left = 0, right = rects.length;
+            while (left < right) {
+                const middle = (left + right) >> 1;
+                if (rects[middle].x <= x) left = middle + 1; else right = middle;
+            }
+            const bar = rects[left - 1];
+            return bar && x <= bar.x + bar.width ? bar.height : 0;
+        };
+        const barTween = barEdges.slice(1).map((right, index) => {
+            const x = barEdges[index], middle = (x + right) / 2;
+            return { x, width: right - x, from: heightAt(startBars, middle), to: heightAt(targetBars, middle) };
+        });
+        barLayer.barState = barTween.map(bar => ({ x: bar.x, width: bar.width, height: bar.from }));
+        const animatedBars = makeSvg("path", { class: "combined-death-bar" });
+        barLayer.appendChild(animatedBars);
+        [...lines, ...bars].forEach(element => { element.style.visibility = "hidden"; });
+        const started = performance.now();
+        const duration = 260;
+        function frame(now) {
+            if (version !== animationVersion || !holder.isConnected || holder.querySelector(".time-history-chart") !== newSvg) return;
+            const progress = Math.min(1, (now - started) / duration);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            barTween.forEach(({ from, to }, index) => {
+                barLayer.barState[index].height = from + (to - from) * eased;
+            });
+            animatedBars.setAttribute("d", deathBarPath(barLayer.barState));
+            curveTween.forEach((point, index) => {
+                curveLayer.curveState[index].y = point.fromY + (point.toY - point.fromY) * eased;
+            });
+            curvePaths.forEach(({ element, segments }) => {
+                let path = "";
+                for (const index of segments) {
+                    const a = curveLayer.curveState[index], b = curveLayer.curveState[index + 1];
+                    path += `M${a.x},${a.y}L${b.x},${b.y} `;
+                }
+                element.setAttribute("d", path);
+            });
+            markerTransitions.forEach(({ element, source, target, exiting }) => {
+                element.setAttribute("cx", source.x + (target.x - source.x) * eased);
+                element.setAttribute("cy", source.y + (target.y - source.y) * eased);
+                element.setAttribute("r", source.radius + (target.radius - source.radius) * eased);
+                element.setAttribute("opacity", source.opacity + (target.opacity - source.opacity) * eased);
+                if (progress === 1 && exiting) element.remove();
+            });
+            if (progress < 1) chartAnimationFrames.set(key, requestAnimationFrame(frame));
+            else {
+                chartAnimationFrames.delete(key);
+                curveLayer.remove();
+                barLayer.remove();
+                [...lines, ...bars].forEach(element => { element.style.visibility = ""; });
+            }
+        }
+        // Initialize circles AND connecting lines before the browser can paint.
+        frame(started);
+    };
+    holder.updateTrend = update;
+
+    // Coalesce input to one draw per frame. Wheel zoom eases toward its target;
+    // dragging follows fractional positions directly without snapping to clears.
+    const navigate = (next, immediate = false) => {
+        const { total } = getCounts();
+        const target = chartViewport(total, next);
+        navigationTarget = { zoom: target.zoom, offset: target.offset };
+        navigationImmediate = immediate;
+        if (navigationFrame !== null) return;
+        lastNavigationTime = performance.now();
+        const frame = now => {
+            navigationFrame = null;
+            if (!holder.isConnected || !navigationTarget) return;
+            const current = chartZoomLevels.get(key) || { zoom: 1, offset: 0 };
+            const target = navigationTarget;
+            const blend = navigationImmediate ? 1 : 1 - Math.exp(-Math.max(8, Math.min(64, now - lastNavigationTime)) / 65);
+            lastNavigationTime = now;
+            const zoom = Math.exp(Math.log(current.zoom) + (Math.log(target.zoom) - Math.log(current.zoom)) * blend);
+            const offset = current.offset + (target.offset - current.offset) * blend;
+            const done = Math.abs(Math.log(zoom / target.zoom)) < 0.0001 && Math.abs(offset - target.offset) < 0.0001;
+            update(done ? target : { zoom, offset });
+            if (done) navigationTarget = null;
+            else navigationFrame = requestAnimationFrame(frame);
+        };
+        navigationFrame = requestAnimationFrame(frame);
+    };
+
+    holder.addEventListener("click", event => {
+        const button = event.target.closest(".chart-zoom");
+        if (!button || button.disabled) return;
+        const current = getCounts(navigationTarget);
+        const zoom = Math.max(1, Math.min(Math.max(1, current.total - 1), current.zoom * (button.dataset.direction === "in" ? 1.25 : .8)));
+        const nextSpan = (current.total - 1) / zoom;
+        const start = Math.max(0, Math.min(current.total - 1 - nextSpan, current.start + (current.span - nextSpan) / 2));
+        navigate({ zoom, offset: current.total - 1 - nextSpan - start });
+    });
+
+    holder.addEventListener("wheel", event => {
+        if (!event.target.closest(".time-history-chart")) return;
+        event.preventDefault();
+        const current = getCounts(navigationTarget);
+        if (current.total <= 1) return;
+        const rect = holder.querySelector(".time-history-chart").getBoundingClientRect();
+        const plotWidth = rect.width * .84;
+        const fraction = Math.min(1, Math.max(0, (event.clientX - rect.left - rect.width * .08) / plotWidth));
+        const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? rect.height : 1;
+        if (event.shiftKey || Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
+            const delta = (event.shiftKey ? event.deltaY : event.deltaX) * unit;
+            const start = Math.max(0, Math.min(current.total - 1 - current.span, current.start + delta / plotWidth * current.span));
+            navigate({ zoom: current.zoom, offset: current.total - 1 - current.span - start });
+            return;
+        }
+        const anchor = current.start + fraction * current.span;
+        const factor = Math.exp(-Math.max(-240, Math.min(240, event.deltaY * unit)) * .002);
+        const zoom = Math.max(1, Math.min(Math.max(1, current.total - 1), current.zoom * factor));
+        const nextSpan = (current.total - 1) / zoom;
+        const start = Math.max(0, Math.min(current.total - 1 - nextSpan, anchor - fraction * nextSpan));
+        navigate({ zoom, offset: current.total - 1 - nextSpan - start });
+    }, { passive: false });
+
+    let drag = null;
+    holder.addEventListener("pointerdown", event => {
+        if (event.button !== 0 || !event.target.closest(".time-history-chart")) return;
+        stopNavigation();
+        const { total, count, start, span, zoom } = getCounts();
+        if (total <= count) return;
+        drag = { pointerId: event.pointerId, x: event.clientX, start, total, count, span, zoom };
+        holder.setPointerCapture(event.pointerId);
+        holder.classList.add("is-panning");
+    });
+    holder.addEventListener("pointermove", event => {
+        if (drag && drag.pointerId === event.pointerId) {
+            const rect = holder.querySelector(".time-history-chart")?.getBoundingClientRect();
+            if (!rect) return;
+            const shift = -(event.clientX - drag.x) / (rect.width * .84) * drag.span;
+            const start = Math.min(drag.total - 1 - drag.span, Math.max(0, drag.start + shift));
+            navigate({ zoom: drag.zoom, offset: drag.total - 1 - drag.span - start }, true);
+            return;
+        }
+        const svg = holder.querySelector(".time-history-chart");
+        const tooltip = holder.querySelector(".chart-hover-tooltip");
+        if (!svg || !tooltip || !event.target.closest(".time-history-chart")) return;
+        const point = nearestChartPoint(svg, event.clientX);
+        if (!point) return;
+        if (tooltip.dataset.point !== point.dataset.point) {
+            tooltip.innerHTML = `<strong>${t(Number(holder.dataset.limit) === 1 ? "autolog.individual-clear" : "autolog.gaussian-time")}: ${safeText(formatTime(Number(point.dataset.average)))}</strong><span>${tf("autolog.clears-range", { start: point.dataset.runStart, end: point.dataset.runEnd })}</span><span>${tf(Number(holder.dataset.limit) === 1 ? "autolog.death-rate-value" : "autolog.gaussian-death-rate", { percent: point.dataset.deathRate })}</span>`;
+            tooltip.dataset.point = point.dataset.point;
+        }
+        tooltip.hidden = false;
+        const wrap = holder.querySelector(".history-svg-wrap");
+        const box = wrap.getBoundingClientRect();
+        tooltip.style.left = `${Math.min(box.width - tooltip.offsetWidth - 6, Math.max(6, event.clientX - box.left + 12))}px`;
+        tooltip.style.top = `${Math.max(4, event.clientY - box.top - tooltip.offsetHeight - 8)}px`;
+    });
+    const stopPanning = event => {
+        if (!drag || drag.pointerId !== event.pointerId) return;
+        drag = null;
+        holder.classList.remove("is-panning");
+        const tooltip = holder.querySelector(".chart-hover-tooltip");
+        if (tooltip && !holder.matches(":hover")) tooltip.hidden = true;
+    };
+    holder.addEventListener("pointerup", stopPanning);
+    holder.addEventListener("pointercancel", stopPanning);
+    holder.addEventListener("pointerleave", () => {
+        if (!drag) {
+            const tooltip = holder.querySelector(".chart-hover-tooltip");
+            if (tooltip) tooltip.hidden = true;
+        }
+    });
+}
+
+function showBossDetail(name) {
+    selectedBossName = name;
+    lastBossDetailSignature = null;
+    document.getElementById("autolog-list-view").hidden = true;
+    const detail = document.getElementById("autolog-detail-view");
+    detail.hidden = false;
+    renderBossDetail();
+}
+
+function getTimeChartZoom(bossName) {
+    return chartZoomLevels.get(`${bossName}:trend`)?.zoom || 1;
+}
+
+function renderBossDetail() {
+    const boss = autologRows.find(r => r.level === selectedBossName);
+    const detail = document.getElementById("autolog-detail-view");
+    if (!boss || !detail) return;
+    document.getElementById("autolog-list-view").hidden = true;
+    detail.hidden = false;
+    const history = boss.history || [];
+    const clearCount = history.filter(a => a.cleared).length;
+    selectedAverageWindow = Math.max(1, Math.min(selectedAverageWindow, maxSmoothing(clearCount)));
+    const art = bossArt.get(boss.level) || {};
+    const outcomeHistory = boss.outcomeHistory || [];
+    const signature = JSON.stringify({ level: boss.level, attempts: boss.attempts, clears: boss.clears, deaths: boss.deaths, best: boss.best, totalPlaytime: boss.totalPlaytime, history, outcomeHistory, avg10: boss.avg10, avg20: boss.avg20, avg50: boss.avg50, selectedDetailTab, selectedAverageWindow });
+    if (signature === lastBossDetailSignature) return;
+    lastBossDetailSignature = signature;
+    window.stopAutologWork();
+    detail.innerHTML = `<button class="detail-back" type="button" data-action="back">${t("autolog.back")}</button>
+        <div class="boss-detail-heading"><div class="boss-detail-title"><p class="attempt-eyebrow">${t("autolog.boss-progress")}</p><div class="boss-detail-bossbar" style="background:${safeText(art.background || "#493576")};color:${safeText(art.color || "#ffffff")}"><h2>${safeText(boss.level)}</h2>${art.icon ? `<img src="${safeText(art.icon)}" alt="" loading="lazy">` : ""}</div><p>${tf("autolog.boss-attempts", { attempts: boss.attempts, clears: boss.clears })}</p></div>
+        <div class="detail-tabs"><button class="is-active" type="button" data-detail-tab="progress">${t("autolog.progress")}</button><button type="button" data-detail-tab="attempts">${t("autolog.attempts")}</button></div></div>
+        <div class="detail-tab-content" data-panel="progress" ${selectedDetailTab === "progress" ? "" : "hidden"}>
+            <div class="improvement-cards"><div><span>${t("autolog.total-playtime")}</span><strong>${safeText(boss.totalPlaytime || "0:00.00")}</strong></div><div><span>${t("autolog.best-clear")}</span><strong>${safeText(boss.best)}</strong></div><div><span>${t("autolog.total-deaths")}</span><strong>${boss.deaths}</strong></div><div><span>${t("autolog.avg-10")}</span><strong>${safeText(completeAverage(boss.avg10, boss.clears, 10))}</strong></div><div><span>${t("autolog.avg-20")}</span><strong>${safeText(completeAverage(boss.avg20, boss.clears, 20))}</strong></div><div><span>${t("autolog.avg-50")}</span><strong>${safeText(completeAverage(boss.avg50, boss.clears, 50))}</strong></div></div>
+            <div class="history-chart-grid combined-history-grid">
+                <article class="history-card time-history-card">
+                    <h3>${t("autolog.clear-times")}</h3>
+                    <label class="average-slider-label" for="time-average-slider"><span>${t("autolog.average-window")}</span><output id="time-average-value">${selectedAverageWindow}</output></label>
+                    <input id="time-average-slider" class="average-window-slider" type="range" min="1" max="${maxSmoothing(clearCount)}" step="1" value="${selectedAverageWindow}" aria-label="${t("autolog.average-window-aria")}">
+                    <div class="average-slider-ends"><span>${t("autolog.individual-clears")}</span><span>${t("autolog.up-to-50-average")}</span></div>
+                    <div class="time-chart-content" data-boss="${safeText(boss.level)}" data-limit="${selectedAverageWindow}" data-zoom="${getTimeChartZoom(boss.level)}">${drawTimeChart(history, art, selectedAverageWindow, getTimeChartZoom(boss.level))}</div>
+                </article>
+
+            </div>
+        </div>
+        <div class="detail-tab-content" data-panel="attempts" ${selectedDetailTab === "attempts" ? "" : "hidden"}>${renderAttempts(history.map(a => ({id:a.id, when:a.when, level:boss.level, result:a.cleared ? "Clear" : "Fail", time:formatTime(a.timeSeconds)})), false)}</div>`;
+    detail.querySelectorAll(".time-chart-content").forEach(holder => bindTimeChartControls(holder, history, art));
+
+    const averageSlider = detail.querySelector("#time-average-slider");
+    averageSlider?.addEventListener("input", () => {
+        selectedAverageWindow = Number(averageSlider.value);
+        detail.querySelector("#time-average-value").value = selectedAverageWindow;
+        if (pendingSmoothingFrame !== null) return;
+        pendingSmoothingFrame = requestAnimationFrame(() => {
+            pendingSmoothingFrame = null;
+            if (!averageSlider.isConnected) return;
+            const chart = detail.querySelector(".time-chart-content");
+            chart.dataset.limit = Number(averageSlider.value);
+            const zoom = Number(averageSlider.value) === maxSmoothing(clearCount)
+                ? { zoom: 1, offset: 0 }
+                : chartZoomLevels.get(`${boss.level}:trend`) || { zoom: 1, offset: 0 };
+            chart.updateTrend?.(zoom, true);
+        });
+    });
+    detail.querySelectorAll("[data-detail-tab]").forEach(b => b.classList.toggle("is-active", b.dataset.detailTab === selectedDetailTab));
+    detail.querySelectorAll("[data-detail-tab]").forEach(button => button.addEventListener("click", () => {
+        selectedDetailTab = button.dataset.detailTab;
+        detail.querySelectorAll("[data-detail-tab]").forEach(b => b.classList.toggle("is-active", b === button));
+        detail.querySelectorAll("[data-panel]").forEach(panel => panel.hidden = panel.dataset.panel !== button.dataset.detailTab);
+    }));
+    detail.querySelector('[data-action="back"]').addEventListener("click", () => {
+        window.stopAutologWork();
+        selectedBossName = null;
+        lastBossDetailSignature = null;
+        selectedDetailTab = "progress";
+        detail.hidden = true;
+        detail.replaceChildren();
+        document.getElementById("autolog-list-view").hidden = false;
+    });
+    detail.querySelectorAll("[data-delete-run]").forEach(button => button.addEventListener("click", () => {
+        if (confirm(t("autolog.delete-attempt-confirm"))) window.cupheadHost?.deleteAttempt(Number(button.dataset.deleteRun));
+    }));
+}
+
+function renderAttempts(attempts, includeBoss = true) {
+    if (!attempts.length) return `<p class="attempt-empty">${t("autolog.no-attempts")}</p>`;
+    return `<div class="recent-attempt-list">${attempts.map(r => {
+        const isDeath = r.kind === "death";
+        const resultLabel = r.result === "Clear" ? t("result.clear") : r.result === "Fail" ? t("result.fail") : t("result.death");
+        return `<article class="recent-attempt-card ${isDeath ? "is-death-event" : ""}">
+        <span class="attempt-result ${isDeath ? "is-death" : r.result === "Clear" ? "is-clear" : "is-fail"}">${safeText(resultLabel)}</span>
+        ${includeBoss ? `<button type="button" class="attempt-boss-link" data-boss="${safeText(r.level)}">${safeText(r.level)}</button>` : ""}
+        <span class="attempt-detail"><small>${t("autolog.when")}</small><b>${safeText(r.when)}</b></span>${isDeath ? "" : `<span class="attempt-detail"><small>${t("autolog.clear-time")}</small><b>${safeText(r.time)}</b></span>`}
+        ${Number.isFinite(Number(r.id)) ? `<button type="button" class="delete-run-button" data-delete-${isDeath ? "death" : "run"}="${r.id}" aria-label="${t(isDeath ? "autolog.delete-death-aria" : "autolog.delete-run-aria")}">${t("autolog.delete")}</button>` : ""}
+    </article>`;
+    }).join("")}</div>`;
+}
+
+let autologRecentRows = [];
+window.renderAutologStats = function(rows, recent, categoryKey) {
+    if (categoryKey && categoryKey !== selectedLogCategory) return;
+    const summary = document.getElementById("autolog-summary");
+    const recentEl = document.getElementById("autolog-recent");
+    if (!summary || !recentEl) return;
+    autologRows = rows;
+    autologRecentRows = recent;
+    summary.innerHTML = rows.map(r => {
+        const art = bossArt.get(r.level) || {};
+        return `<button class="boss-stat-card" type="button" data-boss="${safeText(r.level)}">
+        <span class="boss-card-header" style="background:${safeText(art.background || "#493576")};color:${safeText(art.color || "#ffffff")}">
+            <span class="boss-card-name">${safeText(r.level)}</span>
+            ${art.icon ? `<img class="boss-card-icon" src="${safeText(art.icon)}" alt="" loading="lazy">` : ""}
+        </span>
+        <span class="boss-card-stats"><span><small>${t("autolog.attempts-label")}</small><b>${r.attempts}</b></span><span><small>${t("autolog.clears-label")}</small><b>${r.clears}</b></span><span><small>${t("autolog.deaths-label")}</small><b>${r.deaths}</b></span></span>
+    </button>`;
+    }).join("");
+    recentEl.innerHTML = renderAttempts(recent);
+    summary.querySelectorAll(".boss-stat-card").forEach(button => button.addEventListener("click", () => showBossDetail(button.dataset.boss)));
+    recentEl.querySelectorAll(".attempt-boss-link").forEach(button => button.addEventListener("click", () => showBossDetail(button.dataset.boss)));
+    recentEl.querySelectorAll("[data-delete-run]").forEach(button => button.addEventListener("click", event => {
+        event.stopPropagation();
+        if (confirm(t("autolog.delete-attempt-confirm"))) window.cupheadHost?.deleteAttempt(Number(button.dataset.deleteRun));
+    }));
+    recentEl.querySelectorAll("[data-delete-death]").forEach(button => button.addEventListener("click", event => {
+        event.stopPropagation();
+        if (confirm(t("autolog.delete-death-confirm"))) window.cupheadHost?.deleteDeath(Number(button.dataset.deleteDeath));
+    }));
+    if (selectedBossName) {
+        lastBossDetailSignature = null;
+        renderBossDetail();
+    }
+};
+
+window.refreshAutologLanguage = function() {
+    lastBossDetailSignature = null;
+    window.renderAutologStats(autologRows, autologRecentRows);
+};
+
+document.getElementById("clear-all-attempts").addEventListener("click", () => {
+    if (!confirm(t("autolog.delete-all-confirm"))) return;
+    window.stopAutologWork();
+    selectedBossName = null;
+    document.getElementById("autolog-detail-view").hidden = true;
+    document.getElementById("autolog-detail-view").replaceChildren();
+    document.getElementById("autolog-list-view").hidden = false;
+    window.cupheadHost?.clearAttempts();
+});
+
+function renderLogCategoryControls() {
+    renderCategoryControls({
+        categories: categories.filter(category => ["1-1", "DLC"].includes(category.id)),
+        onSelect: selectLogCategory
+    });
+}
+function selectLogCategory(categoryId, subOption = null) {
+    window.stopAutologWork();
+    activeCategory = categories.find(category => category.id === categoryId);
+    activeSubOption = categoryId === "DLC" ? (subOption || localStorage.getItem("cupheadLogDlcSubOption") || "lobber") : null;
+    selectedLogCategory = categoryId === "DLC" ? `DLC:${activeSubOption}` : "1-1";
+    localStorage.setItem("cupheadLogCategory", selectedLogCategory);
+    if (activeSubOption) localStorage.setItem("cupheadLogDlcSubOption", activeSubOption);
+    selectedBossName = null;
+    lastBossDetailSignature = null;
+    document.getElementById("autolog-detail-view").hidden = true;
+    document.getElementById("autolog-detail-view").replaceChildren();
+    document.getElementById("autolog-list-view").hidden = false;
+    refreshBossArt();
+    renderLogCategoryControls();
+    window.renderAutologStats([], []);
+    window.cupheadHost?.requestStats(selectedLogCategory);
+}
+activeCategory = categories.find(category => category.id === (selectedLogCategory === "1-1" ? "1-1" : "DLC"));
+activeSubOption = selectedLogCategory.split(":")[1] || null;
+renderLogCategoryControls();
+
+if (window.cupheadHost && window.cupheadHost.isDesktopApp) {
+    window.cupheadHost.requestStats(selectedLogCategory);
+    if (typeof fetchAndUpdateWrTimes === "function") fetchAndUpdateWrTimes();
+} else {
+    renderAutologStats([], []);
+    document.getElementById("autolog-summary").innerHTML =
+        `<p class='attempt-empty'>${t("autolog.no-live-stats")}</p>`;
+}
+</script>
+</body>
+</html>

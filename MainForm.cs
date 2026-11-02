@@ -1,0 +1,299 @@
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.IO;
+using System.Text.Json;
+using System.Windows.Forms;
+using CupheadTrainingLog.Services;
+using Microsoft.Web.WebView2.Core;
+using Microsoft.Web.WebView2.WinForms;
+
+namespace CupheadTrainingLog
+{
+    public sealed class MainForm : Form
+    {
+        private const string VirtualHost = "cuphead-training.local";
+
+        private readonly RunDatabase database = new RunDatabase();
+        private readonly AttemptTracker tracker;
+        private readonly Timer pollTimer = new Timer();
+        private readonly WebView2 webView = new WebView2();
+
+        private bool watching;
+        private bool includeRecentActivity;
+        private bool includeHistory;
+        private string statsCategoryKey = "1-1";
+        private bool? compactMode;
+        private string versionWarning;
+        private string lastStatus = "Ready";
+        private DateTime lastStatusPushUtc = DateTime.MinValue;
+
+        public MainForm()
+        {
+            tracker = new AttemptTracker(database);
+            tracker.StatusChanged += s =>
+            {
+                lastStatus = s;
+                var now = DateTime.UtcNow;
+                if ((now - lastStatusPushUtc).TotalMilliseconds < 250)
+                    return;
+                lastStatusPushUtc = now;
+                BeginInvoke(new Action(PushWatcherStatus));
+            };
+            tracker.VersionWarning += w =>
+            {
+                versionWarning = w;
+                BeginInvoke(new Action(PushWatcherStatus));
+            };
+            tracker.AttemptLogged += e => BeginInvoke(new Action(() => OnAttemptLogged(e)));
+            tracker.DeathLogged += () => BeginInvoke(new Action(() =>
+            {
+                PostJson(StatsReport.ToJson(database, includeRecentActivity, includeHistory, statsCategoryKey));
+                PushWatcherStatus();
+            }));
+
+            Text = "Cuphead Training Table";
+            Width = 1100;
+            Height = 740;
+            StartPosition = FormStartPosition.CenterScreen;
+            MinimumSize = new Size(800, 560);
+            BackColor = Color.FromArgb(17, 9, 44);
+
+            webView.Dock = DockStyle.Fill;
+            Controls.Add(webView);
+            Activated += (s, e) => SetWebViewMemoryTarget(false);
+            Deactivate += (s, e) => SetWebViewMemoryTarget(true);
+
+            pollTimer.Interval = 100;
+            pollTimer.Tick += (s, e) =>
+            {
+                if (watching)
+                    tracker.Tick();
+            };
+
+            // Start capturing automatically when the desktop app opens.
+            watching = true;
+            pollTimer.Start();
+
+            Load += async (s, e) => await InitializeWebViewAsync();
+            FormClosing += (s, e) =>
+            {
+                pollTimer.Stop();
+                tracker.Dispose();
+                database.Dispose();
+            };
+        }
+
+        private async System.Threading.Tasks.Task InitializeWebViewAsync()
+        {
+            string webRoot = Path.Combine(AppContext.BaseDirectory, "Web");
+            string profile = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "CupheadTrainingLog",
+                "WebView2");
+
+            Directory.CreateDirectory(profile);
+            var env = await CoreWebView2Environment.CreateAsync(null, profile);
+            await webView.EnsureCoreWebView2Async(env);
+            SetWebViewMemoryTarget(ActiveForm != this);
+
+            webView.CoreWebView2.SetVirtualHostNameToFolderMapping(
+                VirtualHost,
+                webRoot,
+                CoreWebView2HostResourceAccessKind.Allow);
+
+            webView.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
+            webView.CoreWebView2.NavigationCompleted += (s, e) => PushWatcherStatus();
+
+            webView.Source = new Uri($"https://{VirtualHost}/app-shell.html");
+        }
+
+        private void SetWebViewMemoryTarget(bool inactive)
+        {
+            if (webView.IsDisposed || webView.CoreWebView2 == null) return;
+            try
+            {
+                webView.CoreWebView2.MemoryUsageTargetLevel = inactive
+                    ? CoreWebView2MemoryUsageTargetLevel.Low
+                    : CoreWebView2MemoryUsageTargetLevel.Normal;
+            }
+            catch (NotImplementedException) { /* Older installed WebView runtime. */ }
+            catch (System.Runtime.InteropServices.COMException) { /* Runtime unavailable while closing. */ }
+        }
+
+        private void CoreWebView2_WebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs e)
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(e.WebMessageAsJson);
+                var root = doc.RootElement;
+                if (!root.TryGetProperty("cmd", out var cmdProp))
+                    return;
+
+                string cmd = cmdProp.GetString();
+                switch (cmd)
+                {
+                    case "toggleWatching":
+                        watching = !watching;
+                        if (watching) pollTimer.Start();
+                        else pollTimer.Stop();
+                        PushWatcherStatus();
+                        break;
+                    case "setWatching":
+                        watching = root.TryGetProperty("value", out var v) && v.GetBoolean();
+                        if (watching) pollTimer.Start();
+                        else pollTimer.Stop();
+                        PushWatcherStatus();
+                        break;
+                    case "getWatcherState":
+                        PushWatcherStatus();
+                        break;
+                    case "setStatsMode":
+                        includeRecentActivity = root.TryGetProperty("includeRecent", out var includeRecent) && includeRecent.GetBoolean();
+                        includeHistory = root.TryGetProperty("includeHistory", out var withHistory) && withHistory.GetBoolean();
+                        break;
+                    case "getStats":
+                        if (root.TryGetProperty("categoryKey", out var categoryElement) && categoryElement.GetString() is string category
+                            && (category == "1-1" || category == "DLC:lobber" || category == "DLC:charge"))
+                            statsCategoryKey = category;
+                        if (root.TryGetProperty("includeRecent", out var requestedRecent))
+                            includeRecentActivity = requestedRecent.GetBoolean();
+                        if (root.TryGetProperty("includeHistory", out var requestedHistory))
+                            includeHistory = requestedHistory.GetBoolean();
+                        PostJson(StatsReport.ToJson(database, includeRecentActivity, includeHistory, statsCategoryKey));
+                        break;
+                    case "exportBackup":
+                        PostJson(JsonSerializer.Serialize(new { type = "backupDatabase", database = database.ExportBackup() }, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
+                        break;
+                    case "autoBackup":
+                        SaveAutomaticBackup(root);
+                        break;
+                    case "importBackup":
+                        try
+                        {
+                            if (!root.TryGetProperty("database", out var backupJson))
+                                throw new InvalidOperationException("The backup is missing attempt data.");
+                            var backup = JsonSerializer.Deserialize<RunDatabase.BackupPayload>(backupJson.GetRawText(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                            database.ImportBackup(backup);
+                            PostJson(JsonSerializer.Serialize(new { type = "backupImportComplete" }));
+                            PostJson(StatsReport.ToJson(database, includeRecentActivity, includeHistory, statsCategoryKey));
+                        }
+                        catch (Exception ex)
+                        {
+                            PostJson(JsonSerializer.Serialize(new { type = "backupImportError", message = ex.Message }));
+                        }
+                        break;
+                    case "deleteAttempt":
+                        if (root.TryGetProperty("id", out var attemptId) && attemptId.TryGetInt64(out long id))
+                        {
+                            database.DeleteAttempt(id);
+                            PostJson(StatsReport.ToJson(database, includeRecentActivity, includeHistory, statsCategoryKey));
+                        }
+                        break;
+                    case "deleteDeath":
+                        if (root.TryGetProperty("id", out var deathId) && deathId.TryGetInt64(out long deathEventId))
+                        {
+                            database.DeleteDeath(deathEventId);
+                            PostJson(StatsReport.ToJson(database, includeRecentActivity, includeHistory, statsCategoryKey));
+                        }
+                        break;
+                    case "clearAllAttempts":
+                        database.ClearAttempts();
+                        PostJson(StatsReport.ToJson(database, includeRecentActivity, includeHistory, statsCategoryKey));
+                        break;
+                    case "setCompactMode":
+                        SetCompactMode(root.TryGetProperty("value", out var compact) && compact.GetBoolean());
+                        break;
+                }
+            }
+            catch
+            {
+                // ignore malformed host messages
+            }
+        }
+
+        private void OnAttemptLogged(AttemptTracker.AttemptLoggedEvent e)
+        {
+            if (e.Cleared)
+            {
+                PostJson(JsonSerializer.Serialize(new
+                {
+                    type = "applyClear",
+                    bossName = e.BossName,
+                    categoryKey = e.CategoryKey,
+                    seconds = e.TimeSeconds
+                }));
+            }
+
+            PostJson(StatsReport.ToJson(database, includeRecentActivity, includeHistory, statsCategoryKey));
+            PushWatcherStatus();
+        }
+
+        private void SaveAutomaticBackup(JsonElement message)
+        {
+            var localStorage = new Dictionary<string, string>();
+            if (message.TryGetProperty("localStorage", out var storage) && storage.ValueKind == JsonValueKind.Object)
+            {
+                foreach (var entry in storage.EnumerateObject())
+                    localStorage[entry.Name] = entry.Value.ValueKind == JsonValueKind.String ? entry.Value.GetString() ?? string.Empty : string.Empty;
+            }
+
+            var backup = new
+            {
+                format = "cuphead-training-table-backup",
+                version = 1,
+                exportedAt = DateTime.UtcNow.ToString("o"),
+                localStorage,
+                database = database.ExportBackup()
+            };
+
+            string directory = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "CupheadTrainingLog",
+                "Backups");
+            Directory.CreateDirectory(directory);
+            string path = Path.Combine(directory, "cuphead-training-auto-backup.json");
+            string temporaryPath = path + ".tmp";
+            File.WriteAllText(temporaryPath, JsonSerializer.Serialize(backup, new JsonSerializerOptions(JsonSerializerDefaults.Web) { WriteIndented = true }));
+            File.Move(temporaryPath, path, true);
+        }
+
+        private void SetCompactMode(bool compact)
+        {
+            if (compactMode == compact)
+                return;
+            compactMode = compact;
+
+            var workArea = Screen.FromControl(this).WorkingArea;
+            int minWidth = Math.Min(compact ? 700 : 800, workArea.Width);
+            int minHeight = Math.Min(compact ? 480 : 560, workArea.Height);
+            MinimumSize = new Size(minWidth, minHeight);
+
+            int width = Math.Max(minWidth, Math.Min(compact ? 900 : 1100, workArea.Width));
+            int height = Math.Max(minHeight, Math.Min(compact ? 620 : 740, workArea.Height));
+            Size = new Size(width, height);
+            Location = new Point(
+                workArea.Left + Math.Max(0, (workArea.Width - width) / 2),
+                workArea.Top + Math.Max(0, (workArea.Height - height) / 2));
+        }
+
+        private void PushWatcherStatus()
+        {
+            PostJson(JsonSerializer.Serialize(new
+            {
+                type = "watcherStatus",
+                watching,
+                status = lastStatus,
+                warning = !string.IsNullOrEmpty(versionWarning)
+            }));
+        }
+
+        private void PostJson(string json)
+        {
+            if (webView.CoreWebView2 == null)
+                return;
+            try { webView.CoreWebView2.PostWebMessageAsJson(json); }
+            catch { /* webview not ready */ }
+        }
+    }
+}

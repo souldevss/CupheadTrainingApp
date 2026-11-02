@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cuphead Training Table — Info</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/info.css">
+    <link rel="stylesheet" href="css/host-bridge.css">
+</head>
+<body data-page="info">
+
+<div class="pages">
+    <img id="bigtitle" src="assets/bigtitle.png" alt="Cuphead Training Table">
+    <a href="info.html" class="info-nav-btn active-info" data-i18n-aria-label="ui.info-aria" aria-label="How it works">&#9432;</a>
+
+    <button id="lang-toggle-btn" class="lang-toggle-btn-inline" type="button" onclick="setActiveLanguage(getActiveLanguage() === 'pt-BR' ? 'en' : 'pt-BR')" data-i18n-aria-label="ui.language-aria" aria-label="Toggle language">
+        <img src="https://flagcdn.com/w40/us.png" srcset="https://flagcdn.com/w80/us.png 2x" alt="English" width="28" height="21">
+    </button>
+</div>
+
+<div class="nav-row">
+    <div class="page-tabs">
+        <a href="index.html" data-i18n="nav.training">Training</a>
+        <a href="index2.html" data-i18n="nav.time-table">Time Table</a>
+        <a href="autolog.html" data-i18n="nav.attempt-log">Attempt Log</a>
+    </div>
+    <button id="compact-mode-toggle" class="compact-mode-toggle" type="button" aria-pressed="false" data-i18n="ui.compact">Compact mode</button>
+</div>
+
+    <div class="info-page">
+
+        <section class="info-section">
+            <h2 data-i18n="info.loadout-title">Equipment checks</h2>
+            <p data-i18n="info.loadout-text"></p>
+        </section>
+
+        <section class="info-section">
+            <h2 data-i18n-content="info.backup-title">Back up your data</h2>
+            <p><span data-i18n-content="info.backup-description">Export your personal times, preferences, boss attempts, and deaths in one backup file. The desktop app also refreshes an automatic backup every 10 minutes at</span> <code>%LocalAppData%\CupheadTrainingLog\Backups\cuphead-training-auto-backup.json</code>. <span data-i18n-content="info.backup-description-end">Importing adds run history and skips records that are already present.</span></p>
+            <div class="backup-controls">
+                <button id="export-backup" class="data-control-btn" type="button" data-i18n="info.export-all">Export all data</button>
+                <button id="import-backup" class="data-control-btn" type="button" data-i18n="info.import-backup">Import backup</button>
+                <input id="backup-file" type="file" accept="application/json,.json" hidden>
+                <span id="backup-status" role="status"></span>
+            </div>
+        </section>
+
+        <section class="info-section">
+
+
+            <h2 data-i18n-content="info.what-title">What the fork is this website</h2>
+            <p data-i18n-content="info.what-text">
+                This is a personal practice tracker for speedruns. Enter your best times for each level or split, see your rank, and track your progress.
+            </p>
+        </section>
+
+        <section class="info-section">
+            <h2 data-i18n-content="info.ranks-title">Ranks</h2>
+            <p data-i18n-content="info.ranks-intro">Each level has 19 thresholds, from fastest to slowest:</p>
+            <div class="info-ranks">
+                <span class="info-rank-badge" style="background:#ffffff;color:#000000;">WR</span>
+                <span class="info-rank-badge" style="background:#252525;color:#F1C232;">S</span>
+                <span class="info-rank-badge" style="background:#9e4058;color:#eaf8fd;">A++</span>
+                <span class="info-rank-badge" style="background:#d88d6f;color:#000000;">A+</span>
+                <span class="info-rank-badge" style="background:#f1cb79;color:#000000;">A</span>
+                <span class="info-rank-badge" style="background:#fffab2;color:#000000;">A-</span>
+                <span class="info-rank-badge" style="background:#D9D2E9;color:#000000;">B+</span>
+                <span class="info-rank-badge" style="background:#A2A7FE;color:#000000;">B</span>
+                <span class="info-rank-badge" style="background:#7980F7;color:#000000;">B-</span>
+                <span class="info-rank-badge" style="background:#9FC5E8;color:#000000;">C+</span>
+                <span class="info-rank-badge" style="background:#84AFE6;color:#000000;">C</span>
+                <span class="info-rank-badge" style="background:#6C9CE8;color:#000000;">C-</span>
+                <span class="info-rank-badge" style="background:#A0C2C7;color:#000000;">D+</span>
+                <span class="info-rank-badge" style="background:#8CB5BC;color:#000000;">D</span>
+                <span class="info-rank-badge" style="background:#76A5AF;color:#000000;">D-</span>
+                <span class="info-rank-badge" style="background:#EA9999;color:#000000;">E+</span>
+                <span class="info-rank-badge" style="background:#DD7E6B;color:#000000;">E</span>
+                <span class="info-rank-badge" style="background:#E06666;color:#000000;">E-</span>
+                <span class="info-rank-badge" style="background:#999999;color:#000000;">F</span>
+            </div>
+            <p data-i18n-content="info.ranks-text">
+                The rank thresholds are based on the current WR for each IL and made-up F rank times.
+            </p>
+        </section>
+
+        <section class="info-section">
+            <h2 data-i18n-content="info.distribution-title">Distribution Curve</h2>
+            <p data-i18n-content="info.distribution-text">
+                Each rank threshold is computed as:
+            </p>
+            <div class="info-formula">
+                threshold(i) = WR + (F &minus; WR) &times; (i&thinsp;/&thinsp;18)<sup>1.35</sup>
+            </div>
+            <p>
+                <span data-i18n-content="info.distribution.explain-i">where <strong>i</strong> is the rank index (0&thinsp;=&thinsp;WR, 18&thinsp;=&thinsp;F).
+                The exponent controls how the 19 thresholds are spread between WR and F:</span>
+            </p>
+            <ul>
+                <li data-i18n-content="info.distribution.linear-desc"><strong>= 1.0 (linear)</strong> — equal gap between every consecutive rank.</li>
+                <li data-i18n-content="info.distribution.power-desc"><strong>&gt; 1.0 (used here: 1.35)</strong> — thresholds cluster near WR; gaps grow toward F. Improving from F to D is easier than from S to WR.</li>
+            </ul>
+            <p data-i18n-content="info.distribution.graph-desc">The graph below shows how the curve maps rank index to the fraction of the WR&rarr;F range used for each threshold. Tick marks on the axis show where each rank falls.</p>
+            <div class="info-graph-wrap">
+                <canvas id="curve-graph" width="680" height="260"></canvas>
+            </div>
+        </section>
+
+    </div>
+
+    <script src="js/sound-effects.js"></script>
+<script src="js/language.js"></script>
+    <script src="js/info-graph.js"></script>
+    <script src="js/host-bridge.js"></script>
+    <script src="js/backup.js"></script>
+    <script src="js/compact-mode.js"></script>
+
+</body>
+</html>

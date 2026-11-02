@@ -1,0 +1,125 @@
+.info-page {
+    max-width: 890px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.info-page h2,
+.info-page p,
+.info-page li,
+.info-page strong,
+.info-page em,
+.info-page code {
+    text-shadow: 2px 2px 2px rgba(0, 0, 0, 0.85);
+}
+
+.info-section {
+    background: transparent;
+    border-radius: 12px;
+    padding: 20px 24px;
+    text-align: left;
+}
+
+.info-section h2 {
+    margin: 0 0 10px;
+    font-size: 18px;
+    color: #f1c232;
+    font-family: monospace;
+}
+
+.info-section p,
+.info-section li {
+    margin: 0 0 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #eee3f8;
+    line-height: 1.6;
+}
+
+.info-section p:last-child,
+.info-section li:last-child {
+    margin-bottom: 0;
+}
+
+.info-section ul {
+    margin: 8px 0;
+    padding-left: 20px;
+}
+
+.info-section strong {
+    color: #ffffff;
+}
+
+.info-section em {
+    color: #eee3f8;
+    font-style: normal;
+    font-weight: 600;
+}
+
+.info-section code {
+    background: rgba(103, 78, 167, 0.4);
+    border: 1px solid #392872;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 13px;
+    color: #f1c232;
+    font-family: monospace;
+}
+
+.backup-controls { display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin-top:14px; }
+.backup-controls .data-control-btn { margin:0; }
+#backup-status { color:#c0c7cf; font-size:13px; }
+
+.info-ranks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 10px 0;
+}
+
+.info-rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 28px;
+    padding: 0 8px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 800;
+    border: 1px solid rgba(32, 18, 77, 0.4);
+}
+
+.info-formula {
+    background: rgba(103, 78, 167, 0.25);
+    border: 1px solid #392872;
+    border-radius: 8px;
+    padding: 10px 16px;
+    margin: 10px 0;
+    font-family: monospace;
+    font-size: 14px;
+    color: #f1c232;
+}
+
+.info-graph-wrap {
+    margin-top: 14px;
+    background: rgba(0, 0, 0, 0.75);
+    border: 1px solid #392872;
+    border-radius: 8px;
+    overflow: hidden;
+    max-width: 100%;
+}
+
+.info-graph-wrap canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+body[data-page="info"] {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cuphead Training Table</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/host-bridge.css">
+</head>
+<body data-page="time-table">
+
+<div class="pages">
+    <img id="bigtitle" src="assets/bigtitle.png" alt="Cuphead Training Table">
+    <a href="info.html" class="info-nav-btn" data-i18n-aria-label="ui.info-aria" aria-label="How it works">&#9432;</a>
+
+    <button id="lang-toggle-btn" class="lang-toggle-btn-inline" type="button" onclick="setActiveLanguage(getActiveLanguage() === 'pt-BR' ? 'en' : 'pt-BR')" data-i18n-aria-label="ui.language-aria" aria-label="Toggle language">
+        <img src="https://flagcdn.com/w40/us.png" srcset="https://flagcdn.com/w80/us.png 2x" alt="English" width="28" height="21">
+    </button>
+</div>
+
+<div class="nav-row">
+    <div class="page-tabs">
+        <a href="index.html" data-i18n="nav.training">Training</a>
+        <a href="index2.html" class="active" data-i18n="nav.time-table">Time Table</a>
+        <a href="autolog.html" data-i18n="nav.attempt-log">Attempt Log</a>
+    </div>
+    <button id="compact-mode-toggle" class="compact-mode-toggle" type="button" aria-pressed="false" data-i18n="ui.compact">Compact mode</button>
+</div>
+
+    <div id="category-tabs" class="category-tabs"></div>
+
+    <div class="scroll-wrapper">
+        <div id="table"></div>
+        <div id="totals"></div>
+    </div>
+
+    <script src="js/sound-effects.js"></script>
+<script src="data.js"></script>
+    <script src="js/state.js"></script>
+    <script src="js/time.js"></script>
+    <script src="js/category.js"></script>
+    <script src="js/data-access.js"></script>
+    <script src="js/ranks.js"></script>
+    <script src="js/calculations.js"></script>
+    <script src="js/wr-times.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/render-time-table.js"></script>
+    <script src="js/render-personal.js"></script>
+    <script src="js/render.js"></script>
+    <script src="js/language.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/host-bridge.js"></script>
+    <script src="js/compact-mode.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,116 @@
+.host-watcher-dock {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 12000;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border: 2px solid var(--panel-accent-bright, #e0b965);
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(16, 20, 25, 0.97), rgba(23, 27, 34, 0.98));
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(6px);
+    max-width: min(920px, calc(100vw - 32px));
+}
+
+.host-watcher-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #888;
+    flex-shrink: 0;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.15);
+}
+
+.host-watcher-dot.active {
+    background: #6bff8d;
+    box-shadow: 0 0 10px rgba(107, 255, 141, 0.8);
+}
+
+.host-watcher-dot.warn {
+    background: #ff9f43;
+    box-shadow: 0 0 10px rgba(255, 159, 67, 0.8);
+}
+
+.host-watcher-text {
+    font-size: 13px;
+    color: #edf0f3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.host-watcher-btn {
+    border: 2px solid #c5ccd5;
+    border-radius: 999px;
+    background: var(--panel-accent-soft, #303c4c);
+    color: #fff;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 6px 14px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.host-watcher-btn:hover {
+    background: var(--panel-accent, #556579);
+}
+
+.host-watcher-btn.active {
+    background: #9e4058;
+    border-color: #ffb4c6;
+}
+
+.host-watcher-link {
+    color: var(--panel-accent-bright, #e0b965);
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.host-watcher-link:hover {
+    text-decoration: underline;
+}
+
+.autolog-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
+    border-radius: 12px;
+    border: 2px solid var(--panel-border, #333b46);
+}
+
+.autolog-table th,
+.autolog-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.autolog-table thead th {
+    background: var(--panel-bg-deep, #101419);
+    color: #e0b965;
+    text-align: left;
+}
+
+.autolog-table tbody tr:hover td {
+    filter: brightness(1.05);
+}
+
+.trend-up {
+    color: #6bff8d;
+    font-weight: 700;
+}
+
+.trend-down {
+    color: #ff7b7b;
+    font-weight: 700;
+}
+
+.trend-flat {
+    color: #b7c0ca;
+}
