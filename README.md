@@ -85,7 +85,3 @@ The workflow builds the app, creates a GitHub release with generated notes, and 
 - **High memory or CPU:** WebView2 runs multiple child processes. Graph interaction can still use substantial resources; this build is not advertised as a low-memory native interface.
 
 When reporting a problem, include your app version, Windows and Cuphead versions, category, and reproduction steps. Only attach an exported history if you intend to share its contents.
-
-## Credits
-
-Thanks to the original [CupheadTrainingTable](https://github.com/souldevss/CupheadTrainingTable), the CupheadMusicPlayer memory engine, [myekul.com](https://myekul.com/), and the runners whose reference videos are linked in the table. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for attribution. This is an unofficial project and is not affiliated with Studio MDHR.
