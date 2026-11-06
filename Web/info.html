@@ -24,7 +24,7 @@
         <a href="index.html" data-i18n="nav.training">Training</a>
         <a href="index2.html" data-i18n="nav.time-table">Time Table</a>
         <a href="autolog.html" data-i18n="nav.attempt-log">Attempt Log</a>
-        <a href="info.html" class="active" data-i18n="nav.backups">Backups</a>
+        <a href="backups.html" data-i18n="nav.backups">Backups</a>
     </div>
     <button id="compact-mode-toggle" class="compact-mode-toggle" type="button" aria-pressed="false" data-i18n="ui.compact">Compact mode</button>
 </div>
@@ -36,16 +36,7 @@
             <p data-i18n="info.loadout-text"></p>
         </section>
 
-        <section class="info-section">
-            <h2 data-i18n-content="info.backup-title">Back up your data</h2>
-            <p><span data-i18n-content="info.backup-description">Export your personal times, preferences, boss attempts, and deaths in one backup file. The desktop app also refreshes an automatic backup every 10 minutes at</span> <code>%LocalAppData%\CupheadTrainingLog\Backups\cuphead-training-auto-backup.json</code>. <span data-i18n-content="info.backup-description-end">Importing adds run history and skips records that are already present.</span></p>
-            <div class="backup-controls">
-                <button id="export-backup" class="data-control-btn" type="button" data-i18n="info.export-all">Export all data</button>
-                <button id="import-backup" class="data-control-btn" type="button" data-i18n="info.import-backup">Import backup</button>
-                <input id="backup-file" type="file" accept="application/json,.json" hidden>
-                <span id="backup-status" role="status"></span>
-            </div>
-        </section>
+
 
         <section class="info-section">
 
@@ -110,10 +101,9 @@
     </div>
 
     <script src="js/sound-effects.js"></script>
-<script src="js/language.js"></script>
+<script src="js/language.js?v=1.0.2-backups"></script>
     <script src="js/info-graph.js"></script>
-    <script src="js/host-bridge.js"></script>
-    <script src="js/backup.js"></script>
+    <script src="js/host-bridge.js?v=1.0.2-backups"></script>
     <script src="js/compact-mode.js"></script>
 
 </body>

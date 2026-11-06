@@ -26,6 +26,7 @@ const TRANSLATIONS = {
         // Page title
         "page.title": "Cuphead Training Table",
         "page.title.info": "Cuphead Training Table — Info",
+        "page.title.backups": "Cuphead Training Table — Backups",
         "page.title.attempts": "Cuphead Training Table — Attempt Log",
 
         // Info page
@@ -220,6 +221,7 @@ const TRANSLATIONS = {
         // Page title
         "page.title": "Tabela de Treino Cuphead",
         "page.title.info": "Tabela de Treino Cuphead — Info",
+        "page.title.backups": "Tabela de Treino Cuphead — Backups",
         "page.title.attempts": "Tabela de Treino Cuphead — Registro de tentativas",
 
         // Info page
@@ -452,6 +454,7 @@ function applyLanguage(lang)
     // Update page title
     const isInfoPage = document.body.dataset.page === "info";
     document.title = isInfoPage ? t("page.title.info")
+        : document.body.dataset.page === "backups" ? t("page.title.backups")
         : document.body.dataset.page === "attempt-log" ? t("page.title.attempts")
         : t("page.title");
 

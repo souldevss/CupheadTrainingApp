@@ -3,7 +3,8 @@
         training: document.getElementById("training"),
         "time-table": document.getElementById("time-table"),
         "attempt-log": document.getElementById("attempt-log"),
-        info: document.getElementById("info")
+        info: document.getElementById("info"),
+        backups: document.getElementById("backups")
     };
     let activePage = "training";
     let initialized = false;

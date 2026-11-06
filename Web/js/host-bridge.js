@@ -271,7 +271,7 @@
         document.addEventListener("click", event => {
             const link = event.target.closest("a[href]");
             if (!link) return;
-            const page = {"index.html":"training", "index2.html":"time-table", "autolog.html":"attempt-log", "info.html":"info"}[link.getAttribute("href")];
+            const page = {"index.html":"training", "index2.html":"time-table", "autolog.html":"attempt-log", "info.html":"info", "backups.html":"backups"}[link.getAttribute("href")];
             if (!page) return;
             event.preventDefault();
             window.parent.postMessage({type:"switchPage",page}, "*");
