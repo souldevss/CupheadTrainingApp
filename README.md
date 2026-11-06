@@ -42,7 +42,7 @@ Data stays on your PC:
 | Interface settings and WebView profile | `%LocalAppData%\CupheadTrainingLog\WebView2\` |
 | Latest automatic backup | `%LocalAppData%\CupheadTrainingLog\Backups\cuphead-training-auto-backup.json` |
 
-Use the export/import controls on the Info page to move your data between PCs. Import replaces the stored attempt/death data; export a copy first if you want to keep the current history. The automatic backup overwrites one local file, so keep separate exports for older snapshots.
+Open the **Backups** tab to export or import your data between PCs. Import adds run history and skips records already present; settings from the backup are restored. The automatic backup overwrites one local file, so keep separate exports for older snapshots.
 
 Updating the app does not require deleting these folders. Personal databases, backups, browser profiles, and build output are excluded from the source repository.
 

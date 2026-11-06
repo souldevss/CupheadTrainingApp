@@ -2,7 +2,8 @@
     const pages = {
         training: document.getElementById("training"),
         "time-table": document.getElementById("time-table"),
-        "attempt-log": document.getElementById("attempt-log")
+        "attempt-log": document.getElementById("attempt-log"),
+        info: document.getElementById("info")
     };
     let activePage = "training";
     let initialized = false;
@@ -43,7 +44,7 @@
         if (!initialized) return;
         const includeHistory = name === "attempt-log";
         sendToHost({ cmd: "setStatsMode", includeRecent: includeHistory, includeHistory });
-        if (name !== "time-table") {
+        if (name === "training" || name === "attempt-log") {
             sendToHost({ cmd: "getStats", includeRecent: includeHistory, includeHistory, categoryKey: includeHistory ? (localStorage.getItem("cupheadLogCategory") || "1-1") : undefined });
         }
     }
@@ -86,7 +87,7 @@
         const includeHistory = activePage === "attempt-log";
         sendToHost({ cmd: "setStatsMode", includeRecent: includeHistory, includeHistory });
         sendToHost({ cmd: "getWatcherState" });
-        if (activePage !== "time-table") {
+        if (activePage === "training" || activePage === "attempt-log") {
             sendToHost({ cmd: "getStats", includeRecent: includeHistory, includeHistory, categoryKey: includeHistory ? (localStorage.getItem("cupheadLogCategory") || "1-1") : undefined });
         }
 
