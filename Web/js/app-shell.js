@@ -19,6 +19,9 @@
 
     function updateFrameTitles() {
         const portuguese = localStorage.getItem("cuphead-training-lang") === "pt-BR";
+        document.documentElement.lang = portuguese ? "pt-BR" : "en";
+        document.title = portuguese ? "App de treino de Cuphead" : "Cuphead Training App";
+        sendToHost({ cmd: "setAppLanguage", portuguese });
         pages.training.title = portuguese ? "Treino" : "Training";
         pages["time-table"].title = portuguese ? "Tabela de Tempos" : "Time Table";
         pages["attempt-log"].title = portuguese ? "Registro de tentativas" : "Attempt Log";
@@ -26,7 +29,7 @@
 
     updateFrameTitles();
     window.addEventListener("storage", event => {
-        if (event.key === "cuphead-training-lang") updateFrameTitles();
+        if (event.key === "cuphead-training-lang" || event.key === null) updateFrameTitles();
         if (event.key === "cupheadCompactMode" || event.key === null) {
             sendToHost({ cmd: "setCompactMode", value: localStorage.getItem("cupheadCompactMode") !== "false" });
         }

@@ -1,6 +1,6 @@
 param(
     [ValidatePattern('^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$')]
-    [string]$Version = '1.1.2'
+    [string]$Version = '1.1.3'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -28,7 +28,12 @@ foreach ($required in @('CupheadTrainingApp.exe', 'Web/app-shell.html', 'Web/aut
 Copy-Item -LiteralPath (Join-Path $projectRoot 'README.md') -Destination $publishDirectory
 Copy-Item -LiteralPath (Join-Path $projectRoot 'THIRD-PARTY-NOTICES.md') -Destination $publishDirectory
 $archive = Join-Path $artifactRoot "$packageName.zip"
-Compress-Archive -Path $publishDirectory -DestinationPath $archive
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$compression = [IO.Compression.CompressionLevel]::Optimal
+if ([Enum]::IsDefined([IO.Compression.CompressionLevel], 'SmallestSize')) {
+    $compression = [IO.Compression.CompressionLevel]::SmallestSize
+}
+[IO.Compression.ZipFile]::CreateFromDirectory($publishDirectory, $archive, $compression, $true)
 $hash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
 "$hash  $packageName.zip" | Set-Content -LiteralPath "$archive.sha256" -Encoding ascii
 Write-Host "Package: $archive"

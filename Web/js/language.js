@@ -14,6 +14,7 @@ const TRANSLATIONS = {
         "nav.import": "⬆ Import Times",
         "nav.attempt-log": "Attempt Log",
         "ui.compact": "Compact mode",
+        "ui.muted-graph-colors": "Muted graph colors",
         "ui.check-for-updates": "Check for updates",
         "ui.compact-on": "Compact mode: On",
         "ui.info-aria": "How it works",
@@ -285,6 +286,7 @@ const TRANSLATIONS = {
         "nav.import": "⬆ Importar Tempos",
         "nav.attempt-log": "Registro de tentativas",
         "ui.compact": "Modo compacto",
+        "ui.muted-graph-colors": "Cores suaves nos gráficos",
         "ui.check-for-updates": "Verificar atualizações",
         "ui.compact-on": "Modo compacto: ativado",
         "ui.info-aria": "Como funciona",
@@ -293,13 +295,13 @@ const TRANSLATIONS = {
         "ui.switch-to-portuguese": "Mudar para português",
 
         // Bigtitle alt text
-        "bigtitle.alt": "Cuphead Training App",
+        "bigtitle.alt": "App de treino de Cuphead",
 
         // Page title
-        "page.title": "Cuphead Training App",
-        "page.title.info": "Cuphead Training App — Info",
-        "page.title.backups": "Cuphead Training App — Backups",
-        "page.title.attempts": "Cuphead Training App — Registro de tentativas",
+        "page.title": "App de treino de Cuphead",
+        "page.title.info": "App de treino de Cuphead — Informações",
+        "page.title.backups": "App de treino de Cuphead — Cópias de segurança",
+        "page.title.attempts": "App de treino de Cuphead — Registro de tentativas",
 
         // Info page
         "info.what-title": "Que resenha é essa",
@@ -405,7 +407,7 @@ const TRANSLATIONS = {
         "projection.recap-deaths": "+{count} mortes inferidas",
         "projection.recap-count": "+{count} vitórias do recap",
         "projection.recorded-count": "Run Recap: {hits} de {count} runs iniciadas atingiram a meta",
-        "recap.title": "Resumo de runs",
+        "recap.title": "Run Recap",
         "recap.drop": "Solte um arquivo .rrc aqui ou escolha um arquivo",
         "recap.drop-one": "Solte um arquivo .rrc por vez.",
         "recap.final-boss": "Chefe final",
@@ -610,7 +612,7 @@ function applyLanguage(lang)
         : document.body.dataset.page === "attempt-log" ? t("page.title.attempts")
         : t("page.title");
 
-    // Keep the product name consistent across languages.
+    // Update the visible heading.
     const bigtitle = document.getElementById("bigtitle");
     if (bigtitle) bigtitle.textContent = t("bigtitle.alt");
 
@@ -722,6 +724,10 @@ function setupIconNavigation() {
         control.innerHTML = `${navigationIcon(key)}<span class="icon-caption" data-i18n="${key}" aria-hidden="true"></span>`;
     });
 }
+
+window.addEventListener("storage", event => {
+    if (event.key === LANG_KEY || event.key === null) applyLanguage(getActiveLanguage());
+});
 
 setupIconNavigation();
 applyLanguage(getActiveLanguage());

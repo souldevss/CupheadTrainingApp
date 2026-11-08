@@ -107,9 +107,9 @@ const totalsRowsStyles = [
 const isleImages = new Map([
     ["Inkwell Isle I", "ch-inkwell-isle-one.webp"],
     ["Inkwell Isle 1", "ch-inkwell-isle-one.webp"],
-    ["Inkwell Isle II", "isle 2.jpg"],
-    ["Inkwell Isle III", "isle 3.png"],
-    ["Inkwell Hell", "hell.png"]
+    ["Inkwell Isle II", "isle-two.jpg"],
+    ["Inkwell Isle III", "isle-three.jpg"],
+    ["Inkwell Hell", "hell.jpg"]
 ]);
 
 function isleArtworkStyle(name, tone) {

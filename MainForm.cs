@@ -113,7 +113,7 @@ namespace CupheadTrainingApp
                 _ = CheckForUpdatesAsync(manual: false);
             };
 
-            webView.Source = new Uri($"https://{VirtualHost}/app-shell.html?v=app-updates");
+            webView.Source = new Uri($"https://{VirtualHost}/app-shell.html?v=run-recap-name");
         }
 
         private void SetWebViewMemoryTarget(bool inactive)
@@ -141,6 +141,11 @@ namespace CupheadTrainingApp
                 string cmd = cmdProp.GetString();
                 switch (cmd)
                 {
+                    case "setAppLanguage":
+                        Text = root.TryGetProperty("portuguese", out var portuguese) && portuguese.GetBoolean()
+                            ? "App de treino de Cuphead"
+                            : "Cuphead Training App";
+                        break;
                     case "checkForUpdates":
                         if (Uri.TryCreate(e.Source, UriKind.Absolute, out var source) &&
                             source.Scheme == Uri.UriSchemeHttps && source.Host == VirtualHost &&

@@ -23,7 +23,7 @@ body {
     min-height: 100%;
     margin: 0;
     padding: 20px;
-    background-image: linear-gradient(180deg, rgba(15, 19, 28, .14), rgba(15, 19, 28, .38)), url("assets/backgrounds/myekul-bg.png");
+    background-image: linear-gradient(180deg, rgba(15, 19, 28, .14), rgba(15, 19, 28, .38)), url("assets/backgrounds/myekul-bg.jpg");
     background-repeat: no-repeat;
     background-position: center center;
     background-attachment: fixed;
@@ -1400,3 +1400,11 @@ body.compact-mode .time-history-chart { height:190px; }
         max-height: none;
     }
 }
+
+.time-chart-heading { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:baseline; gap:0 12px; }
+.graph-color-setting { display:inline-flex; align-items:center; gap:6px; color:#c0c7cf; font-size:12px; cursor:pointer; }
+.muted-graphs .time-history-chart {
+    filter:saturate(.25);
+}
+.muted-graphs .history-chart .rank-band-fill { opacity:.07; }
+.muted-graphs .history-chart .rank-band-glow { display:none; }

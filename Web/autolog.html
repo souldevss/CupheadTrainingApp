@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cuphead Training App — Attempt Log</title>
-    <link rel="stylesheet" href="style.css?v=myekul-background">
+    <link rel="stylesheet" href="style.css?v=graph-color-control">
     <link rel="stylesheet" href="css/host-bridge.css">
 </head>
 <body data-page="attempt-log">
@@ -127,13 +127,13 @@
 </main>
 
 <script src="js/sound-effects.js"></script>
-<script src="data.js?v=reverse-rank-wheel"></script>
+<script src="data.js?v=smaller-artwork"></script>
 <script src="js/state.js"></script>
 <script src="js/time.js"></script>
 <script src="js/ranks.js?v=wheel-ranks"></script>
 <script src="js/data-access.js"></script>
 <script src="js/category.js"></script>
-<script src="js/language.js?v=live-average"></script>
+<script src="js/language.js?v=run-recap-name"></script>
 <script src="js/host-bridge.js?v=live-average"></script>
 <script src="js/compact-mode.js?v=compact-default"></script>
 <script src="js/wr-times.js"></script>
@@ -935,7 +935,10 @@ function renderBossDetail() {
             <div class="improvement-cards"><div><span>${t("autolog.total-playtime")}</span><strong>${safeText(boss.totalPlaytime || "0:00.00")}</strong></div><div><span>${t("autolog.best-clear")}</span><strong>${safeText(boss.best)}</strong></div><div><span>${t("autolog.total-deaths")}</span><strong>${boss.deaths}</strong></div><div><span>${t("autolog.avg-10")}</span><strong>${safeText(completeAverage(boss.avg10, boss.clears, 10))}</strong></div><div><span>${t("autolog.avg-20")}</span><strong>${safeText(completeAverage(boss.avg20, boss.clears, 20))}</strong></div><div><span>${t("autolog.avg-50")}</span><strong>${safeText(completeAverage(boss.avg50, boss.clears, 50))}</strong></div></div>
             <div class="history-chart-grid combined-history-grid">
                 <article class="history-card time-history-card">
-                    <h3>${t("autolog.clear-times")}</h3>
+                    <div class="time-chart-heading">
+                        <h3>${t("autolog.clear-times")}</h3>
+                        ${clearCount ? `<label class="graph-color-setting"><input id="muted-graph-colors" type="checkbox"> ${t("ui.muted-graph-colors")}</label>` : ""}
+                    </div>
                     <label class="average-slider-label" for="time-average-slider"><span>${t("autolog.average-window")}</span><output id="time-average-value">${selectedAverageWindow}</output></label>
                     <input id="time-average-slider" class="average-window-slider" type="range" min="1" max="${maxSmoothing(clearCount)}" step="1" value="${selectedAverageWindow}" aria-label="${t("autolog.average-window-aria")}">
                     <div class="average-slider-ends"><span>${t("autolog.individual-clears")}</span><span>${t("autolog.up-to-50-average")}</span></div>
@@ -946,6 +949,17 @@ function renderBossDetail() {
         </div>
         <div class="detail-tab-content" data-panel="attempts" ${selectedDetailTab === "attempts" ? "" : "hidden"}>${renderAttempts(history.map(a => ({id:a.id, when:a.when, level:boss.level, result:a.cleared ? "Clear" : "Fail", time:formatTime(a.timeSeconds)})), false)}</div>`;
     detail.querySelectorAll(".time-chart-content").forEach(holder => bindTimeChartControls(holder, history, art));
+
+    const mutedColors = detail.querySelector("#muted-graph-colors");
+    if (mutedColors) {
+        const chart = mutedColors.closest(".time-history-card");
+        mutedColors.checked = localStorage.getItem("cupheadMutedGraphs") === "true";
+        chart.classList.toggle("muted-graphs", mutedColors.checked);
+        mutedColors.addEventListener("change", () => {
+            localStorage.setItem("cupheadMutedGraphs", String(mutedColors.checked));
+            chart.classList.toggle("muted-graphs", mutedColors.checked);
+        });
+    }
 
     const averageSlider = detail.querySelector("#time-average-slider");
     averageSlider?.addEventListener("input", () => {
