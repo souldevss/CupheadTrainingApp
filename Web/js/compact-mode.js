@@ -1,26 +1,33 @@
 (function () {
     const storageKey = "cupheadCompactMode";
     const button = document.getElementById("compact-mode-toggle");
-    let compact = localStorage.getItem(storageKey) === "true";
+    let compact = localStorage.getItem(storageKey) !== "false";
 
-    function applyCompactMode() {
+    function applyCompactMode(notifyHost = false) {
         document.body.classList.toggle("compact-mode", compact);
         if (button) {
             button.setAttribute("aria-pressed", String(compact));
-            button.textContent = compact ? t("ui.compact-on") : t("ui.compact");
+            button.dataset.i18n = compact ? "ui.compact-on" : "ui.compact";
+            button.textContent = t(button.dataset.i18n);
         }
-        if (window.cupheadHost?.isDesktopApp) {
+        if (notifyHost && window.parent === window && window.cupheadHost?.isDesktopApp) {
             window.cupheadHost.setCompactMode(compact);
         }
     }
 
     if (button) {
         button.addEventListener("click", () => {
-            compact = !compact;
+            compact = localStorage.getItem(storageKey) === "false";
             localStorage.setItem(storageKey, String(compact));
-            applyCompactMode();
+            applyCompactMode(true);
         });
     }
+
+    window.addEventListener("storage", event => {
+        if (event.key !== storageKey && event.key !== null) return;
+        compact = localStorage.getItem(storageKey) !== "false";
+        applyCompactMode();
+    });
 
     applyCompactMode();
 })();

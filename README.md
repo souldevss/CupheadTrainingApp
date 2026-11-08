@@ -13,6 +13,8 @@ Built with C# / .NET 8, Windows Forms, SQLite, and a WebView2 interface. Based o
 
 The release includes the .NET runtime. It requires 64-bit Windows and the [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/). Install WebView2 if the interface does not open. Releases are unsigned, so Windows may show a publisher warning.
 
+The desktop app checks for stable updates on startup. You can also select **Check for updates** in **Info**. If an update is available, the prompt shows the release notes since your installed version. Select **Update and restart** to download and verify the Windows package and install it in your current app folder. Your training data stays in LocalAppData.
+
 ## Features
 
 - **Automatic recording:** reads game memory to capture clear times and deaths. Retries are discarded rather than treated as deaths; King Dice miniboss victories are not individual King Dice clears.
@@ -59,7 +61,7 @@ dotnet run --project .\CupheadTrainingApp.csproj -c Release
 To make the same self-contained ZIP as the releases:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\Publish.ps1 -Version 1.1.1
+powershell -ExecutionPolicy Bypass -File .\scripts\Publish.ps1 -Version 1.1.2
 ```
 
 The ZIP and SHA-256 checksum appear in `artifacts/`. The script requires a fresh output directory for each version. All required source files are included here; the neighboring music-player project is not needed.
@@ -75,8 +77,8 @@ GitHub Actions builds a Windows ZIP for pushes to `main`, pull requests, and man
 To publish a versioned download on the repository's **Releases** page, push a version tag:
 
 ```powershell
-git tag v1.1.2
-git push origin v1.1.2
+git tag v1.1.3
+git push origin v1.1.3
 ```
 
 Write the changes for the new tag in `release-notes/vX.Y.Z.md`. The workflow builds the app, creates a GitHub release with those notes, and attaches the ZIP and checksum. Use a new version tag for each release. GitHub Pages cannot run the Windows memory-reading companion; Releases distributes the desktop app.

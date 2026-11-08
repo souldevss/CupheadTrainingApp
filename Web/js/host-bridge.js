@@ -123,6 +123,12 @@
         else if (hasHost) window.chrome.webview.postMessage(message);
     }
 
+    const updateButton = document.getElementById("check-for-updates");
+    if (updateButton && (inAppShell || hasHost)) {
+        updateButton.hidden = false;
+        updateButton.addEventListener("click", () => postToHost({ cmd: "checkForUpdates" }));
+    }
+
     function handleHostMessage(raw) {
         let msg = raw;
         if (typeof raw === "string") {

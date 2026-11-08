@@ -4,25 +4,25 @@ const ranks = [
 ];
 
 const ranksStyles = [
-    { background: "#ffffff", color: "#000000" },
-    { background: "#252525", color: "#F1C232" },
-    { background: "#9e4058", color: "#eaf8fd" },
-    { background: "#d88d6f", color: "#000000" },
-    { background: "#f1cb79", color: "#000000" },
-    { background: "#fffab2", color: "#000000" },
-    { background: "#7980F7", color: "#000000" },
-    { background: "#A2A7FE", color: "#000000" },
-    { background: "#b6b8dd", color: "#000000" },
-    { background: "#6C9CE8", color: "#000000" },
-    { background: "#84AFE6", color: "#000000" },
-    { background: "#9FC5E8", color: "#000000" },
-    { background: "#41a777", color: "#000000" },
-    { background: "#74b390", color: "#000000" },
-    { background: "#99c99f", color: "#000000" },
-    { background: "#E06666", color: "#000000" },
-    { background: "#DD7E6B", color: "#000000" },
-    { background: "#EA9999", color: "#000000" },
-    { background: "#a7a7a7", color: "#000000" }
+    { background: "#fffdf5", color: "#161219" },
+    { background: "#fff8d7", color: "#805400" },
+    { background: "#ffe99a", color: "#161219" },
+    { background: "#ffd36e", color: "#161219" },
+    { background: "#ffb65e", color: "#161219" },
+    { background: "#f69861", color: "#161219" },
+    { background: "#f48380", color: "#161219" },
+    { background: "#ed73a0", color: "#161219" },
+    { background: "#e27dbe", color: "#161219" },
+    { background: "#d185db", color: "#161219" },
+    { background: "#b18ae6", color: "#161219" },
+    { background: "#968fe9", color: "#161219" },
+    { background: "#829deb", color: "#161219" },
+    { background: "#76b0e7", color: "#161219" },
+    { background: "#67bfd8", color: "#161219" },
+    { background: "#65c7b5", color: "#161219" },
+    { background: "#78c47d", color: "#161219" },
+    { background: "#92a63b", color: "#161219" },
+    { background: "#746568", color: "#ffffff" }
 ];
 
 const DEFAULT_WR_TO_F_RATIO = 0.723;

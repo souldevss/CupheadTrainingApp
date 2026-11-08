@@ -110,13 +110,7 @@ function getInterpolatedRankStyle(seconds, thresholds)
     const previousThreshold = thresholds[currentRankIndex - 1];
     const range = previousThreshold - currentThreshold;
     const position = seconds - currentThreshold;
-    const rawFactor = Math.max(0, Math.min(1, position / range));
-    const isAPlusBoundary = currentRankIndex === 3 && currentRankIndex - 1 === 2;
-    const factor = isAPlusBoundary
-        ? (rawFactor < 0.25 ? 0 : rawFactor < 0.55 ? 0.25 : 0.7)
-        : rawFactor < 0.5
-            ? rawFactor * 0.6
-            : 0.4 + (rawFactor - 0.5) * 0.6;
+    const factor = range === 0 ? 0 : Math.max(0, Math.min(1, position / range));
 
     const currentStyle = getRankStyle(currentRankIndex);
     const previousStyle = getRankStyle(currentRankIndex - 1);

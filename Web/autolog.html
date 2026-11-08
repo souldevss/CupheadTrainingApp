@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cuphead Training App — Attempt Log</title>
-    <link rel="stylesheet" href="style.css?v=live-motion">
+    <link rel="stylesheet" href="style.css?v=myekul-background">
     <link rel="stylesheet" href="css/host-bridge.css">
 </head>
 <body data-page="attempt-log">
@@ -127,15 +127,15 @@
 </main>
 
 <script src="js/sound-effects.js"></script>
-<script src="data.js?v=live-average"></script>
+<script src="data.js?v=reverse-rank-wheel"></script>
 <script src="js/state.js"></script>
 <script src="js/time.js"></script>
-<script src="js/ranks.js"></script>
+<script src="js/ranks.js?v=wheel-ranks"></script>
 <script src="js/data-access.js"></script>
 <script src="js/category.js"></script>
 <script src="js/language.js?v=live-average"></script>
 <script src="js/host-bridge.js?v=live-average"></script>
-<script src="js/compact-mode.js"></script>
+<script src="js/compact-mode.js?v=compact-default"></script>
 <script src="js/wr-times.js"></script>
 <script src="js/run-projection.js?v=live-average"></script>
 <script src="js/run-recap.js?v=live-average"></script>
@@ -268,30 +268,19 @@ function getCachedTimeTrend(history, outcomes, strength) {
             intervals[intervals.length - 1].deaths += deaths;
             intervals[intervals.length - 1].attempts += attempts;
         }
-        let originalMin = Infinity, originalMax = -Infinity;
-        for (const clear of clears) {
-            originalMin = Math.min(originalMin, clear.timeSeconds);
-            originalMax = Math.max(originalMax, clear.timeSeconds);
-        }
-        cached = { outcomes, clears, intervals, originalMin, originalMax, trends: new Map() };
+        cached = { outcomes, clears, intervals, trends: new Map() };
         timeTrendCache.set(history, cached);
     }
     let trend = cached.trends.get(strength);
     if (!trend) {
-        const averages = averageTrend(cached.clears, cached.intervals, strength);
-        let trendMin = Infinity, trendMax = -Infinity;
-        for (const point of averages) {
-            trendMin = Math.min(trendMin, point.timeSeconds);
-            trendMax = Math.max(trendMax, point.timeSeconds);
-        }
-        trend = { averages, trendMin, trendMax };
+        trend = averageTrend(cached.clears, cached.intervals, strength);
     }
     cached.trends.delete(strength);
     cached.trends.set(strength, trend);
     // Bounded cache: repeated slider positions reuse work without keeping every
     // possible smoothing value in memory.
     if (cached.trends.size > 4) cached.trends.delete(cached.trends.keys().next().value);
-    return { ...trend, clears: cached.clears, originalMin: cached.originalMin, originalMax: cached.originalMax };
+    return trend;
 }
 
 function deathBarPath(bars) {
@@ -336,10 +325,38 @@ function timeChartRankColor(thresholds, seconds) {
     return ranksStyles[index < 0 ? ranks.length - 1 : index]?.background || "#8993a0";
 }
 
+function fitTimeChartRange(points, live) {
+    let min = Infinity, max = -Infinity;
+    for (const point of points) {
+        min = Math.min(min, point.timeSeconds);
+        max = Math.max(max, point.timeSeconds);
+    }
+    const padding = Math.max((max - min) * 0.1, 0.25);
+    let baseLow = Math.max(0, min - padding);
+    let baseHigh = max + padding;
+    if (Math.ceil(baseLow * 2) > Math.floor(baseHigh * 2)) {
+        const nearestSecond = Math.round(min + max) / 2;
+        baseLow = Math.min(baseLow, nearestSecond);
+        baseHigh = Math.max(baseHigh, nearestSecond);
+    }
+    const low = live !== null && live < baseLow ? Math.max(0, live - padding) : baseLow;
+    const high = live !== null && live > baseHigh ? Math.ceil((live + padding) / 5) * 5 : baseHigh;
+    return { low, high, baseLow, baseHigh };
+}
+
+function timeAxisTicks(low, high) {
+    const minimumStep = (high - low) / 5;
+    const magnitude = 10 ** Math.floor(Math.log10(Math.max(1, minimumStep)));
+    const step = minimumStep <= .5 ? .5 : [1, 2, 5, 10].find(value => value * magnitude >= minimumStep) * magnitude;
+    const ticks = [];
+    for (let second = Math.ceil(low / step) * step; second <= high; second += step) ticks.push(second);
+    return ticks;
+}
+
 function drawTimeChart(history, art, limit, zoom = 1) {
     const outcomes = autologRows.find(boss => boss.level === selectedBossName)?.outcomeHistory || EMPTY_OUTCOMES;
-    const { clears, averages, originalMin, originalMax, trendMin, trendMax } = getCachedTimeTrend(history, outcomes, limit);
-    if (!clears.length) return `<div class="history-empty">${t("autolog.no-clear-times")}</div>`;
+    const averages = getCachedTimeTrend(history, outcomes, limit);
+    if (!averages.length) return `<div class="history-empty">${t("autolog.no-clear-times")}</div>`;
     const key = `${selectedBossName}:trend`;
     const zoomState = chartZoomLevels.get(key) || { zoom: 1, offset: 0 };
     const viewport = chartViewport(averages.length, { zoom, offset: zoomState.offset });
@@ -351,14 +368,8 @@ function drawTimeChart(history, art, limit, zoom = 1) {
 
     const thresholds = timeChartThresholds(art);
     const rankColorForTime = seconds => timeChartRankColor(thresholds, seconds);
-    // Blend the original range with the current trend for partial auto-scaling.
-    const minValue = (originalMin + trendMin) / 2;
-    const maxValue = (originalMax + trendMax) / 2;
-    const padding = Math.max((maxValue - minValue) * 0.1, 0.25);
-    const low = Math.max(0, Math.min(minValue - padding, originalMin));
-    const baseHigh = maxValue + padding;
     const live = getLiveChartTime(selectedBossName);
-    const high = live > baseHigh ? Math.ceil((live + padding) / 5) * 5 : baseHigh;
+    const { low, high, baseLow, baseHigh } = fitTimeChartRange(visible, live);
     const range = Math.max(high - low, 0.1);
     const y = value => 92 - ((value - low) / range) * 84;
     const x = index => viewport.span === 0 ? 125 : 20 + (start + index - viewport.start) * 210 / viewport.span;
@@ -375,12 +386,16 @@ function drawTimeChart(history, art, limit, zoom = 1) {
         const time = visible[left].timeSeconds + (visible[right].timeSeconds - visible[left].timeSeconds) * fraction;
         return `<circle class="trend-marker" cx="${x(position)}" cy="${y(time)}" r="2.7" style="fill:${rankColorForTime(time)}" data-position="${dataPosition}"/>`;
     }).join("");
-    const rankLines = thresholds.map((time, i) => {
-        if (time < low || time > high) return "";
+    const rankBands = thresholds.map((time, i) => {
+        const lower = i === 0 ? low : Math.max(low, thresholds[i - 1]);
+        const upper = i === thresholds.length - 1 ? high : Math.min(high, time);
+        if (upper <= lower) return null;
         const color = ranksStyles[i]?.background || "#8993a0";
-        return `<g class="rank-reference"><line x1="20" y1="${y(time)}" x2="230" y2="${y(time)}" style="stroke:${color}"><title>${safeText(ranks[i] || "Rank")}: ${safeText(formatTime(time))}</title></line><text x="1" y="${y(time) - 1}" style="fill:${color}">${safeText(ranks[i] || "")}</text></g>`;
-    }).join("");
-    const timeAxis = [high, (high + low) / 2, low].map(value => `<g class="time-axis-mark"><line x1="20" y1="${y(value)}" x2="230" y2="${y(value)}"/><text x="249" y="${y(value) + 1.5}" text-anchor="end">${safeText(formatTime(value))}</text></g>`).join("");
+        const top = y(upper), height = y(lower) - top;
+        const label = height >= 5 ? `<text x="1" y="${top + height / 2}" dominant-baseline="middle" style="fill:${color}">${safeText(ranks[i] || "")}</text>` : "";
+        return { fill: `<rect x="20" y="${top}" width="210" height="${height}" style="fill:${color}"/>`, label };
+    }).filter(Boolean);
+    const timeAxis = timeAxisTicks(low, high).map(value => `<g class="time-axis-mark"><line x1="20" y1="${y(value)}" x2="230" y2="${y(value)}"/><text x="249" y="${y(value) + 1.5}" text-anchor="end">${safeText(formatTime(value))}</text></g>`).join("");
     const segmentColors = [];
     const rankPaths = new Map();
     visible.slice(1).forEach((run, index) => {
@@ -404,9 +419,16 @@ function drawTimeChart(history, art, limit, zoom = 1) {
     return `<div class="history-chart-wrap">
         <div class="combined-chart-legend"><span>${t("autolog.clear-times")}</span><span>${t("autolog.death-bars")}</span><strong class="live-chart-time" hidden></strong></div>
         <div class="chart-controls"><span>${limit === 1 ? t("autolog.individual-clear-times") : tf("autolog.average-label", { count: limit })}</span><span><button class="chart-zoom" type="button" data-direction="out" aria-label="${t("autolog.zoom-out")}" ${zoom <= 1 ? "disabled" : ""}>−</button><button class="chart-zoom" type="button" data-direction="in" aria-label="${t("autolog.zoom-in")}" ${zoom >= Math.max(1, averages.length - 1) ? "disabled" : ""}>+</button></span></div>
-        <div class="history-svg-wrap"><svg class="history-chart time-history-chart" data-low="${low}" data-high="${high}" data-base-high="${baseHigh}" viewBox="0 0 250 100" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${t("autolog.average-aria")}">
-            <defs><clipPath id="time-plot-clip"><rect x="20" y="0" width="210" height="100"/></clipPath></defs>
-            ${timeAxis}${rankLines}<g class="time-plot" clip-path="url(#time-plot-clip)">${deathBars}${runLines}
+        <div class="history-svg-wrap"><svg class="history-chart time-history-chart" data-low="${low}" data-high="${high}" data-base-low="${baseLow}" data-base-high="${baseHigh}" viewBox="0 0 250 100" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${t("autolog.average-aria")}">
+            <defs>
+                <clipPath id="time-plot-clip"><rect x="20" y="0" width="210" height="100"/></clipPath>
+                <filter id="time-rank-glow" filterUnits="userSpaceOnUse" x="0" y="0" width="250" height="100"><feGaussianBlur stdDeviation="3.5"/></filter>
+                <g id="time-rank-fills">${rankBands.map(band => band.fill).join("")}</g>
+            </defs>
+            <use href="#time-rank-fills" class="rank-band-glow" filter="url(#time-rank-glow)"/>
+            <use href="#time-rank-fills" class="rank-band-fill"/>
+            <g class="rank-band">${rankBands.map(band => band.label).join("")}</g>
+            ${timeAxis}<g class="time-plot" clip-path="url(#time-plot-clip)">${deathBars}${runLines}
             ${visible.map((a, i) => `<circle cx="${x(i)}" cy="${y(a.timeSeconds)}" r="0" data-point="${i}" data-next-color="${segmentColors[i] || rankColorForTime(a.timeSeconds)}" data-average="${a.timeSeconds}" data-run-start="${a.runStart}" data-run-end="${a.runEnd}" data-death-rate="${a.deathRate.toFixed(1)}"/>`).join("")}
             ${markers}</g><circle class="live-chart-point" cx="233" cy="92" r="2.7" visibility="hidden"><title></title></circle>
         </svg><div class="chart-hover-tooltip" hidden></div></div><div class="history-axis"><span>${tf("autolog.clears-range", { start: visible[0].runStart, end: visible[0].runEnd })}</span><span>${tf("autolog.clears-range", { start: visible[visible.length - 1].runStart, end: visible[visible.length - 1].runEnd })}</span></div>
@@ -459,6 +481,7 @@ function bindTimeChartControls(holder, history, art) {
     let navigationImmediate = false;
     let lastNavigationTime = 0;
     let livePointFrame = null;
+    let verticalFrame = null;
     const liveSamples = [];
     const liveDisplayDelay = 350;
     const liveThresholds = timeChartThresholds(art);
@@ -474,6 +497,7 @@ function bindTimeChartControls(holder, history, art) {
     disposeTimeChart = () => {
         stopNavigation();
         stopLivePoint();
+        if (verticalFrame !== null) cancelAnimationFrame(verticalFrame);
         animationVersion++;
         const frame = chartAnimationFrames.get(key);
         if (frame) cancelAnimationFrame(frame);
@@ -547,10 +571,50 @@ function bindTimeChartControls(holder, history, art) {
         label.textContent = `${t("autolog.live-attempt")}: ${formatTime(seconds)}`;
         point.querySelector("title").textContent = label.textContent;
     }
+    function animateVerticalRange(svg, previous, animatePlot) {
+        const low = Number(svg.dataset.low), high = Number(svg.dataset.high);
+        if (!previous || (low === previous.low && high === previous.high)
+            || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+        const layers = [...svg.querySelectorAll(".rank-band-fill, .rank-band-glow")];
+        if (animatePlot) layers.push(svg.querySelector(".time-plot"));
+        const labels = Array.from(svg.querySelectorAll(".time-axis-mark text, .rank-band text"), element => [element, Number(element.getAttribute("y"))]);
+        const grid = Array.from(svg.querySelectorAll(".time-axis-mark line"), element => [element, Number(element.getAttribute("y1"))]);
+        const livePoint = svg.querySelector(".live-chart-point");
+        const markers = animatePlot ? [...svg.querySelectorAll(".trend-marker")] : [];
+        const started = performance.now();
+        function frame(now) {
+            const progress = Math.min(1, (now - started) / 260);
+            const eased = 1 - (1 - progress) ** 3;
+            const displayLow = previous.low + (low - previous.low) * eased;
+            const displayHigh = previous.high + (high - previous.high) * eased;
+            svg.displayRange = { low: displayLow, high: displayHigh };
+            const displaySpan = Math.max(displayHigh - displayLow, 0.1);
+            const scale = Math.max(high - low, 0.1) / displaySpan;
+            const shift = 92 * (1 - scale) - (low - displayLow) * 84 / displaySpan;
+            for (const layer of layers) layer.setAttribute("transform", `translate(0,${shift}) scale(1,${scale})`);
+            for (const [element, y] of labels) element.setAttribute("y", y * scale + shift);
+            for (const [element, y] of grid) {
+                element.setAttribute("y1", y * scale + shift);
+                element.setAttribute("y2", y * scale + shift);
+            }
+            const cy = Number(livePoint.getAttribute("cy"));
+            livePoint.setAttribute("transform", `translate(0,${cy * (scale - 1) + shift})`);
+            for (const marker of markers) {
+                const y = Number(marker.getAttribute("cy"));
+                marker.setAttribute("transform", `translate(0,${y * (1 - 1 / scale)}) scale(1,${1 / scale})`);
+            }
+            verticalFrame = progress < 1 ? requestAnimationFrame(frame) : null;
+        }
+        frame(started);
+    }
     const update = (next, animate = false) => {
         if (animate) stopNavigation();
         const version = ++animationVersion;
         const svg = holder.querySelector(".time-history-chart");
+        const previousRange = svg?.displayRange || (svg && { low: Number(svg.dataset.low), high: Number(svg.dataset.high) });
+        if (verticalFrame !== null) cancelAnimationFrame(verticalFrame);
+        verticalFrame = null;
         const oldCurve = svg?.querySelector(".curve-animation-layer");
         const startBars = animate ? readDeathBars(svg) : [];
         const startMarkers = animate && svg ? Array.from(svg.querySelectorAll(".trend-marker"), marker => ({
@@ -571,8 +635,9 @@ function bindTimeChartControls(holder, history, art) {
         holder.innerHTML = drawTimeChart(history, art, Number(holder.dataset.limit), next.zoom);
         fitChart();
         paintLivePoint();
-        if (!startPoints?.length) return;
         const newSvg = holder.querySelector(".time-history-chart");
+        if (newSvg) animateVerticalRange(newSvg, previousRange, !startPoints?.length);
+        if (!startPoints?.length) return;
         const points = Array.from(newSvg?.querySelectorAll("circle[data-point]") || []);
         if (!points.length) return;
         const targets = points.map(point => ({ x: Number(point.getAttribute("cx")), y: Number(point.getAttribute("cy")), color: point.dataset.nextColor }));
@@ -715,9 +780,12 @@ function bindTimeChartControls(holder, history, art) {
             if (seconds < (liveSamples.at(-1)?.seconds ?? seconds)) liveSamples.length = 0;
             liveSamples.push({ at: performance.now(), seconds });
         }
-        const high = Number(svg.dataset.high), baseHigh = Number(svg.dataset.baseHigh);
-        if (seconds > high || (high > baseHigh && (seconds === null || seconds <= baseHigh))) {
-            update(chartZoomLevels.get(key) || { zoom: 1, offset: 0 });
+        const low = Number(svg.dataset.low), high = Number(svg.dataset.high);
+        const baseLow = Number(svg.dataset.baseLow), baseHigh = Number(svg.dataset.baseHigh);
+        const outside = seconds !== null && (seconds < low || seconds > high);
+        const canReset = (low < baseLow || high > baseHigh) && (seconds === null || (seconds >= baseLow && seconds <= baseHigh));
+        if (outside || canReset) {
+            update(chartZoomLevels.get(key) || { zoom: 1, offset: 0 }, true);
         } else paintLivePoint();
     };
     paintLivePoint();

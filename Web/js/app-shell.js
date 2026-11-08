@@ -27,6 +27,9 @@
     updateFrameTitles();
     window.addEventListener("storage", event => {
         if (event.key === "cuphead-training-lang") updateFrameTitles();
+        if (event.key === "cupheadCompactMode" || event.key === null) {
+            sendToHost({ cmd: "setCompactMode", value: localStorage.getItem("cupheadCompactMode") !== "false" });
+        }
     });
 
     function sendToHost(message) {
@@ -103,7 +106,7 @@
         window.setInterval(saveBackup, 10 * 60 * 1000);
 
         try {
-            sendToHost({ cmd: "setCompactMode", value: localStorage.getItem("cupheadCompactMode") === "true" });
+            sendToHost({ cmd: "setCompactMode", value: localStorage.getItem("cupheadCompactMode") !== "false" });
         } catch { /* local storage may be unavailable */ }
     }
 

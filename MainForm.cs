@@ -10,7 +10,7 @@ using Microsoft.Web.WebView2.WinForms;
 
 namespace CupheadTrainingApp
 {
-    public sealed class MainForm : Form
+    public sealed partial class MainForm : Form
     {
         private const string VirtualHost = "cuphead-training.local";
 
@@ -79,6 +79,7 @@ namespace CupheadTrainingApp
             Load += async (s, e) => await InitializeWebViewAsync();
             FormClosing += (s, e) =>
             {
+                updateLifetime.Cancel();
                 pollTimer.Stop();
                 tracker.Dispose();
                 database.Dispose();
@@ -104,9 +105,15 @@ namespace CupheadTrainingApp
                 CoreWebView2HostResourceAccessKind.Allow);
 
             webView.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
-            webView.CoreWebView2.NavigationCompleted += (s, e) => PushWatcherStatus();
+            webView.CoreWebView2.NavigationCompleted += (s, e) =>
+            {
+                PushWatcherStatus();
+                if (!e.IsSuccess || checkedForUpdates) return;
+                checkedForUpdates = true;
+                _ = CheckForUpdatesAsync(manual: false);
+            };
 
-            webView.Source = new Uri($"https://{VirtualHost}/app-shell.html?v=linear-live");
+            webView.Source = new Uri($"https://{VirtualHost}/app-shell.html?v=app-updates");
         }
 
         private void SetWebViewMemoryTarget(bool inactive)
@@ -134,6 +141,12 @@ namespace CupheadTrainingApp
                 string cmd = cmdProp.GetString();
                 switch (cmd)
                 {
+                    case "checkForUpdates":
+                        if (Uri.TryCreate(e.Source, UriKind.Absolute, out var source) &&
+                            source.Scheme == Uri.UriSchemeHttps && source.Host == VirtualHost &&
+                            source.AbsolutePath == "/app-shell.html")
+                            _ = CheckForUpdatesAsync(manual: true);
+                        break;
                     case "toggleWatching":
                         watching = !watching;
                         if (watching) pollTimer.Start();
