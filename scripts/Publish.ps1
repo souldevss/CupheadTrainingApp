@@ -1,25 +1,25 @@
 param(
     [ValidatePattern('^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$')]
-    [string]$Version = '1.0.0'
+    [string]$Version = '1.1.0'
 )
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $artifactRoot = Join-Path $projectRoot 'artifacts'
-$packageName = "CupheadTrainingTable-$Version-win-x64"
+$packageName = "CupheadTrainingApp-$Version-win-x64"
 $publishDirectory = Join-Path $artifactRoot $packageName
 
 if (Test-Path -LiteralPath $publishDirectory) {
     throw "Output already exists: $publishDirectory. Use a clean checkout or a new version."
 }
 
-dotnet publish (Join-Path $projectRoot 'CupheadTrainingLog.App.csproj') `
+dotnet publish (Join-Path $projectRoot 'CupheadTrainingApp.csproj') `
     --configuration Release --runtime win-x64 --self-contained true `
     --output $publishDirectory "-p:Version=$Version" `
     -p:DebugType=None -p:DebugSymbols=false
 if ($LASTEXITCODE -ne 0) { throw 'dotnet publish failed.' }
 
-foreach ($required in @('CupheadTrainingLog.exe', 'Web/app-shell.html', 'Web/autolog.html', 'e_sqlite3.dll')) {
+foreach ($required in @('CupheadTrainingApp.exe', 'Web/app-shell.html', 'Web/autolog.html', 'e_sqlite3.dll')) {
     if (-not (Test-Path -LiteralPath (Join-Path $publishDirectory $required))) {
         throw "Published package is missing $required"
     }

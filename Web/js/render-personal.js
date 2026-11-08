@@ -202,7 +202,7 @@ function renderPersonalTotals()
 
         totalsHtml += `
     <tr ${tooltipAttr}>
-        <td class="island sticky-col-1" style="background: ${rowStyle.background}; color: ${rowStyle.color};">${row.name}</td>
+        <td class="island sticky-col-1 isle-artwork" style="background-color: ${rowStyle.background}; color: ${rowStyle.color}; ${isleArtworkStyle(row.name, rowStyle.background)}">${row.name}</td>
         <td class="personal-time-col" style="background: ${rankStyle.background}; color: ${rankStyle.color};">
             <div class="time-input-wrapper" style="background: transparent !important; justify-content: space-between; padding: 1px 6px;">
                 <span>${row.total === null ? "-" : formatTime(row.total)}</span>

@@ -34,20 +34,26 @@
     }
 
     function selectPage(name) {
-        if (!pages[name]) return;
+        if (!Object.hasOwn(pages, name) || name === activePage) return;
         activePage = name;
         Object.entries(pages).forEach(([page, frame]) => {
             frame.hidden = page !== name;
         });
-        notifyActivity();
-        if (latestWatcherStatus) pages[name].contentWindow.postMessage({ type: "hostMessage", payload: latestWatcherStatus }, "*");
+        const frame = pages[name];
+        if (!frame.hasAttribute("src")) frame.src = frame.dataset.src;
+        activatePage();
+    }
 
-        if (!initialized) return;
-        const includeHistory = name === "attempt-log";
-        sendToHost({ cmd: "setStatsMode", includeRecent: includeHistory, includeHistory });
-        if (name === "training" || name === "attempt-log") {
-            sendToHost({ cmd: "getStats", includeRecent: includeHistory, includeHistory, categoryKey: includeHistory ? (localStorage.getItem("cupheadLogCategory") || "1-1") : undefined });
-        }
+    function activatePage() {
+        notifyActivity();
+        const frame = pages[activePage];
+        const includeHistory = activePage === "attempt-log";
+        const enabled = frame.dataset.ready === "true" && (activePage === "training" || includeHistory);
+        sendToHost({ cmd: "setStatsMode", enabled, includeRecent: includeHistory, includeHistory });
+        if (frame.dataset.ready !== "true") return;
+        if (latestWatcherStatus) frame.contentWindow.postMessage({ type: "hostMessage", payload: latestWatcherStatus }, "*");
+        if (enabled) sendToHost({ cmd: "getStats", includeRecent: includeHistory, includeHistory,
+            categoryKey: includeHistory ? (localStorage.getItem("cupheadLogCategory") || "1-1") : undefined });
     }
 
     window.addEventListener("message", event => {
@@ -81,16 +87,10 @@
         pages[activePage].contentWindow.postMessage({ type: "hostMessage", payload: message }, "*");
     });
 
-    function initializeAfterFramesLoad() {
-        if (initialized || !Object.values(pages).every(frame => frame.contentDocument?.readyState === "complete")) return;
+    function initializeShell() {
+        if (initialized) return;
         initialized = true;
-        notifyActivity();
-        const includeHistory = activePage === "attempt-log";
-        sendToHost({ cmd: "setStatsMode", includeRecent: includeHistory, includeHistory });
         sendToHost({ cmd: "getWatcherState" });
-        if (activePage === "training" || activePage === "attempt-log") {
-            sendToHost({ cmd: "getStats", includeRecent: includeHistory, includeHistory, categoryKey: includeHistory ? (localStorage.getItem("cupheadLogCategory") || "1-1") : undefined });
-        }
 
         const localStorageSnapshot = () => Object.fromEntries(
             Array.from({ length: localStorage.length }, (_, index) => {
@@ -107,6 +107,16 @@
         } catch { /* local storage may be unavailable */ }
     }
 
-    Object.values(pages).forEach(frame => frame.addEventListener("load", initializeAfterFramesLoad));
-    initializeAfterFramesLoad();
+    for (const [name, frame] of Object.entries(pages)) {
+        function pageLoaded() {
+            if (!frame.contentDocument || frame.contentDocument.URL === "about:blank") return;
+            frame.dataset.ready = "true";
+            if (name === activePage) {
+                initializeShell();
+                activatePage();
+            }
+        }
+        frame.addEventListener("load", pageLoaded);
+        if (frame.contentDocument?.readyState === "complete") pageLoaded();
+    }
 })();

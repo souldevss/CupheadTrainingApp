@@ -21,13 +21,13 @@ const TRANSLATIONS = {
         "ui.switch-to-portuguese": "Switch to Portuguese",
 
         // Bigtitle alt text
-        "bigtitle.alt": "Cuphead Training Table",
+        "bigtitle.alt": "Cuphead Training App",
 
         // Page title
-        "page.title": "Cuphead Training Table",
-        "page.title.info": "Cuphead Training Table — Info",
-        "page.title.backups": "Cuphead Training Table — Backups",
-        "page.title.attempts": "Cuphead Training Table — Attempt Log",
+        "page.title": "Cuphead Training App",
+        "page.title.info": "Cuphead Training App — Info",
+        "page.title.backups": "Cuphead Training App — Backups",
+        "page.title.attempts": "Cuphead Training App — Attempt Log",
 
         // Info page
         "info.what-title": "What the fork is this website",
@@ -115,7 +115,7 @@ const TRANSLATIONS = {
         "backup.imported": "Backup imported. Existing run history was kept; duplicate runs were skipped.",
         "backup.import-partial": "Run history was imported, but browser data could not be restored: {error}",
         "backup.import-error": "Could not import backup: {error}",
-        "backup.invalid": "This file is not a supported Cuphead Training Table backup.",
+        "backup.invalid": "This file is not a supported Cuphead Training App backup.",
         "backup.read-error": "Could not read this backup file.",
         "backup.select-error": "Could not read the selected backup file.",
         "backup.storage-missing": "Backup storage data is missing.",
@@ -124,6 +124,80 @@ const TRANSLATIONS = {
         "times-import.empty": "No times found in the import file",
         "times-import.error": "Error importing file: Invalid JSON format",
         "autolog.title": "Attempt Log",
+        "projection.views": "Attempt Log views",
+        "projection.use-recap": "Include Run Recap",
+        "projection.recap-missing": "No .rrc loaded",
+        "projection.recap-mismatch": "Different route",
+        "projection.recap-available": "{name} · {count} starts",
+        "projection.recap-source": "Practice + {count} recap starts",
+        "projection.recap-deaths": "+{count} inferred deaths",
+        "projection.recap-count": "+{count} recap clears",
+        "projection.recorded-count": "Run Recap: {hits} of {count} starts met the target",
+        "recap.title": "Run Recap",
+        "recap.drop": "Drop a .rrc file here or choose a file",
+        "recap.drop-one": "Drop one .rrc file at a time.",
+        "recap.final-boss": "Final boss",
+        "recap.previous": "Previous attempt",
+        "recap.next": "Next attempt",
+        "recap.compare": "Compare",
+        "recap.compare-none": "None",
+        "recap.compare-best": "Fastest recorded finish",
+        "recap.file-history": "File history",
+        "recap.no-clears": "This attempt has no recorded boss clears.",
+        "recap.breakdown": "Timing breakdown",
+        "recap.time-levels": "Level segments",
+        "recap.time-map": "Map movement",
+        "recap.time-scorecards": "Scorecards",
+        "recap.time-cutscenes": "Cutscenes",
+        "recap.time-other": "Other scenes",
+        "recap.attempts": "Recorded starts",
+        "recap.finished": "Finished",
+        "recap.unfinished": "Unfinished",
+        "recap.check-target": "Check history",
+        "recap.target-result": "Finished at or under target in {hits} of {count} recorded starts.",
+        "recap.reset-points": "Last recorded scenes",
+        "recap.scenes": "Raw scene history",
+        "recap.attempt": "Attempt",
+        "recap.scene": "Scene",
+        "recap.elapsed": "Run time",
+        "recap.level-time": "Level time",
+        "recap.scorecard": "Scorecard",
+        "recap.after-scorecard": "Scorecard after {level}",
+        "recap.no-scenes": "No recorded scenes",
+        "recap.no-unfinished": "No unfinished attempts",
+        "recap.loaded": "Opened {name}",
+        "recap.invalid": "Could not read this file. Choose a Run Recap .rrc file of up to 50 MB.",
+        "recap.restore-error": "Could not reopen the saved recap. Select the .rrc file again.",
+        "recap.save-error": "Opened {name} for this session. The app could not save it locally.",
+        "recap.note": "Last saved scenes are approximate reset points.",
+        "projection.boss-log": "Boss log",
+        "projection.title": "Run Projection",
+        "projection.help": "How it works",
+        "projection.split": "Split",
+        "projection.breakdown": "Split breakdown",
+        "projection.clear": "Average clear",
+        "projection.death-rate": "Death odds",
+        "projection.sample": "Attempts used",
+        "projection.total": "Projected clear time",
+        "projection.low-sample": "Small sample",
+        "projection.low-sample-detail": "Fewer than 100 attempts. This estimate is preliminary.",
+        "projection.missing-clears": "Splits still missing a recorded clear: {count}.",
+        "projection.loading": "Waiting for attempt history…",
+        "projection.other": "Other splits",
+        "projection.includes-residual": "Includes {time} residual",
+        "projection.deathless": "First-try clear odds",
+        "projection.one-in": "1 in {count} attempts",
+        "projection.one-attempt": "1 in 1 attempt",
+        "projection.no-deaths": "None recorded",
+        "projection.outside-sample": "Outside the sample",
+        "projection.target": "Target time",
+        "projection.estimate": "Estimate odds",
+        "projection.target-overall": "Deathless target odds",
+        "projection.target-pace": "Target pace odds",
+        "projection.include-deathless": "Include first-try risk",
+        "projection.target-invalid": "Enter a time like 25:30.00 or 1:02:30.",
+        "projection.target-unavailable": "Some splits have no clear times.",
+        "projection.note": "Uses up to 100 practice attempts per boss and the category residual. Run Recap can add up to 100 outcomes per boss. Some deaths are inferred from resets.",
         "autolog.category": "Category",
         "autolog.subtitle": "Choose a boss to see how your clear times and deaths change over attempts.",
         "autolog.clear-all": "Clear all records",
@@ -216,13 +290,13 @@ const TRANSLATIONS = {
         "ui.switch-to-portuguese": "Mudar para português",
 
         // Bigtitle alt text
-        "bigtitle.alt": "Tabela de Treino Cuphead",
+        "bigtitle.alt": "Cuphead Training App",
 
         // Page title
-        "page.title": "Tabela de Treino Cuphead",
-        "page.title.info": "Tabela de Treino Cuphead — Info",
-        "page.title.backups": "Tabela de Treino Cuphead — Backups",
-        "page.title.attempts": "Tabela de Treino Cuphead — Registro de tentativas",
+        "page.title": "Cuphead Training App",
+        "page.title.info": "Cuphead Training App — Info",
+        "page.title.backups": "Cuphead Training App — Backups",
+        "page.title.attempts": "Cuphead Training App — Registro de tentativas",
 
         // Info page
         "info.what-title": "Que resenha é essa",
@@ -319,6 +393,80 @@ const TRANSLATIONS = {
         "times-import.empty": "Nenhum tempo encontrado no arquivo de importação",
         "times-import.error": "Erro ao importar arquivo: formato JSON inválido",
         "autolog.title": "Registro de tentativas",
+        "projection.views": "Seções do registro de tentativas",
+        "projection.use-recap": "Incluir Run Recap",
+        "projection.recap-missing": "Nenhum .rrc aberto",
+        "projection.recap-mismatch": "Rota diferente",
+        "projection.recap-available": "{name} · {count} largadas",
+        "projection.recap-source": "Treino + {count} largadas do recap",
+        "projection.recap-deaths": "+{count} mortes inferidas",
+        "projection.recap-count": "+{count} vitórias do recap",
+        "projection.recorded-count": "Run Recap: {hits} de {count} runs iniciadas atingiram a meta",
+        "recap.title": "Resumo de runs",
+        "recap.drop": "Solte um arquivo .rrc aqui ou escolha um arquivo",
+        "recap.drop-one": "Solte um arquivo .rrc por vez.",
+        "recap.final-boss": "Chefe final",
+        "recap.previous": "Tentativa anterior",
+        "recap.next": "Próxima tentativa",
+        "recap.compare": "Comparar",
+        "recap.compare-none": "Nenhuma",
+        "recap.compare-best": "Run concluída mais rápida",
+        "recap.file-history": "Histórico do arquivo",
+        "recap.no-clears": "Esta tentativa não tem vitórias registradas.",
+        "recap.breakdown": "Divisão do tempo",
+        "recap.time-levels": "Segmentos de fases",
+        "recap.time-map": "Movimento no mapa",
+        "recap.time-scorecards": "Telas de resultados",
+        "recap.time-cutscenes": "Cenas de história",
+        "recap.time-other": "Outras cenas",
+        "recap.attempts": "Runs iniciadas",
+        "recap.finished": "Concluídas",
+        "recap.unfinished": "Incompletas",
+        "recap.check-target": "Consultar histórico",
+        "recap.target-result": "O tempo alvo foi atingido em {hits} de {count} runs iniciadas.",
+        "recap.reset-points": "Últimas cenas registradas",
+        "recap.scenes": "Histórico bruto de cenas",
+        "recap.attempt": "Tentativa",
+        "recap.scene": "Cena",
+        "recap.elapsed": "Tempo de run",
+        "recap.level-time": "Tempo da fase",
+        "recap.scorecard": "Tela de resultados",
+        "recap.after-scorecard": "Resultados após {level}",
+        "recap.no-scenes": "Nenhuma cena registrada",
+        "recap.no-unfinished": "Nenhuma tentativa incompleta",
+        "recap.loaded": "Arquivo aberto: {name}",
+        "recap.invalid": "Não foi possível ler o arquivo. Escolha um arquivo .rrc do Run Recap de até 50 MB.",
+        "recap.restore-error": "Não foi possível reabrir o resumo salvo. Selecione o arquivo .rrc novamente.",
+        "recap.save-error": "Arquivo {name} aberto para esta sessão. Não foi possível salvá-lo localmente.",
+        "recap.note": "As últimas cenas salvas são pontos aproximados de reset.",
+        "projection.boss-log": "Registro de chefes",
+        "projection.title": "Projeção de run",
+        "projection.help": "Como é calculado",
+        "projection.split": "Etapa",
+        "projection.breakdown": "Detalhes por etapa",
+        "projection.clear": "Tempo médio de vitória",
+        "projection.death-rate": "Chance de morrer",
+        "projection.sample": "Tentativas usadas",
+        "projection.total": "Tempo projetado sem mortes",
+        "projection.low-sample": "Amostra pequena",
+        "projection.low-sample-detail": "Menos de 100 tentativas. A estimativa é preliminar.",
+        "projection.missing-clears": "Etapas ainda sem vitória registrada: {count}.",
+        "projection.loading": "Aguardando o histórico de tentativas…",
+        "projection.other": "Outras etapas",
+        "projection.includes-residual": "Inclui {time} de tempo residual",
+        "projection.deathless": "Chance de vencer de primeira",
+        "projection.one-in": "1 em {count} tentativas",
+        "projection.one-attempt": "1 em 1 tentativa",
+        "projection.no-deaths": "Nenhuma registrada",
+        "projection.outside-sample": "Fora da amostra",
+        "projection.target": "Tempo alvo",
+        "projection.estimate": "Estimar chances",
+        "projection.target-overall": "Chance da meta sem mortes",
+        "projection.target-pace": "Chance do ritmo alvo",
+        "projection.include-deathless": "Incluir risco da primeira tentativa",
+        "projection.target-invalid": "Digite um tempo como 25:30.00 ou 1:02:30.",
+        "projection.target-unavailable": "Há etapas sem tempos de vitória.",
+        "projection.note": "Usa até 100 tentativas de treino por chefe e o residual da categoria. O Run Recap pode somar até 100 resultados por chefe. Algumas mortes são inferidas de resets.",
         "autolog.category": "Categoria",
         "autolog.subtitle": "Escolha um chefe para acompanhar a evolução dos tempos de conclusão e das mortes.",
         "autolog.clear-all": "Limpar todos os registros",
@@ -458,14 +606,9 @@ function applyLanguage(lang)
         : document.body.dataset.page === "attempt-log" ? t("page.title.attempts")
         : t("page.title");
 
-    // Swap bigtitle image
+    // Keep the product name consistent across languages.
     const bigtitle = document.getElementById("bigtitle");
-    if (bigtitle) {
-        bigtitle.src = lang === "pt-BR"
-            ? "assets/bigtitle_pt-br.png"
-            : "assets/bigtitle_en.png";
-        bigtitle.alt = t("bigtitle.alt");
-    }
+    if (bigtitle) bigtitle.textContent = t("bigtitle.alt");
 
     // Translate nav links with data-i18n
     document.querySelectorAll("[data-i18n]").forEach(el => {
@@ -533,5 +676,48 @@ function applyLanguage(lang)
     }
 }
 
-// Initialize on page load
+const navigationIcons = {
+    "nav.training": '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+    "nav.time-table": '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M3 14h18M10 9v11"/>',
+    "nav.attempt-log": '<rect x="5" y="4" width="14" height="16" rx="2"/><path d="M9 8h6m-6 4h6m-6 4h4"/>',
+    "nav.backups": '<path d="M4 9h16v11H4zM3 5h18v4H3zM9 13h6"/>',
+    "ui.info-aria": '<circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/>',
+    "projection.boss-log": '<path d="M5 21V4m0 1c5-4 9 4 15 0v10c-6 4-10-4-15 0"/>',
+    "projection.title": '<circle cx="5" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 6h8a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h8"/>',
+    "recap.title": '<path d="M5 3h10l4 4v14H5zM14 3v5h5M8 16l3-3 2 2 3-4"/>',
+    island: '<path d="M2 18h20M4 15l5-6 3 3 4-7 4 10"/>',
+    boss: '<path d="m3 7 5 4 4-6 4 6 5-4-2 11H5z"/>'
+};
+
+function navigationIcon(key) {
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${navigationIcons[key]}</svg>`;
+}
+
+function setupIconNavigation() {
+    const tabs = document.querySelector(".page-tabs");
+    const info = document.querySelector(".info-nav-btn");
+    if (tabs) {
+        const sections = document.createElement("div");
+        const tools = document.createElement("div");
+        sections.className = tools.className = "nav-icon-group";
+        tabs.querySelectorAll("a").forEach(link => {
+            const group = link.dataset.i18n === "nav.backups" ? tools : sections;
+            group.appendChild(link);
+        });
+        if (info) tools.appendChild(info);
+        tabs.append(sections, tools);
+    }
+
+    document.querySelectorAll(".page-tabs a, .autolog-view-tabs button").forEach(control => {
+        const key = control.dataset.i18n || control.dataset.i18nAriaLabel;
+        if (!Object.hasOwn(navigationIcons, key)) return;
+        control.removeAttribute("data-i18n");
+        control.dataset.i18nAriaLabel = key;
+        control.classList.add("icon-reveal");
+        if (control.matches("a.active, a.active-info")) control.setAttribute("aria-current", "page");
+        control.innerHTML = `${navigationIcon(key)}<span class="icon-caption" data-i18n="${key}" aria-hidden="true"></span>`;
+    });
+}
+
+setupIconNavigation();
 applyLanguage(getActiveLanguage());

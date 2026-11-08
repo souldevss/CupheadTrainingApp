@@ -1,4 +1,4 @@
-# Cuphead Training Table
+# Cuphead Training App
 
 A Windows training companion for Cuphead speedrunners. Track clears and deaths automatically while you play, compare your times with training targets, and see your progress for each boss.
 
@@ -6,9 +6,9 @@ Built with C# / .NET 8, Windows Forms, SQLite, and a WebView2 interface. Based o
 
 ## Download and run
 
-1. Open this repository's **Releases** page and download the latest `CupheadTrainingTable-…-win-x64.zip`.
+1. Open this repository's **Releases** page and download the latest `CupheadTrainingApp-…-win-x64.zip`.
 2. Extract the entire ZIP into a folder.
-3. Open `CupheadTrainingLog.exe`. Keep the accompanying files and `Web` folder together.
+3. Open `CupheadTrainingApp.exe`. Keep the accompanying files and `Web` folder together.
 4. Launch Cuphead. The app starts watching automatically; the watcher status shows whether it has connected.
 
 The release includes the .NET runtime. It requires 64-bit Windows and the [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/). Install WebView2 if the interface does not open. Releases are unsigned, so Windows may show a publisher warning.
@@ -48,20 +48,24 @@ Updating the app does not require deleting these folders. Personal databases, ba
 
 ## Build from source
 
-Install the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) on Windows. From the folder containing `CupheadTrainingLog.App.csproj`:
+Install the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) on Windows. From the folder containing `CupheadTrainingApp.csproj`:
 
 ```powershell
-dotnet build .\CupheadTrainingLog.App.csproj -c Release
-dotnet run --project .\CupheadTrainingLog.App.csproj -c Release
+dotnet build .\CupheadTrainingApp.csproj -c Release
+dotnet run --project .\CupheadTrainingApp.csproj -c Release
 ```
 
 To make the same self-contained ZIP as the releases:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\Publish.ps1 -Version 1.0.0
+powershell -ExecutionPolicy Bypass -File .\scripts\Publish.ps1 -Version 1.1.0
 ```
 
 The ZIP and SHA-256 checksum appear in `artifacts/`. The script requires a fresh output directory for each version. All required source files are included here; the neighboring music-player project is not needed.
+
+## Run Projection and Run Recap
+
+Open **Attempt Log → Run Projection** to estimate target pace and first-try odds. Import a local `.rrc` file in **Run Recap** to browse attempts, compare splits, or add its clears and inferred boss resets to a matching category projection.
 
 ## Automatic builds and releases
 
@@ -70,11 +74,11 @@ GitHub Actions builds a Windows ZIP for pushes to `main`, pull requests, and man
 To publish a versioned download on the repository's **Releases** page, push a version tag:
 
 ```powershell
-git tag v1.0.1
-git push origin v1.0.1
+git tag v1.1.1
+git push origin v1.1.1
 ```
 
-The workflow builds the app, creates a GitHub release with generated notes, and attaches the ZIP and checksum. Use a new version tag for each release. GitHub Pages cannot run the Windows memory-reading companion; Releases distributes the desktop app.
+Write the changes for the new tag in `release-notes/vX.Y.Z.md`. The workflow builds the app, creates a GitHub release with those notes, and attaches the ZIP and checksum. Use a new version tag for each release. GitHub Pages cannot run the Windows memory-reading companion; Releases distributes the desktop app.
 
 ## Troubleshooting
 

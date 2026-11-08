@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using Microsoft.Data.Sqlite;
 
-namespace CupheadTrainingLog.Services
+namespace CupheadTrainingApp.Services
 {
     public sealed class RunDatabase : IDisposable
     {
@@ -317,6 +317,7 @@ ORDER BY recorded_at ASC, kind ASC, id ASC;";
                 {
                     IsDeath = reader.GetInt32(1) == 1,
                     IsClear = reader.GetInt32(2) != 0,
+                    TimeSeconds = reader.GetDouble(3),
                     RecordedAtUtc = DateTime.Parse(reader.GetString(4), null, System.Globalization.DateTimeStyles.RoundtripKind)
                 });
             return list;
@@ -436,6 +437,7 @@ WHERE NOT EXISTS (SELECT 1 FROM death_events WHERE boss_name = $boss AND scene_i
         {
             public bool IsDeath { get; set; }
             public bool IsClear { get; set; }
+            public double TimeSeconds { get; set; }
             public DateTime RecordedAtUtc { get; set; }
         }
 

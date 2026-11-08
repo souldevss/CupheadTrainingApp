@@ -1,7 +1,7 @@
 using System;
 using System.Windows.Forms;
 
-namespace CupheadTrainingLog
+namespace CupheadTrainingApp
 {
     internal static class Program
     {

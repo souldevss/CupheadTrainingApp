@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace CupheadTrainingLog.Training
+namespace CupheadTrainingApp.Training
 {
     /// <summary>Training-table rank thresholds (mirrors data.js).</summary>
     public static class RankGrades

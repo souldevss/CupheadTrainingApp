@@ -24,12 +24,13 @@ jobs:
       - name: Package Windows app
         shell: pwsh
         run: |
-          $version = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME.Substring(1) } else { '1.0.0-ci.' + $env:GITHUB_RUN_NUMBER }
+          $project = [xml](Get-Content -LiteralPath CupheadTrainingApp.csproj -Raw)
+          $version = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME.Substring(1) } else { $project.Project.PropertyGroup.Version + '-ci.' + $env:GITHUB_RUN_NUMBER }
           ./scripts/Publish.ps1 -Version $version
       - name: Upload build download
         uses: actions/upload-artifact@v4
         with:
-          name: CupheadTrainingTable-win-x64
+          name: CupheadTrainingApp-win-x64
           path: |
             artifacts/*.zip
             artifacts/*.sha256
@@ -41,6 +42,18 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $assets = Get-ChildItem -Path artifacts/*.zip, artifacts/*.sha256 | Select-Object -ExpandProperty FullName
-          gh release create "$env:GITHUB_REF_NAME" @assets --verify-tag --generate-notes --title "Cuphead Training Table $env:GITHUB_REF_NAME"
+          $notes = "release-notes/$env:GITHUB_REF_NAME.md"
+          if (-not (Test-Path -LiteralPath $notes)) { throw "Write release notes at $notes before tagging." }
+          gh release create "$env:GITHUB_REF_NAME" @assets --verify-tag --notes-file $notes --title "Cuphead Training App $env:GITHUB_REF_NAME"
           if ($LASTEXITCODE -ne 0) { throw 'Release publication failed.' }
+      - name: Replace generated notes on earlier releases
+        if: github.ref == 'refs/tags/v1.1.0'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          foreach ($tag in @('v1.0.0', 'v1.0.1', 'v1.0.2')) {
+            gh release edit $tag --notes-file "release-notes/$tag.md" --title "Cuphead Training App $tag"
+            if ($LASTEXITCODE -ne 0) { throw "Could not update the notes for $tag." }
+          }
 

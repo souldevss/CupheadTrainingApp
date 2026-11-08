@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace CupheadTrainingLog.Services
+namespace CupheadTrainingApp.Services
 {
     public static class BossNameNormalizer
     {

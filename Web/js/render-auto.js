@@ -88,8 +88,8 @@ function renderAutoTimesPage() {
             html += "<tr>";
             if (index === 0) {
                 html += `
-            <td rowspan="${island.levels.length}" class="island"
-                style="background:${island.color}; color:${island.textcolor};">
+            <td rowspan="${island.levels.length}" class="island isle-artwork"
+                style="background-color:${island.color}; color:${island.textcolor}; ${isleArtworkStyle(island.name, island.color)}">
                 ${island.name}
             </td>`;
             }

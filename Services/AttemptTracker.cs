@@ -2,9 +2,9 @@ using System;
 using System.Linq;
 using CupheadMusicPlayer.Engine;
 using CupheadMusicPlayer.Engine.Memory;
-using CupheadTrainingLog.Training;
+using CupheadTrainingApp.Training;
 
-namespace CupheadTrainingLog.Services
+namespace CupheadTrainingApp.Services
 {
     public sealed class AttemptTracker : IDisposable
     {

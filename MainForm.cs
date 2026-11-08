@@ -4,11 +4,11 @@ using System.Drawing;
 using System.IO;
 using System.Text.Json;
 using System.Windows.Forms;
-using CupheadTrainingLog.Services;
+using CupheadTrainingApp.Services;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 
-namespace CupheadTrainingLog
+namespace CupheadTrainingApp
 {
     public sealed class MainForm : Form
     {
@@ -22,6 +22,7 @@ namespace CupheadTrainingLog
         private bool watching;
         private bool includeRecentActivity;
         private bool includeHistory;
+        private bool publishStats = true;
         private string statsCategoryKey = "1-1";
         private bool? compactMode;
         private string versionWarning;
@@ -48,11 +49,11 @@ namespace CupheadTrainingLog
             tracker.AttemptLogged += e => BeginInvoke(new Action(() => OnAttemptLogged(e)));
             tracker.DeathLogged += () => BeginInvoke(new Action(() =>
             {
-                PostJson(StatsReport.ToJson(database, includeRecentActivity, includeHistory, statsCategoryKey));
+                if (includeRecentActivity || includeHistory) PushStats();
                 PushWatcherStatus();
             }));
 
-            Text = "Cuphead Training Table";
+            Text = "Cuphead Training App";
             Width = 1100;
             Height = 740;
             StartPosition = FormStartPosition.CenterScreen;
@@ -105,7 +106,7 @@ namespace CupheadTrainingLog
             webView.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
             webView.CoreWebView2.NavigationCompleted += (s, e) => PushWatcherStatus();
 
-            webView.Source = new Uri($"https://{VirtualHost}/app-shell.html");
+            webView.Source = new Uri($"https://{VirtualHost}/app-shell.html?v=1.1.0");
         }
 
         private void SetWebViewMemoryTarget(bool inactive)
@@ -149,6 +150,7 @@ namespace CupheadTrainingLog
                         PushWatcherStatus();
                         break;
                     case "setStatsMode":
+                        publishStats = !root.TryGetProperty("enabled", out var enabled) || enabled.GetBoolean();
                         includeRecentActivity = root.TryGetProperty("includeRecent", out var includeRecent) && includeRecent.GetBoolean();
                         includeHistory = root.TryGetProperty("includeHistory", out var withHistory) && withHistory.GetBoolean();
                         break;
@@ -160,7 +162,7 @@ namespace CupheadTrainingLog
                             includeRecentActivity = requestedRecent.GetBoolean();
                         if (root.TryGetProperty("includeHistory", out var requestedHistory))
                             includeHistory = requestedHistory.GetBoolean();
-                        PostJson(StatsReport.ToJson(database, includeRecentActivity, includeHistory, statsCategoryKey));
+                        PushStats();
                         break;
                     case "exportBackup":
                         PostJson(JsonSerializer.Serialize(new { type = "backupDatabase", database = database.ExportBackup() }, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
@@ -176,7 +178,7 @@ namespace CupheadTrainingLog
                             var backup = JsonSerializer.Deserialize<RunDatabase.BackupPayload>(backupJson.GetRawText(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                             database.ImportBackup(backup);
                             PostJson(JsonSerializer.Serialize(new { type = "backupImportComplete" }));
-                            PostJson(StatsReport.ToJson(database, includeRecentActivity, includeHistory, statsCategoryKey));
+                            PushStats();
                         }
                         catch (Exception ex)
                         {
@@ -187,19 +189,19 @@ namespace CupheadTrainingLog
                         if (root.TryGetProperty("id", out var attemptId) && attemptId.TryGetInt64(out long id))
                         {
                             database.DeleteAttempt(id);
-                            PostJson(StatsReport.ToJson(database, includeRecentActivity, includeHistory, statsCategoryKey));
+                            PushStats();
                         }
                         break;
                     case "deleteDeath":
                         if (root.TryGetProperty("id", out var deathId) && deathId.TryGetInt64(out long deathEventId))
                         {
                             database.DeleteDeath(deathEventId);
-                            PostJson(StatsReport.ToJson(database, includeRecentActivity, includeHistory, statsCategoryKey));
+                            PushStats();
                         }
                         break;
                     case "clearAllAttempts":
                         database.ClearAttempts();
-                        PostJson(StatsReport.ToJson(database, includeRecentActivity, includeHistory, statsCategoryKey));
+                        PushStats();
                         break;
                     case "setCompactMode":
                         SetCompactMode(root.TryGetProperty("value", out var compact) && compact.GetBoolean());
@@ -210,6 +212,12 @@ namespace CupheadTrainingLog
             {
                 // ignore malformed host messages
             }
+        }
+
+        private void PushStats()
+        {
+            if (publishStats)
+                PostJson(StatsReport.ToJson(database, includeRecentActivity, includeHistory, statsCategoryKey));
         }
 
         private void OnAttemptLogged(AttemptTracker.AttemptLoggedEvent e)
@@ -225,7 +233,7 @@ namespace CupheadTrainingLog
                 }));
             }
 
-            PostJson(StatsReport.ToJson(database, includeRecentActivity, includeHistory, statsCategoryKey));
+            if (e.Cleared || includeRecentActivity || includeHistory) PushStats();
             PushWatcherStatus();
         }
 

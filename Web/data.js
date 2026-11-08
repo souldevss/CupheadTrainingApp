@@ -104,6 +104,21 @@ const totalsRowsStyles = [
     { name: "Sob", background: "#1d595e", color: "#faeb69" }
 ];
 
+const isleImages = new Map([
+    ["Inkwell Isle I", "ch-inkwell-isle-one.webp"],
+    ["Inkwell Isle 1", "ch-inkwell-isle-one.webp"],
+    ["Inkwell Isle II", "isle 2.jpg"],
+    ["Inkwell Isle III", "isle 3.png"],
+    ["Inkwell Hell", "hell.png"]
+]);
+
+function isleArtworkStyle(name, tone) {
+    const file = isleImages.get(name);
+    if (!file) return "";
+    const tint = `color-mix(in srgb, ${tone} 72%, transparent)`;
+    return `background-image:linear-gradient(${tint},${tint}),url('assets/Isles/${encodeURIComponent(file)}');`;
+}
+
 const islands = [
 {
     name: "Inkwell Isle I",
@@ -180,7 +195,7 @@ const lobberDlcIslands = [
 }
 ];
 
-const version11Residual = { wrTime: 661.65, fRankTime: 710 };
+const version11Residual = { wrTime: 661.65, fRankTime: 695 };
 
 const lobberDlcResidual = { wrTime: 250.83, fRankTime: 270 };
 

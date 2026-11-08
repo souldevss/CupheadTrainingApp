@@ -2,14 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
-using CupheadTrainingLog.Training;
+using CupheadTrainingApp.Training;
 
-namespace CupheadTrainingLog.Services
+namespace CupheadTrainingApp.Services
 {
     public static class StatsReport
     {
         public static string ToJson(RunDatabase database, bool includeRecentActivity, bool includeHistory, string categoryKey = "1-1")
         {
+            if (!includeRecentActivity && !includeHistory)
+                return JsonSerializer.Serialize(new { type = "statsPayload", categoryBests = database.GetCategoryBests() });
+
             var rows = new List<object>();
             var levels = categoryKey.StartsWith("DLC:")
                 ? new[] { TrainingLevels.Category11.First(level => level.IsPlatforming), TrainingLevels.Mausoleum }.Concat(TrainingLevels.DlcBosses)
@@ -19,13 +22,13 @@ namespace CupheadTrainingLog.Services
                 var stats = database.GetBossStats(level.Name, categoryKey);
                 object avg10 = "—", avg20 = "—", avg50 = "—";
                 object history = Array.Empty<object>();
-                object deathRates = Array.Empty<object>();
                 object outcomeHistory = Array.Empty<object>();
                 if (includeHistory)
                 {
-                    avg10 = FormatAverage(database.GetRecentClearTimes(level.Name, 10, categoryKey), 10);
-                    avg20 = FormatAverage(database.GetRecentClearTimes(level.Name, 20, categoryKey), 20);
-                    avg50 = FormatAverage(database.GetRecentClearTimes(level.Name, 50, categoryKey), 50);
+                    var recentClears = database.GetRecentClearTimes(level.Name, 50, categoryKey);
+                    avg10 = FormatAverage(recentClears, 10);
+                    avg20 = FormatAverage(recentClears, 20);
+                    avg50 = FormatAverage(recentClears, 50);
                     history = database.GetBossAttempts(level.Name, categoryKey).Select(a => (object)new
                     {
                         id = a.Id,
@@ -34,26 +37,20 @@ namespace CupheadTrainingLog.Services
                         when = a.RecordedAtUtc.ToLocalTime().ToString("g")
                     }).ToArray();
                     var outcomes = database.GetBossOutcomeHistory(level.Name, categoryKey);
-                    outcomeHistory = outcomes.Select(outcome => (object)new { isDeath = outcome.IsDeath, isClear = outcome.IsClear }).ToArray();
-                    deathRates = Enumerable.Range(0, (outcomes.Count + 9) / 10).Select(bucket =>
+                    outcomeHistory = outcomes.Select(outcome => (object)new
                     {
-                        var start = bucket * 10;
-                        var count = Math.Min(10, outcomes.Count - start);
-                        var deaths = outcomes.Skip(start).Take(count).Count(outcome => outcome.IsDeath);
-                        return (object)new
-                        {
-                            startAttempt = start + 1,
-                            endAttempt = start + count,
-                            percent = count == 0 ? 0 : Math.Round(deaths * 100.0 / count, 1)
-                        };
+                        isDeath = outcome.IsDeath,
+                        isClear = outcome.IsClear,
+                        clearSeconds = outcome.IsClear ? (double?)outcome.TimeSeconds : null
                     }).ToArray();
                 }
+                var deaths = database.GetBossDeathCount(level.Name, categoryKey);
                 rows.Add(new
                 {
                     level = level.Name,
-                    attempts = stats.Attempts + database.GetBossDeathCount(level.Name, categoryKey),
+                    attempts = stats.Attempts + deaths,
                     clears = stats.Clears,
-                    deaths = database.GetBossDeathCount(level.Name, categoryKey),
+                    deaths,
                     best = stats.BestClearSeconds is double b ? AttemptTracker.FormatTime(b) : "—",
                     bestSeconds = stats.BestClearSeconds,
                     totalPlaytime = AttemptTracker.FormatTime(stats.TotalPlaytimeSeconds),
@@ -61,7 +58,6 @@ namespace CupheadTrainingLog.Services
                     avg20,
                     avg50,
                     history,
-                    deathRates,
                     outcomeHistory
                 });
             }
@@ -82,7 +78,7 @@ namespace CupheadTrainingLog.Services
 
         private static string FormatAverage(List<double> values, int requiredCount)
         {
-            return values.Count == requiredCount ? AttemptTracker.FormatTime(values.Average()) : "—";
+            return values.Count >= requiredCount ? AttemptTracker.FormatTime(values.Take(requiredCount).Average()) : "—";
         }
     }
 }

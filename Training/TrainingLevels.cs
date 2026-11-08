@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace CupheadTrainingLog.Training
+namespace CupheadTrainingApp.Training
 {
     /// <summary>1.1+ category levels from CupheadTrainingTable data.js (F-rank baselines).</summary>
     public static class TrainingLevels

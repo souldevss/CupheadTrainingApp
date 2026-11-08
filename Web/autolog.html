@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cuphead Training Table — Attempt Log</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Cuphead Training App — Attempt Log</title>
+    <link rel="stylesheet" href="style.css?v=1.1.0">
     <link rel="stylesheet" href="css/host-bridge.css">
 </head>
 <body data-page="attempt-log">
 
 <div class="pages">
-    <img id="bigtitle" src="assets/bigtitle.png" alt="Cuphead Training Table">
+    <div id="bigtitle">Cuphead Training App</div>
     <a href="info.html" class="info-nav-btn" data-i18n-aria-label="ui.info-aria" aria-label="How it works">&#9432;</a>
     <button id="lang-toggle-btn" class="lang-toggle-btn-inline" type="button" onclick="setActiveLanguage(getActiveLanguage() === 'pt-BR' ? 'en' : 'pt-BR')" data-i18n-aria-label="ui.language-aria" aria-label="Toggle language">
         <img src="https://flagcdn.com/w40/us.png" srcset="https://flagcdn.com/w80/us.png 2x" alt="English" width="28" height="21">
@@ -35,28 +35,116 @@
         <p data-i18n="autolog.subtitle">Choose a boss to see how your clear times and deaths change over attempts.</p></div>
         <button id="clear-all-attempts" class="clear-all-attempts" type="button" data-i18n="autolog.clear-all">Clear all records</button>
     </header>
+    <div class="detail-tabs autolog-view-tabs" role="group" data-i18n-aria-label="projection.views">
+        <button id="show-boss-log" type="button" class="is-active" aria-pressed="true" data-i18n="projection.boss-log">Boss log</button>
+        <button id="show-run-projection" type="button" aria-pressed="false" data-i18n="projection.title">Run Projection</button>
+        <button id="show-run-recap" type="button" aria-pressed="false" data-i18n="recap.title">Run Recap</button>
+    </div>
     <section id="autolog-list-view">
         <div id="autolog-summary" class="boss-stat-grid"></div>
         <h2 class="attempt-section-title" data-i18n="autolog.recent">Recent attempts</h2>
         <div id="autolog-recent" class="recent-attempt-list"></div>
     </section>
     <section id="autolog-detail-view" class="boss-detail-view" hidden></section>
+    <section id="run-projection" class="history-card" hidden>
+        <h2 data-i18n="projection.title">Run Projection</h2>
+        <label class="projection-target-option"><input id="projection-use-recap" type="checkbox" disabled> <span data-i18n="projection.use-recap">Include Run Recap</span></label>
+        <p id="projection-source" class="projection-note" role="status"></p>
+        <div id="projection-summary" role="status"></div>
+        <form id="projection-target-form" class="projection-target-form">
+            <label for="projection-target" data-i18n="projection.target">Target time</label>
+            <input id="projection-target" type="text" placeholder="25:30.00" required>
+            <button class="data-control-btn" type="submit" data-i18n="projection.estimate">Estimate odds</button>
+            <label class="projection-target-option"><input id="projection-target-deathless" type="checkbox"> <span data-i18n="projection.include-deathless">Include first-try risk</span></label>
+        </form>
+        <div id="projection-target-result" role="status"></div>
+        <details class="projection-breakdown">
+            <summary data-i18n="projection.breakdown">Split breakdown</summary>
+            <div class="projection-table-wrap">
+            <table class="projection-table">
+                <thead><tr>
+                    <th scope="col" data-i18n="projection.split">Split</th>
+                    <th scope="col" data-i18n="projection.clear">Average clear</th>
+                    <th scope="col" data-i18n="projection.death-rate">Death odds</th>
+                    <th scope="col" data-i18n="projection.sample">Attempts used</th>
+                </tr></thead>
+                <tbody id="projection-splits"></tbody>
+            </table>
+            </div>
+        </details>
+        <details class="projection-breakdown projection-note">
+            <summary data-i18n="projection.help">How it’s calculated</summary>
+            <p data-i18n="projection.note"></p>
+        </details>
+    </section>
+    <section id="run-recap" class="history-card" hidden>
+        <h2 data-i18n="recap.title">Run Recap</h2>
+        <label id="recap-drop-zone" class="recap-file-picker">
+            <span data-i18n="recap.drop">Drop a .rrc file here or choose a file</span>
+            <input id="recap-file" type="file" accept=".rrc">
+        </label>
+        <p id="recap-status" role="status"></p>
+        <div id="recap-data" hidden>
+            <div class="recap-browser">
+                <button id="recap-previous" type="button" class="chart-zoom" data-i18n-aria-label="recap.previous">‹</button>
+                <div id="recap-attempt-dots" class="recap-attempt-dots" role="group" data-i18n-aria-label="recap.attempts"></div>
+                <button id="recap-next" type="button" class="chart-zoom" data-i18n-aria-label="recap.next">›</button>
+                <label><span data-i18n="recap.attempt">Attempt</span> <input id="recap-attempt" type="number" min="1" step="1"></label>
+                <span id="recap-attempt-count"></span>
+            </div>
+            <div class="recap-toolbar">
+                <label><span data-i18n="recap.final-boss">Final boss</span>
+                    <select id="recap-final-boss"><option value="level_devil">The Devil</option><option value="level_saltbaker">Chef Saltbaker</option></select>
+                </label>
+                <label><span data-i18n="recap.compare">Compare</span>
+                    <select id="recap-compare"><option value="none" data-i18n="recap.compare-none">None</option><option value="best" data-i18n="recap.compare-best">Fastest recorded finish</option></select>
+                </label>
+            </div>
+            <div id="recap-attempt-header" class="recap-attempt-header"></div>
+            <div id="recap-islands" class="recap-island-grid"></div>
+            <div id="recap-breakdown" class="recap-breakdown"></div>
+            <details class="projection-breakdown">
+                <summary data-i18n="recap.scenes">Raw scene history</summary>
+                <div class="projection-table-wrap"><table class="projection-table">
+                    <thead><tr><th scope="col" data-i18n="recap.scene">Scene</th><th scope="col" data-i18n="recap.elapsed">Run time</th><th scope="col" data-i18n="recap.level-time">Level time</th></tr></thead>
+                    <tbody id="recap-scenes"></tbody>
+                </table></div>
+            </details>
+            <details class="recap-file-history">
+            <summary data-i18n="recap.file-history">File history and reset points</summary>
+            <div id="recap-summary" class="projection-metrics"></div>
+            <form id="recap-target-form" class="projection-target-form">
+                <label for="recap-target" data-i18n="projection.target">Target time</label>
+                <input id="recap-target" type="text" placeholder="25:30.00" required>
+                <button class="data-control-btn" type="submit" data-i18n="recap.check-target">Check history</button>
+            </form>
+            <p id="recap-target-result" role="status"></p>
+            <details class="projection-breakdown"><summary data-i18n="recap.reset-points">Last scenes in unfinished attempts</summary><ul id="recap-resets"></ul></details>
+            <p class="projection-note" data-i18n="recap.note"></p>
+            </details>
+        </div>
+    </section>
 </main>
 
 <script src="js/sound-effects.js"></script>
-<script src="data.js"></script>
+<script src="data.js?v=1.1.0"></script>
 <script src="js/state.js"></script>
 <script src="js/time.js"></script>
+<script src="js/ranks.js"></script>
+<script src="js/data-access.js"></script>
 <script src="js/category.js"></script>
-<script src="js/language.js?v=1.0.2-backups"></script>
-<script src="js/host-bridge.js?v=1.0.2-backups"></script>
+<script src="js/language.js?v=1.1.0"></script>
+<script src="js/host-bridge.js?v=1.1.0"></script>
 <script src="js/compact-mode.js"></script>
 <script src="js/wr-times.js"></script>
+<script src="js/run-projection.js?v=1.1.0"></script>
+<script src="js/run-recap.js?v=1.1.0"></script>
 <script>
 let autologRows = [];
 let selectedLogCategory = localStorage.getItem("cupheadLogCategory") || "1-1";
 if (!["1-1", "DLC:lobber", "DLC:charge"].includes(selectedLogCategory)) selectedLogCategory = "1-1";
 let selectedBossName = null;
+let logView = "bosses";
 let selectedDetailTab = "progress";
 let selectedAverageWindow = 10;
 let lastBossDetailSignature = null;
@@ -81,6 +169,9 @@ window.releaseAutologPage = function () {
     document.getElementById("autolog-detail-view").replaceChildren();
     document.getElementById("autolog-summary").replaceChildren();
     document.getElementById("autolog-recent").replaceChildren();
+    document.getElementById("projection-splits").replaceChildren();
+    document.getElementById("projection-summary").replaceChildren();
+    document.getElementById("projection-target-result").replaceChildren();
     autologRows = [];
     autologRecentRows = [];
     lastBossDetailSignature = null;
@@ -767,6 +858,11 @@ window.renderAutologStats = function(rows, recent, categoryKey) {
     if (!summary || !recentEl) return;
     autologRows = rows;
     autologRecentRows = recent;
+    if (logView === "recap") return;
+    if (logView === "projection") {
+        renderRunProjection(rows, selectedLogCategory);
+        return;
+    }
     summary.innerHTML = rows.map(r => {
         const art = bossArt.get(r.level) || {};
         return `<button class="boss-stat-card" type="button" data-boss="${safeText(r.level)}">
@@ -797,7 +893,38 @@ window.renderAutologStats = function(rows, recent, categoryKey) {
 window.refreshAutologLanguage = function() {
     lastBossDetailSignature = null;
     window.renderAutologStats(autologRows, autologRecentRows);
+    if (logView === "recap") refreshRunRecap();
 };
+
+function selectLogView(view) {
+    window.stopAutologWork();
+    logView = view;
+    selectedBossName = null;
+    lastBossDetailSignature = null;
+    const detail = document.getElementById("autolog-detail-view");
+    detail.hidden = true;
+    detail.replaceChildren();
+    document.getElementById("autolog-list-view").hidden = view !== "bosses";
+    document.getElementById("run-projection").hidden = view !== "projection";
+    document.getElementById("run-recap").hidden = view !== "recap";
+    document.getElementById("category-tabs").hidden = view === "recap";
+    document.getElementById("clear-all-attempts").hidden = view !== "bosses";
+    for (const [id, active] of [["show-boss-log", view === "bosses"], ["show-run-projection", view === "projection"], ["show-run-recap", view === "recap"]]) {
+        const button = document.getElementById(id);
+        button.classList.toggle("is-active", active);
+        button.setAttribute("aria-pressed", String(active));
+    }
+    window.renderAutologStats(autologRows, autologRecentRows);
+    if (view !== "bosses") openRunRecap();
+}
+
+window.refreshRecapProjection = () => {
+    if (logView === "projection") renderRunProjection(autologRows, selectedLogCategory);
+};
+
+document.getElementById("show-boss-log").addEventListener("click", () => selectLogView("bosses"));
+document.getElementById("show-run-projection").addEventListener("click", () => selectLogView("projection"));
+document.getElementById("show-run-recap").addEventListener("click", () => selectLogView("recap"));
 
 document.getElementById("clear-all-attempts").addEventListener("click", () => {
     if (!confirm(t("autolog.delete-all-confirm"))) return;
@@ -826,7 +953,7 @@ function selectLogCategory(categoryId, subOption = null) {
     lastBossDetailSignature = null;
     document.getElementById("autolog-detail-view").hidden = true;
     document.getElementById("autolog-detail-view").replaceChildren();
-    document.getElementById("autolog-list-view").hidden = false;
+    document.getElementById("autolog-list-view").hidden = logView !== "bosses";
     refreshBossArt();
     renderLogCategoryControls();
     window.renderAutologStats([], []);
