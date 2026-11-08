@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cuphead Training App — Attempt Log</title>
-    <link rel="stylesheet" href="style.css?v=1.1.0">
+    <link rel="stylesheet" href="style.css?v=live-motion">
     <link rel="stylesheet" href="css/host-bridge.css">
 </head>
 <body data-page="attempt-log">
@@ -127,18 +127,18 @@
 </main>
 
 <script src="js/sound-effects.js"></script>
-<script src="data.js?v=1.1.0"></script>
+<script src="data.js?v=live-average"></script>
 <script src="js/state.js"></script>
 <script src="js/time.js"></script>
 <script src="js/ranks.js"></script>
 <script src="js/data-access.js"></script>
 <script src="js/category.js"></script>
-<script src="js/language.js?v=1.1.0"></script>
-<script src="js/host-bridge.js?v=1.1.0"></script>
+<script src="js/language.js?v=live-average"></script>
+<script src="js/host-bridge.js?v=live-average"></script>
 <script src="js/compact-mode.js"></script>
 <script src="js/wr-times.js"></script>
-<script src="js/run-projection.js?v=1.1.0"></script>
-<script src="js/run-recap.js?v=1.1.0"></script>
+<script src="js/run-projection.js?v=live-average"></script>
+<script src="js/run-recap.js?v=live-average"></script>
 <script>
 let autologRows = [];
 let selectedLogCategory = localStorage.getItem("cupheadLogCategory") || "1-1";
@@ -205,29 +205,25 @@ function trendPointCount(clearCount, strength) {
     return Math.max(2, Math.round(clearCount - (clearCount - 2) * progress));
 }
 
-function gaussianTrend(clears, intervals, strength) {
-    // Strength 1 is the original data. Higher values widen a symmetric bell
-    // curve, truncated at three standard deviations on either side.
-    const sigma = (strength - 1) / 6;
-    const radius = Math.ceil((strength - 1) / 2);
+function averageTrend(clears, intervals, strength) {
+    const width = Math.min(strength, clears.length);
+    const timeSums = [0], deathSums = [0], attemptSums = [0];
+    clears.forEach((clear, index) => {
+        timeSums.push(timeSums[index] + clear.timeSeconds);
+        deathSums.push(deathSums[index] + (intervals[index]?.deaths || 0));
+        attemptSums.push(attemptSums[index] + (intervals[index]?.attempts || 0));
+    });
     const pointCount = trendPointCount(clears.length, strength);
     return Array.from({ length: pointCount }, (_, point) => {
         const center = pointCount <= 1 ? 0 : point * (clears.length - 1) / (pointCount - 1);
-        const start = Math.max(0, Math.ceil(center - radius));
-        const end = Math.min(clears.length - 1, Math.floor(center + radius));
-        let weightedTime = 0, weightTotal = 0, weightedDeaths = 0, weightedAttempts = 0;
-        for (let index = start; index <= end; index++) {
-            const weight = sigma > 0 ? Math.exp(-0.5 * ((index - center) / sigma) ** 2) : 1;
-            weightedTime += clears[index].timeSeconds * weight;
-            weightTotal += weight;
-            weightedDeaths += (intervals[index]?.deaths || 0) * weight;
-            weightedAttempts += (intervals[index]?.attempts || 0) * weight;
-        }
-        // Renormalize at the ends instead of padding with invented samples.
+        const windowStart = Math.round(center - (width - 1) / 2);
+        const start = Math.max(0, windowStart);
+        const end = Math.min(clears.length, windowStart + width);
+        const attempts = attemptSums[end] - attemptSums[start];
         return {
-            timeSeconds: weightedTime / weightTotal,
-            deathRate: weightedAttempts ? weightedDeaths * 100 / weightedAttempts : 0,
-            runStart: start + 1, runEnd: end + 1
+            timeSeconds: (timeSums[end] - timeSums[start]) / (end - start),
+            deathRate: attempts ? (deathSums[end] - deathSums[start]) * 100 / attempts : 0,
+            runStart: start + 1, runEnd: end
         };
     });
 }
@@ -240,6 +236,20 @@ function chartViewport(total, state) {
 }
 
 const EMPTY_OUTCOMES = [];
+let liveAutologAttempt = null;
+function getLiveChartTime(bossName) {
+    const live = liveAutologAttempt;
+    if (!live || live.bossName !== bossName || !Number.isFinite(live.seconds)) return null;
+    if (live.categoryKey !== selectedLogCategory && !(live.categoryKey === "DLC:shared" && selectedLogCategory.startsWith("DLC:"))) return null;
+    const best = autologRows.find(boss => boss.level === bossName)?.bestSeconds;
+    return Number.isFinite(best) && live.seconds >= best ? live.seconds : null;
+}
+
+window.updateAutologLiveAttempt = attempt => {
+    liveAutologAttempt = attempt;
+    document.querySelector(".time-chart-content")?.updateLivePoint?.();
+};
+
 function getCachedTimeTrend(history, outcomes, strength) {
     let cached = timeTrendCache.get(history);
     if (!cached || cached.outcomes !== outcomes) {
@@ -268,7 +278,7 @@ function getCachedTimeTrend(history, outcomes, strength) {
     }
     let trend = cached.trends.get(strength);
     if (!trend) {
-        const averages = gaussianTrend(cached.clears, cached.intervals, strength);
+        const averages = averageTrend(cached.clears, cached.intervals, strength);
         let trendMin = Infinity, trendMax = -Infinity;
         for (const point of averages) {
             trendMin = Math.min(trendMin, point.timeSeconds);
@@ -314,6 +324,18 @@ function nearestChartPoint(svg, clientX) {
     return (Math.abs(points[left].fraction - fraction) <= Math.abs(points[right].fraction - fraction) ? points[left] : points[right]).element;
 }
 
+function timeChartThresholds(art) {
+    return art.fRankTime ? generateRankTimes(art.fRankTime, {
+        wrTime: art.wrTime,
+        fallbackMultipliers: getLogCategoryData()?.rankMultipliers || defaultRankMultipliers
+    }) : [];
+}
+
+function timeChartRankColor(thresholds, seconds) {
+    const index = thresholds.findIndex(threshold => seconds <= threshold);
+    return ranksStyles[index < 0 ? ranks.length - 1 : index]?.background || "#8993a0";
+}
+
 function drawTimeChart(history, art, limit, zoom = 1) {
     const outcomes = autologRows.find(boss => boss.level === selectedBossName)?.outcomeHistory || EMPTY_OUTCOMES;
     const { clears, averages, originalMin, originalMax, trendMin, trendMax } = getCachedTimeTrend(history, outcomes, limit);
@@ -327,23 +349,16 @@ function drawTimeChart(history, art, limit, zoom = 1) {
     zoom = viewport.zoom;
     chartZoomLevels.set(key, { zoom, offset: viewport.offset });
 
-    const category = getLogCategoryData();
-    const multipliers = category?.rankMultipliers || defaultRankMultipliers;
-    const thresholds = art.fRankTime ? generateRankTimes(art.fRankTime, {
-        wrTime: art.wrTime,
-        fallbackMultipliers: multipliers
-    }) : [];
-    const rankIndexForTime = seconds => {
-        const index = thresholds.findIndex(threshold => seconds <= threshold);
-        return index < 0 ? ranks.length - 1 : index;
-    };
-    const rankColorForTime = seconds => ranksStyles[rankIndexForTime(seconds)]?.background || "#8993a0";
+    const thresholds = timeChartThresholds(art);
+    const rankColorForTime = seconds => timeChartRankColor(thresholds, seconds);
     // Blend the original range with the current trend for partial auto-scaling.
     const minValue = (originalMin + trendMin) / 2;
     const maxValue = (originalMax + trendMax) / 2;
     const padding = Math.max((maxValue - minValue) * 0.1, 0.25);
-    const low = minValue - padding;
-    const high = maxValue + padding;
+    const low = Math.max(0, Math.min(minValue - padding, originalMin));
+    const baseHigh = maxValue + padding;
+    const live = getLiveChartTime(selectedBossName);
+    const high = live > baseHigh ? Math.ceil((live + padding) / 5) * 5 : baseHigh;
     const range = Math.max(high - low, 0.1);
     const y = value => 92 - ((value - low) / range) * 84;
     const x = index => viewport.span === 0 ? 125 : 20 + (start + index - viewport.start) * 210 / viewport.span;
@@ -387,13 +402,13 @@ function drawTimeChart(history, art, limit, zoom = 1) {
     }).filter(Boolean);
     const deathBars = `<path class="combined-death-bar" data-bars="${safeText(JSON.stringify(deathBarData))}" d="${deathBarPath(deathBarData)}"/>`;
     return `<div class="history-chart-wrap">
-        <div class="combined-chart-legend"><span>${t("autolog.clear-times")}</span><span>${t("autolog.death-bars")}</span></div>
-        <div class="chart-controls"><span>${limit === 1 ? t("autolog.individual-clear-times") : tf("autolog.gaussian-label", { count: limit })}</span><span><button class="chart-zoom" type="button" data-direction="out" aria-label="${t("autolog.zoom-out")}" ${zoom <= 1 ? "disabled" : ""}>−</button><button class="chart-zoom" type="button" data-direction="in" aria-label="${t("autolog.zoom-in")}" ${zoom >= Math.max(1, averages.length - 1) ? "disabled" : ""}>+</button></span></div>
-        <div class="history-svg-wrap"><svg class="history-chart time-history-chart" viewBox="0 0 250 100" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${t("autolog.gaussian-aria")}">
+        <div class="combined-chart-legend"><span>${t("autolog.clear-times")}</span><span>${t("autolog.death-bars")}</span><strong class="live-chart-time" hidden></strong></div>
+        <div class="chart-controls"><span>${limit === 1 ? t("autolog.individual-clear-times") : tf("autolog.average-label", { count: limit })}</span><span><button class="chart-zoom" type="button" data-direction="out" aria-label="${t("autolog.zoom-out")}" ${zoom <= 1 ? "disabled" : ""}>−</button><button class="chart-zoom" type="button" data-direction="in" aria-label="${t("autolog.zoom-in")}" ${zoom >= Math.max(1, averages.length - 1) ? "disabled" : ""}>+</button></span></div>
+        <div class="history-svg-wrap"><svg class="history-chart time-history-chart" data-low="${low}" data-high="${high}" data-base-high="${baseHigh}" viewBox="0 0 250 100" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${t("autolog.average-aria")}">
             <defs><clipPath id="time-plot-clip"><rect x="20" y="0" width="210" height="100"/></clipPath></defs>
             ${timeAxis}${rankLines}<g class="time-plot" clip-path="url(#time-plot-clip)">${deathBars}${runLines}
             ${visible.map((a, i) => `<circle cx="${x(i)}" cy="${y(a.timeSeconds)}" r="0" data-point="${i}" data-next-color="${segmentColors[i] || rankColorForTime(a.timeSeconds)}" data-average="${a.timeSeconds}" data-run-start="${a.runStart}" data-run-end="${a.runEnd}" data-death-rate="${a.deathRate.toFixed(1)}"/>`).join("")}
-            ${markers}</g>
+            ${markers}</g><circle class="live-chart-point" cx="233" cy="92" r="2.7" visibility="hidden"><title></title></circle>
         </svg><div class="chart-hover-tooltip" hidden></div></div><div class="history-axis"><span>${tf("autolog.clears-range", { start: visible[0].runStart, end: visible[0].runEnd })}</span><span>${tf("autolog.clears-range", { start: visible[visible.length - 1].runStart, end: visible[visible.length - 1].runEnd })}</span></div>
     </div>`;
 }
@@ -426,6 +441,13 @@ function buildTrendTween(source, target) {
         .map(x => ({ x, fromY: sampleTrendAtX(source, x), toY: sampleTrendAtX(target, x) }));
 }
 
+function interpolateLiveTime(samples, time) {
+    while (samples.length > 1 && samples[1].at <= time) samples.shift();
+    const first = samples[0], next = samples[1];
+    if (!next || time <= first.at) return first.seconds;
+    return first.seconds + (next.seconds - first.seconds) * (time - first.at) / (next.at - first.at);
+}
+
 function bindTimeChartControls(holder, history, art) {
     const key = `${holder.dataset.boss}:trend`;
     const previousAnimation = chartAnimationFrames.get(key);
@@ -436,6 +458,14 @@ function bindTimeChartControls(holder, history, art) {
     let navigationTarget = null;
     let navigationImmediate = false;
     let lastNavigationTime = 0;
+    let livePointFrame = null;
+    const liveSamples = [];
+    const liveDisplayDelay = 350;
+    const liveThresholds = timeChartThresholds(art);
+    function stopLivePoint() {
+        if (livePointFrame !== null) cancelAnimationFrame(livePointFrame);
+        livePointFrame = null;
+    }
     const stopNavigation = () => {
         if (navigationFrame !== null) cancelAnimationFrame(navigationFrame);
         navigationFrame = null;
@@ -443,6 +473,7 @@ function bindTimeChartControls(holder, history, art) {
     };
     disposeTimeChart = () => {
         stopNavigation();
+        stopLivePoint();
         animationVersion++;
         const frame = chartAnimationFrames.get(key);
         if (frame) cancelAnimationFrame(frame);
@@ -483,6 +514,39 @@ function bindTimeChartControls(holder, history, art) {
         const viewport = chartViewport(total, state);
         return { total, count: viewport.span + 1, ...viewport };
     };
+    function paintLivePoint() {
+        stopLivePoint();
+        const svg = holder.querySelector(".time-history-chart");
+        if (!svg) return;
+        const point = svg.querySelector(".live-chart-point");
+        const label = holder.querySelector(".live-chart-time");
+        const seconds = getLiveChartTime(holder.dataset.boss);
+        point.setAttribute("visibility", seconds === null ? "hidden" : "visible");
+        label.hidden = seconds === null;
+        if (seconds === null) {
+            liveSamples.length = 0;
+            return;
+        }
+        if (!liveSamples.length) liveSamples.push({ at: performance.now(), seconds });
+        const low = Number(svg.dataset.low), high = Number(svg.dataset.high);
+        const range = Math.max(high - low, 0.1);
+        const paint = displayed => {
+            point.setAttribute("cy", 92 - (displayed - low) * 84 / range);
+            point.style.fill = timeChartRankColor(liveThresholds, displayed);
+        };
+        if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            const frame = now => {
+                paint(interpolateLiveTime(liveSamples, now - liveDisplayDelay));
+                livePointFrame = liveSamples.length > 1 ? requestAnimationFrame(frame) : null;
+            };
+            frame(performance.now());
+        } else {
+            liveSamples.splice(0, liveSamples.length - 1);
+            paint(seconds);
+        }
+        label.textContent = `${t("autolog.live-attempt")}: ${formatTime(seconds)}`;
+        point.querySelector("title").textContent = label.textContent;
+    }
     const update = (next, animate = false) => {
         if (animate) stopNavigation();
         const version = ++animationVersion;
@@ -506,6 +570,7 @@ function bindTimeChartControls(holder, history, art) {
         holder.dataset.zoom = String(next.zoom);
         holder.innerHTML = drawTimeChart(history, art, Number(holder.dataset.limit), next.zoom);
         fitChart();
+        paintLivePoint();
         if (!startPoints?.length) return;
         const newSvg = holder.querySelector(".time-history-chart");
         const points = Array.from(newSvg?.querySelectorAll("circle[data-point]") || []);
@@ -642,6 +707,20 @@ function bindTimeChartControls(holder, history, art) {
         frame(started);
     };
     holder.updateTrend = update;
+    holder.updateLivePoint = () => {
+        const svg = holder.querySelector(".time-history-chart");
+        if (!svg) return;
+        const seconds = getLiveChartTime(holder.dataset.boss);
+        if (seconds !== null) {
+            if (seconds < (liveSamples.at(-1)?.seconds ?? seconds)) liveSamples.length = 0;
+            liveSamples.push({ at: performance.now(), seconds });
+        }
+        const high = Number(svg.dataset.high), baseHigh = Number(svg.dataset.baseHigh);
+        if (seconds > high || (high > baseHigh && (seconds === null || seconds <= baseHigh))) {
+            update(chartZoomLevels.get(key) || { zoom: 1, offset: 0 });
+        } else paintLivePoint();
+    };
+    paintLivePoint();
 
     // Coalesce input to one draw per frame. Wheel zoom eases toward its target;
     // dragging follows fractional positions directly without snapping to clears.
@@ -727,7 +806,7 @@ function bindTimeChartControls(holder, history, art) {
         const point = nearestChartPoint(svg, event.clientX);
         if (!point) return;
         if (tooltip.dataset.point !== point.dataset.point) {
-            tooltip.innerHTML = `<strong>${t(Number(holder.dataset.limit) === 1 ? "autolog.individual-clear" : "autolog.gaussian-time")}: ${safeText(formatTime(Number(point.dataset.average)))}</strong><span>${tf("autolog.clears-range", { start: point.dataset.runStart, end: point.dataset.runEnd })}</span><span>${tf(Number(holder.dataset.limit) === 1 ? "autolog.death-rate-value" : "autolog.gaussian-death-rate", { percent: point.dataset.deathRate })}</span>`;
+            tooltip.innerHTML = `<strong>${t(Number(holder.dataset.limit) === 1 ? "autolog.individual-clear" : "autolog.average-time")}: ${safeText(formatTime(Number(point.dataset.average)))}</strong><span>${tf("autolog.clears-range", { start: point.dataset.runStart, end: point.dataset.runEnd })}</span><span>${tf(Number(holder.dataset.limit) === 1 ? "autolog.death-rate-value" : "autolog.average-death-rate", { percent: point.dataset.deathRate })}</span>`;
             tooltip.dataset.point = point.dataset.point;
         }
         tooltip.hidden = false;

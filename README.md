@@ -22,7 +22,8 @@ The release includes the .NET runtime. It requires 64-bit Windows and the [Micro
 - **Loadout checks:** category rules account for weapons, charms, and supers, with special handling for Forest Follies and Mausoleum.
 - **Boss history:** individual boss pages, clear and death history, total playtime, and deletion controls for incorrect entries.
 - **Interactive progress graph:** clear times with death-rate bars, rank colors and target lines, nearest-point hover, zooming, and panning.
-- **Animated Gaussian smoothing:** adjust a slider from individual clears to a broader improvement trend, with nearby runs weighted more strongly.
+- **Moving averages:** adjust the average window to switch between individual clears and broader trends. Each clear in a window has equal weight.
+- **Live attempt marker:** the current attempt appears when it reaches the boss's best clear time. Its translucent marker moves linearly between timer samples and follows the rank colors.
 - **Backups:** export/import attempts, deaths, and settings; a local automatic backup is refreshed every ten minutes while the app is running.
 - **English and Brazilian Portuguese**, compact mode, boss colors and icons, and interface sound effects.
 
@@ -58,7 +59,7 @@ dotnet run --project .\CupheadTrainingApp.csproj -c Release
 To make the same self-contained ZIP as the releases:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\Publish.ps1 -Version 1.1.0
+powershell -ExecutionPolicy Bypass -File .\scripts\Publish.ps1 -Version 1.1.1
 ```
 
 The ZIP and SHA-256 checksum appear in `artifacts/`. The script requires a fresh output directory for each version. All required source files are included here; the neighboring music-player project is not needed.
@@ -74,8 +75,8 @@ GitHub Actions builds a Windows ZIP for pushes to `main`, pull requests, and man
 To publish a versioned download on the repository's **Releases** page, push a version tag:
 
 ```powershell
-git tag v1.1.1
-git push origin v1.1.1
+git tag v1.1.2
+git push origin v1.1.2
 ```
 
 Write the changes for the new tag in `release-notes/vX.Y.Z.md`. The workflow builds the app, creates a GitHub release with those notes, and attaches the ZIP and checksum. Use a new version tag for each release. GitHub Pages cannot run the Windows memory-reading companion; Releases distributes the desktop app.

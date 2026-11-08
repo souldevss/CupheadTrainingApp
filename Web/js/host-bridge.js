@@ -133,6 +133,7 @@
         switch (msg.type) {
             case "watcherStatus":
                 setWatcherUi(msg);
+                window.updateAutologLiveAttempt?.(msg.liveAttempt);
                 break;
             case "applyClear":
                 if (msg.bossName && Number.isFinite(msg.seconds)) {

@@ -33,6 +33,8 @@ namespace CupheadTrainingApp.Services
 
         public string LiveBossName => activeBossName;
         public float LiveLevelTime { get; private set; }
+        public LiveAttemptInfo LiveAttempt { get; private set; }
+        public sealed record LiveAttemptInfo(string BossName, string CategoryKey, float Seconds);
 
         public AttemptTracker(RunDatabase database)
         {
@@ -41,6 +43,7 @@ namespace CupheadTrainingApp.Services
 
         public void Tick()
         {
+            LiveAttempt = null;
             if (!memory.HookProcess())
             {
                 ResetAttempt();
@@ -267,6 +270,9 @@ namespace CupheadTrainingApp.Services
             }
             else
             {
+                if (canCompleteHere && !ending && !won && !attemptFinished && !endingHandled
+                    && !loadoutRejected && recordingCategory != null && float.IsFinite(levelTime) && levelTime > 0)
+                    LiveAttempt = new LiveAttemptInfo(activeBossName, recordingCategory, levelTime);
                 ReportAttemptStatus($"{activeBossName} | {FormatTime(levelTime)}");
             }
         }

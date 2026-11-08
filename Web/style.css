@@ -1327,6 +1327,8 @@ body.compact-mode .info-section p, body.compact-mode .info-section li { margin-b
 .time-history-chart polyline,.time-history-chart .rank-reference,.time-history-chart .time-axis-mark { pointer-events:none; }
 .time-history-chart .ranked-run-line { fill:none; stroke-width:2; stroke-dasharray:2 2; vector-effect:non-scaling-stroke; pointer-events:none; }
 .history-chart circle { fill:#f8f5ff; stroke:#252b33; stroke-width:.7; vector-effect:non-scaling-stroke; }
+.history-chart .live-chart-point { fill:#8993a0; stroke:#f0fbff; stroke-width:1.2; opacity:.68; }
+.live-chart-time { color:#8de5ff; }
 .time-history-chart circle { cursor:pointer; }
 .history-chart circle:focus { stroke:#fff; stroke-width:1.5; outline:none; }
 .time-history-chart circle.is-fail { fill:#d88d6f; }

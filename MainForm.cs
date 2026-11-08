@@ -106,7 +106,7 @@ namespace CupheadTrainingApp
             webView.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
             webView.CoreWebView2.NavigationCompleted += (s, e) => PushWatcherStatus();
 
-            webView.Source = new Uri($"https://{VirtualHost}/app-shell.html?v=1.1.0");
+            webView.Source = new Uri($"https://{VirtualHost}/app-shell.html?v=linear-live");
         }
 
         private void SetWebViewMemoryTarget(bool inactive)
@@ -287,12 +287,14 @@ namespace CupheadTrainingApp
 
         private void PushWatcherStatus()
         {
+            var live = watching ? tracker.LiveAttempt : null;
             PostJson(JsonSerializer.Serialize(new
             {
                 type = "watcherStatus",
                 watching,
                 status = lastStatus,
-                warning = !string.IsNullOrEmpty(versionWarning)
+                warning = !string.IsNullOrEmpty(versionWarning),
+                liveAttempt = live == null ? null : new { bossName = live.BossName, categoryKey = live.CategoryKey, seconds = live.Seconds }
             }));
         }
 

@@ -8,7 +8,7 @@
     <RootNamespace>CupheadTrainingApp</RootNamespace>
     <AssemblyName>CupheadTrainingApp</AssemblyName>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
-    <Version>1.1.0</Version>
+    <Version>1.1.1</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
