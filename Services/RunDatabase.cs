@@ -219,6 +219,31 @@ LIMIT $limit;";
             return list;
         }
 
+        public double GetTotalPlaytimeSeconds()
+        {
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = "SELECT COALESCE(SUM(time_seconds), 0) FROM attempts;";
+            return Convert.ToDouble(cmd.ExecuteScalar());
+        }
+
+        internal IEnumerable<(string Boss, bool IsDeath, double? ClearSeconds)> ReadOverallOutcomes(string categoryKey)
+        {
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = @"
+SELECT boss_name, kind, clear_seconds FROM (
+  SELECT id, boss_name, 0 AS kind, CASE WHEN cleared = 1 AND time_seconds > 0 THEN time_seconds END AS clear_seconds, recorded_at
+  FROM attempts WHERE category_key = $category OR ($category LIKE 'DLC:%' AND category_key = 'DLC:shared')
+  UNION ALL
+  SELECT id, boss_name, 1, NULL, recorded_at
+  FROM death_events WHERE category_key = $category OR ($category LIKE 'DLC:%' AND category_key = 'DLC:shared')
+)
+ORDER BY recorded_at, kind, id;";
+            cmd.Parameters.AddWithValue("$category", categoryKey);
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+                yield return (reader.GetString(0), reader.GetInt32(1) == 1, reader.IsDBNull(2) ? null : reader.GetDouble(2));
+        }
+
         public BossStats GetBossStats(string bossName, string categoryKey = null)
         {
             using var cmd = connection.CreateCommand();
@@ -315,6 +340,7 @@ ORDER BY recorded_at ASC, kind ASC, id ASC;";
             while (reader.Read())
                 list.Add(new AttemptOutcome
                 {
+                    Id = reader.GetInt64(0),
                     IsDeath = reader.GetInt32(1) == 1,
                     IsClear = reader.GetInt32(2) != 0,
                     TimeSeconds = reader.GetDouble(3),
@@ -435,6 +461,7 @@ WHERE NOT EXISTS (SELECT 1 FROM death_events WHERE boss_name = $boss AND scene_i
 
         public sealed class AttemptOutcome
         {
+            public long Id { get; set; }
             public bool IsDeath { get; set; }
             public bool IsClear { get; set; }
             public double TimeSeconds { get; set; }

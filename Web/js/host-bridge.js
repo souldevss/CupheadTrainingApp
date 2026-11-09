@@ -148,6 +148,9 @@
                     } else applyPersonalTimeIfBetter(msg.bossName, msg.seconds, msg.categoryKey);
                 }
                 break;
+            case "overallProgress":
+                window.receiveOverallProgress?.(msg, msg.categoryKey);
+                break;
             case "statsPayload":
                 window.cupheadCategoryBests = {};
                 (msg.categoryBests || []).forEach(row => {
@@ -172,7 +175,7 @@
                     });
                 }
                 if (typeof window.renderAutologStats === "function") {
-                    window.renderAutologStats(msg.rows || [], msg.recent || [], msg.statsCategoryKey);
+                    window.renderAutologStats(msg.rows || [], msg.recent || [], msg.statsCategoryKey, msg.totalPlaytime);
                 }
                 if (window.autoTrainingPage && typeof renderAutoTimesPage === "function") renderAutoTimesPage();
                 break;

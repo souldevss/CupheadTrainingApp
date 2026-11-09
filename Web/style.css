@@ -1162,6 +1162,25 @@ body.compact-mode .info-section p, body.compact-mode .info-section li { margin-b
     color: #edf0f3;
 }
 .attempt-log-heading { display:flex; justify-content:space-between; align-items:end; margin:24px 0 26px; }
+.all-boss-playtime { display:inline-block; color:#edf1f5; font-size:.55em; font-variant-numeric:tabular-nums; }
+#show-overall-progress { min-width:36px; font-size:20px; line-height:1; }
+.overall-boss-legend { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
+.overall-boss-key { display:grid; place-items:center; width:34px; height:34px; border:1px solid #78929e; border-radius:4px; font-weight:700; }
+.overall-boss-key img { width:26px; height:26px; object-fit:contain; }
+.overall-chart { display:block; width:100%; max-height:350px; margin:10px 0; }
+.overall-chart text { fill:#c0c7cf; font:12px system-ui,sans-serif; dominant-baseline:middle; }
+.overall-hover-point { stroke:#fff; stroke-width:1; pointer-events:none; }
+.overall-plot-target { touch-action:none; }
+.overall-plot-target.can-pan { cursor:grab; }
+.overall-plot-target.is-panning { cursor:grabbing; }
+.overall-chart polyline { fill:none; stroke:currentColor; stroke-width:2; vector-effect:non-scaling-stroke; }
+.overall-chart line { stroke:#456572; }
+.overall-chart .overall-zero-reference line { stroke:#9eb4c2; stroke-dasharray:4 3; }
+.overall-chart .overall-zero-reference text { fill:#edf1f5; font-weight:700; }
+.show-overall-average [data-series] { opacity:.5; }
+.overall-boss-lines .is-muted { opacity:.15; }
+.overall-average-line { color:#fff; }
+.overall-average-line polyline { stroke-width:3; stroke-dasharray:7 4; }
 .attempt-log-heading h1, .boss-detail-heading h2 { margin:4px 0 8px; color:#e0b965; font-size:clamp(28px,4vw,42px); }
 .attempt-log-heading p:not(.attempt-eyebrow), .boss-detail-heading p:not(.attempt-eyebrow) { margin:0; color:#c0c7cf; }
 .attempt-eyebrow { margin:0; color:#aeb8c3; font-size:11px; font-weight:800; letter-spacing:.16em; }

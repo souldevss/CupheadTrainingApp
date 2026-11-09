@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cuphead Training App — Attempt Log</title>
-    <link rel="stylesheet" href="style.css?v=graph-color-control">
+    <link rel="stylesheet" href="style.css?v=overall-death-hover">
     <link rel="stylesheet" href="css/host-bridge.css">
 </head>
 <body data-page="attempt-log">
@@ -31,14 +31,19 @@
 
 <main class="attempt-log-page">
     <header class="attempt-log-heading">
-        <div><p class="attempt-eyebrow">CUPHEAD</p><h1 data-i18n="autolog.title">Attempt Log</h1>
+        <div><p class="attempt-eyebrow">CUPHEAD</p><h1><span data-i18n="autolog.title">Attempt Log</span> <span class="all-boss-playtime">| <span data-i18n="autolog.playtime">Playtime</span>: <span id="autolog-total-playtime">—</span></span></h1>
         <p data-i18n="autolog.subtitle">Choose a boss to see how your clear times and deaths change over attempts.</p></div>
         <button id="clear-all-attempts" class="clear-all-attempts" type="button" data-i18n="autolog.clear-all">Clear all records</button>
     </header>
     <div class="detail-tabs autolog-view-tabs" role="group" data-i18n-aria-label="projection.views">
-        <button id="show-boss-log" type="button" class="is-active" aria-pressed="true" data-i18n="projection.boss-log">Boss log</button>
-        <button id="show-run-projection" type="button" aria-pressed="false" data-i18n="projection.title">Run Projection</button>
-        <button id="show-run-recap" type="button" aria-pressed="false" data-i18n="recap.title">Run Recap</button>
+        <div class="nav-icon-group">
+            <button id="show-overall-progress" type="button" aria-controls="overall-progress" aria-pressed="false" data-i18n-aria-label="autolog.overall-title" data-i18n-title="autolog.overall-title">+</button>
+        </div>
+        <div class="nav-icon-group">
+            <button id="show-boss-log" type="button" class="is-active" aria-pressed="true" data-i18n="projection.boss-log">Boss log</button>
+            <button id="show-run-projection" type="button" aria-pressed="false" data-i18n="projection.title">Run Projection</button>
+            <button id="show-run-recap" type="button" aria-pressed="false" data-i18n="recap.title">Run Recap</button>
+        </div>
     </div>
     <section id="autolog-list-view">
         <div id="autolog-summary" class="boss-stat-grid"></div>
@@ -46,6 +51,11 @@
         <div id="autolog-recent" class="recent-attempt-list"></div>
     </section>
     <section id="autolog-detail-view" class="boss-detail-view" hidden></section>
+    <section id="overall-progress" class="history-card" hidden>
+        <h2 data-i18n="autolog.overall-title">Overall progress</h2>
+        <div id="overall-progress-chart"></div>
+        <p class="projection-note" data-i18n="autolog.overall-method">0% is each boss’s average clear time in this category. Lower values mean faster clears.</p>
+    </section>
     <section id="run-projection" class="history-card" hidden>
         <h2 data-i18n="projection.title">Run Projection</h2>
         <label class="projection-target-option"><input id="projection-use-recap" type="checkbox" disabled> <span data-i18n="projection.use-recap">Include Run Recap</span></label>
@@ -133,12 +143,13 @@
 <script src="js/ranks.js?v=wheel-ranks"></script>
 <script src="js/data-access.js"></script>
 <script src="js/category.js"></script>
-<script src="js/language.js?v=run-recap-name"></script>
-<script src="js/host-bridge.js?v=live-average"></script>
+<script src="js/language.js?v=overall-death-hover"></script>
+<script src="js/host-bridge.js?v=overall-death-hover"></script>
 <script src="js/compact-mode.js?v=compact-default"></script>
 <script src="js/wr-times.js"></script>
 <script src="js/run-projection.js?v=live-average"></script>
 <script src="js/run-recap.js?v=live-average"></script>
+<script src="js/overall-progress.js?v=overall-death-hover"></script>
 <script>
 let autologRows = [];
 let selectedLogCategory = localStorage.getItem("cupheadLogCategory") || "1-1";
@@ -205,7 +216,7 @@ function trendPointCount(clearCount, strength) {
     return Math.max(2, Math.round(clearCount - (clearCount - 2) * progress));
 }
 
-function averageTrend(clears, intervals, strength) {
+function averageTrend(clears, intervals, strength, pointLimit = Infinity) {
     const width = Math.min(strength, clears.length);
     const timeSums = [0], deathSums = [0], attemptSums = [0];
     clears.forEach((clear, index) => {
@@ -213,7 +224,7 @@ function averageTrend(clears, intervals, strength) {
         deathSums.push(deathSums[index] + (intervals[index]?.deaths || 0));
         attemptSums.push(attemptSums[index] + (intervals[index]?.attempts || 0));
     });
-    const pointCount = trendPointCount(clears.length, strength);
+    const pointCount = Math.min(pointLimit, trendPointCount(clears.length, strength));
     return Array.from({ length: pointCount }, (_, point) => {
         const center = pointCount <= 1 ? 0 : point * (clears.length - 1) / (pointCount - 1);
         const windowStart = Math.round(center - (width - 1) / 2);
@@ -924,6 +935,13 @@ function renderBossDetail() {
     selectedAverageWindow = Math.max(1, Math.min(selectedAverageWindow, maxSmoothing(clearCount)));
     const art = bossArt.get(boss.level) || {};
     const outcomeHistory = boss.outcomeHistory || [];
+    const attempts = outcomeHistory.map(outcome => ({
+        id: outcome.id,
+        when: outcome.when,
+        kind: outcome.isDeath ? "death" : "run",
+        result: outcome.isDeath ? "Death" : outcome.isClear ? "Clear" : "Fail",
+        time: outcome.isDeath ? null : formatTime(outcome.clearSeconds ?? outcome.failSeconds)
+    }));
     const signature = JSON.stringify({ level: boss.level, attempts: boss.attempts, clears: boss.clears, deaths: boss.deaths, best: boss.best, totalPlaytime: boss.totalPlaytime, history, outcomeHistory, avg10: boss.avg10, avg20: boss.avg20, avg50: boss.avg50, selectedDetailTab, selectedAverageWindow });
     if (signature === lastBossDetailSignature) return;
     lastBossDetailSignature = signature;
@@ -947,7 +965,7 @@ function renderBossDetail() {
 
             </div>
         </div>
-        <div class="detail-tab-content" data-panel="attempts" ${selectedDetailTab === "attempts" ? "" : "hidden"}>${renderAttempts(history.map(a => ({id:a.id, when:a.when, level:boss.level, result:a.cleared ? "Clear" : "Fail", time:formatTime(a.timeSeconds)})), false)}</div>`;
+        <div class="detail-tab-content" data-panel="attempts" ${selectedDetailTab === "attempts" ? "" : "hidden"}>${renderAttempts(attempts, false)}</div>`;
     detail.querySelectorAll(".time-chart-content").forEach(holder => bindTimeChartControls(holder, history, art));
 
     const mutedColors = detail.querySelector("#muted-graph-colors");
@@ -992,8 +1010,16 @@ function renderBossDetail() {
         detail.replaceChildren();
         document.getElementById("autolog-list-view").hidden = false;
     });
-    detail.querySelectorAll("[data-delete-run]").forEach(button => button.addEventListener("click", () => {
-        if (confirm(t("autolog.delete-attempt-confirm"))) window.cupheadHost?.deleteAttempt(Number(button.dataset.deleteRun));
+    bindAttemptDeletion(detail);
+}
+
+function bindAttemptDeletion(container) {
+    container.querySelectorAll("[data-delete-run], [data-delete-death]").forEach(button => button.addEventListener("click", () => {
+        if (button.hasAttribute("data-delete-death")) {
+            if (confirm(t("autolog.delete-death-confirm"))) window.cupheadHost?.deleteDeath(Number(button.dataset.deleteDeath));
+        } else if (confirm(t("autolog.delete-attempt-confirm"))) {
+            window.cupheadHost?.deleteAttempt(Number(button.dataset.deleteRun));
+        }
     }));
 }
 
@@ -1012,13 +1038,28 @@ function renderAttempts(attempts, includeBoss = true) {
 }
 
 let autologRecentRows = [];
-window.renderAutologStats = function(rows, recent, categoryKey) {
+let overallProgressBosses;
+window.receiveOverallProgress = function(bosses, categoryKey) {
+    if (categoryKey !== selectedLogCategory) return;
+    overallProgressBosses = bosses;
+    if (logView === "overall") renderOverallProgress(bosses);
+};
+
+window.renderAutologStats = function(rows, recent, categoryKey, totalPlaytime) {
+    if (typeof totalPlaytime === "string") {
+        document.getElementById("autolog-total-playtime").textContent = totalPlaytime;
+    }
     if (categoryKey && categoryKey !== selectedLogCategory) return;
     const summary = document.getElementById("autolog-summary");
     const recentEl = document.getElementById("autolog-recent");
     if (!summary || !recentEl) return;
     autologRows = rows;
     autologRecentRows = recent;
+    if (logView === "overall") {
+        if (categoryKey) window.cupheadHost?.postToHost({ cmd: "getOverallProgress" });
+        else renderOverallProgress(overallProgressBosses);
+        return;
+    }
     if (logView === "recap") return;
     if (logView === "projection") {
         renderRunProjection(rows, selectedLogCategory);
@@ -1032,19 +1073,13 @@ window.renderAutologStats = function(rows, recent, categoryKey) {
             ${art.icon ? `<img class="boss-card-icon" src="${safeText(art.icon)}" alt="" loading="lazy">` : ""}
         </span>
         <span class="boss-card-stats"><span><small>${t("autolog.attempts-label")}</small><b>${r.attempts}</b></span><span><small>${t("autolog.clears-label")}</small><b>${r.clears}</b></span><span><small>${t("autolog.deaths-label")}</small><b>${r.deaths}</b></span></span>
+        <span class="boss-card-footer"><span>${t("autolog.playtime")}: <b>${safeText(r.totalPlaytime || "0:00.00")}</b></span></span>
     </button>`;
     }).join("");
     recentEl.innerHTML = renderAttempts(recent);
     summary.querySelectorAll(".boss-stat-card").forEach(button => button.addEventListener("click", () => showBossDetail(button.dataset.boss)));
     recentEl.querySelectorAll(".attempt-boss-link").forEach(button => button.addEventListener("click", () => showBossDetail(button.dataset.boss)));
-    recentEl.querySelectorAll("[data-delete-run]").forEach(button => button.addEventListener("click", event => {
-        event.stopPropagation();
-        if (confirm(t("autolog.delete-attempt-confirm"))) window.cupheadHost?.deleteAttempt(Number(button.dataset.deleteRun));
-    }));
-    recentEl.querySelectorAll("[data-delete-death]").forEach(button => button.addEventListener("click", event => {
-        event.stopPropagation();
-        if (confirm(t("autolog.delete-death-confirm"))) window.cupheadHost?.deleteDeath(Number(button.dataset.deleteDeath));
-    }));
+    bindAttemptDeletion(recentEl);
     if (selectedBossName) {
         lastBossDetailSignature = null;
         renderBossDetail();
@@ -1066,17 +1101,19 @@ function selectLogView(view) {
     detail.hidden = true;
     detail.replaceChildren();
     document.getElementById("autolog-list-view").hidden = view !== "bosses";
+    document.getElementById("overall-progress").hidden = view !== "overall";
     document.getElementById("run-projection").hidden = view !== "projection";
     document.getElementById("run-recap").hidden = view !== "recap";
     document.getElementById("category-tabs").hidden = view === "recap";
     document.getElementById("clear-all-attempts").hidden = view !== "bosses";
-    for (const [id, active] of [["show-boss-log", view === "bosses"], ["show-run-projection", view === "projection"], ["show-run-recap", view === "recap"]]) {
+    for (const [id, active] of [["show-overall-progress", view === "overall"], ["show-boss-log", view === "bosses"], ["show-run-projection", view === "projection"], ["show-run-recap", view === "recap"]]) {
         const button = document.getElementById(id);
         button.classList.toggle("is-active", active);
         button.setAttribute("aria-pressed", String(active));
     }
     window.renderAutologStats(autologRows, autologRecentRows);
-    if (view !== "bosses") openRunRecap();
+    if (view === "overall") window.cupheadHost?.postToHost({ cmd: "getOverallProgress" });
+    if (view === "projection" || view === "recap") openRunRecap();
 }
 
 window.refreshRecapProjection = () => {
@@ -1084,6 +1121,7 @@ window.refreshRecapProjection = () => {
 };
 
 document.getElementById("show-boss-log").addEventListener("click", () => selectLogView("bosses"));
+document.getElementById("show-overall-progress").addEventListener("click", () => selectLogView(logView === "overall" ? "bosses" : "overall"));
 document.getElementById("show-run-projection").addEventListener("click", () => selectLogView("projection"));
 document.getElementById("show-run-recap").addEventListener("click", () => selectLogView("recap"));
 
@@ -1108,6 +1146,8 @@ function selectLogCategory(categoryId, subOption = null) {
     activeCategory = categories.find(category => category.id === categoryId);
     activeSubOption = categoryId === "DLC" ? (subOption || localStorage.getItem("cupheadLogDlcSubOption") || "lobber") : null;
     selectedLogCategory = categoryId === "DLC" ? `DLC:${activeSubOption}` : "1-1";
+    overallProgressBosses = undefined;
+    overallViewport = undefined;
     localStorage.setItem("cupheadLogCategory", selectedLogCategory);
     if (activeSubOption) localStorage.setItem("cupheadLogDlcSubOption", activeSubOption);
     selectedBossName = null;

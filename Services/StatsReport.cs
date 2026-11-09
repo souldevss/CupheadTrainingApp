@@ -39,9 +39,12 @@ namespace CupheadTrainingApp.Services
                     var outcomes = database.GetBossOutcomeHistory(level.Name, categoryKey);
                     outcomeHistory = outcomes.Select(outcome => (object)new
                     {
+                        id = outcome.Id,
+                        when = outcome.RecordedAtUtc.ToLocalTime().ToString("g"),
                         isDeath = outcome.IsDeath,
                         isClear = outcome.IsClear,
-                        clearSeconds = outcome.IsClear ? (double?)outcome.TimeSeconds : null
+                        clearSeconds = outcome.IsClear ? (double?)outcome.TimeSeconds : null,
+                        failSeconds = !outcome.IsDeath && !outcome.IsClear ? (double?)outcome.TimeSeconds : null
                     }).ToArray();
                 }
                 var deaths = database.GetBossDeathCount(level.Name, categoryKey);
@@ -72,13 +75,49 @@ namespace CupheadTrainingApp.Services
                     time = r.IsDeath ? null : AttemptTracker.FormatTime(r.TimeSeconds)
                 }).ToArray() : Array.Empty<object>();
 
-            return JsonSerializer.Serialize(new { type = "statsPayload", rows, recent,
+            var playtime = TimeSpan.FromSeconds(database.GetTotalPlaytimeSeconds());
+            var totalPlaytime = FormattableString.Invariant($"{(long)playtime.TotalHours}:{playtime.Minutes:00}:{playtime.Seconds:00}");
+            return JsonSerializer.Serialize(new { type = "statsPayload", rows, recent, totalPlaytime,
                 statsCategoryKey = categoryKey, categoryBests = database.GetCategoryBests() });
         }
 
         private static string FormatAverage(List<double> values, int requiredCount)
         {
             return values.Count >= requiredCount ? AttemptTracker.FormatTime(values.Take(requiredCount).Average()) : "—";
+        }
+
+        internal static string OverallProgressJson(RunDatabase database, string categoryKey)
+        {
+            var improvementByBoss = database.ReadOverallOutcomes(categoryKey)
+                .GroupBy(outcome => outcome.Boss)
+                .ToDictionary(boss => boss.Key, boss =>
+                {
+                    var clears = new List<double>();
+                    var intervals = new List<(int Deaths, int Attempts)>();
+                    int attempts = 0, deaths = 0;
+                    foreach (var outcome in boss)
+                    {
+                        attempts++;
+                        if (outcome.IsDeath) deaths++;
+                        if (outcome.ClearSeconds is not double seconds) continue;
+                        clears.Add(seconds);
+                        intervals.Add((deaths, attempts));
+                        attempts = deaths = 0;
+                    }
+                    if (intervals.Count > 0 && attempts > 0)
+                    {
+                        var last = intervals[^1];
+                        intervals[^1] = (last.Deaths + deaths, last.Attempts + attempts);
+                    }
+                    double baseline = clears.Count == 0 ? 1 : clears.Average();
+                    return new
+                    {
+                        clears = clears.Select(seconds => (seconds / baseline - 1) * 100).ToArray(),
+                        intervals = intervals.Select(interval => new { deaths = interval.Deaths, attempts = interval.Attempts })
+                    };
+                });
+
+            return JsonSerializer.Serialize(new { type = "overallProgress", categoryKey, bosses = improvementByBoss });
         }
     }
 }

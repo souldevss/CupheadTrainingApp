@@ -113,7 +113,7 @@ namespace CupheadTrainingApp
                 _ = CheckForUpdatesAsync(manual: false);
             };
 
-            webView.Source = new Uri($"https://{VirtualHost}/app-shell.html?v=run-recap-name");
+            webView.Source = new Uri($"https://{VirtualHost}/app-shell.html?v=overall-death-hover");
         }
 
         private void SetWebViewMemoryTarget(bool inactive)
@@ -181,6 +181,9 @@ namespace CupheadTrainingApp
                         if (root.TryGetProperty("includeHistory", out var requestedHistory))
                             includeHistory = requestedHistory.GetBoolean();
                         PushStats();
+                        break;
+                    case "getOverallProgress":
+                        PostJson(StatsReport.OverallProgressJson(database, statsCategoryKey));
                         break;
                     case "exportBackup":
                         PostJson(JsonSerializer.Serialize(new { type = "backupDatabase", database = database.ExportBackup() }, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
