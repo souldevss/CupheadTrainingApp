@@ -119,7 +119,7 @@ namespace CupheadTrainingApp
                 _ = CheckForUpdatesAsync(manual: false);
             };
 
-            webView.Source = new Uri($"https://{VirtualHost}/app-shell.html?v=1.1.8");
+            webView.Source = new Uri($"https://{VirtualHost}/app-shell.html?v=1.2.0");
         }
 
         private void SetWebViewMemoryTarget(bool inactive)
