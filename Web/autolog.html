@@ -137,7 +137,7 @@
 </main>
 
 <script src="js/sound-effects.js"></script>
-<script src="data.js?v=smaller-artwork"></script>
+<script src="data.js?v=1.1.7"></script>
 <script src="js/state.js"></script>
 <script src="js/time.js"></script>
 <script src="js/ranks.js?v=wheel-ranks"></script>
@@ -146,7 +146,7 @@
 <script src="js/language.js?v=overall-offset"></script>
 <script src="js/host-bridge.js?v=overall-death-hover"></script>
 <script src="js/compact-mode.js?v=compact-default"></script>
-<script src="js/wr-times.js"></script>
+<script src="js/wr-times.js?v=vanilla-ils"></script>
 <script src="js/run-projection.js?v=live-average"></script>
 <script src="js/run-recap.js?v=live-average"></script>
 <script src="js/overall-progress.js?v=overall-offset"></script>
@@ -1162,11 +1162,11 @@ function selectLogCategory(categoryId, subOption = null) {
 }
 activeCategory = categories.find(category => category.id === (selectedLogCategory === "1-1" ? "1-1" : "DLC"));
 activeSubOption = selectedLogCategory.split(":")[1] || null;
+updateReferenceTimes();
 renderLogCategoryControls();
 
 if (window.cupheadHost && window.cupheadHost.isDesktopApp) {
     window.cupheadHost.requestStats(selectedLogCategory);
-    if (typeof fetchAndUpdateWrTimes === "function") fetchAndUpdateWrTimes();
 } else {
     renderAutologStats([], []);
     document.getElementById("autolog-summary").innerHTML =

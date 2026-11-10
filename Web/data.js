@@ -125,12 +125,12 @@ const islands = [
     color: "#a7c8cf",
     textcolor: "#20124d",
     levels: [
-        { name: "Forest Follies", icon: "https://myekul.com/shared-assets/cuphead/images/runnguns/forestfollies.png", background: "#95BC7A", color: "#000000", wrTime: 32.63, wrUrl: "https://www.youtube.com/live/13ZSnTYvuGA?t=7173", wrPlayer: "SBDWolf", fRankTime: 44 },
-        { name: "The Root Pack", icon: "https://myekul.com/shared-assets/cuphead/images/therootpack.png", background: "#DDA13A", color: "#000000", fRankTime: 44.5 },
-        { name: "Ribby & Croaks", icon: "https://myekul.com/shared-assets/cuphead/images/ribbyandcroaks.png", background: "#8A8600", color: "#FFFFFF", fRankTime: 67 },
-        { name: "Goopy Le Grande", icon: "https://myekul.com/shared-assets/cuphead/images/goopylegrande.png", background: "#5A88D8", color: "#000000", fRankTime: 41 },
-        { name: "Hilda Berg", icon: "https://myekul.com/shared-assets/cuphead/images/hildaberg.png", background: "#B12A2A", color: "#FFD700", fRankTime: 87 },
-        { name: "Cagney Carnation", icon: "https://myekul.com/shared-assets/cuphead/images/cagneycarnation.png", background: "#FFA500", color: "#000000", fRankTime: 50.5 }
+        { name: "Forest Follies", icon: "https://myekul.com/shared-assets/cuphead/images/runnguns/forestfollies.png", background: "#95BC7A", color: "#000000", wrTime: 32.63, wrUrl: "https://www.youtube.com/live/13ZSnTYvuGA?t=7173", wrPlayer: "SBDWolf", fRankTime: 42 },
+        { name: "The Root Pack", icon: "https://myekul.com/shared-assets/cuphead/images/therootpack.png", background: "#DDA13A", color: "#000000", fRankTime: 43 },
+        { name: "Ribby & Croaks", icon: "https://myekul.com/shared-assets/cuphead/images/ribbyandcroaks.png", background: "#8A8600", color: "#FFFFFF", fRankTime: 68 },
+        { name: "Goopy Le Grande", icon: "https://myekul.com/shared-assets/cuphead/images/goopylegrande.png", background: "#5A88D8", color: "#000000", fRankTime: 42 },
+        { name: "Hilda Berg", icon: "https://myekul.com/shared-assets/cuphead/images/hildaberg.png", background: "#B12A2A", color: "#FFD700", fRankTime: 90 },
+        { name: "Cagney Carnation", icon: "https://myekul.com/shared-assets/cuphead/images/cagneycarnation.png", background: "#FFA500", color: "#000000", fRankTime: 65 }
     ]
 },
 {
@@ -138,11 +138,11 @@ const islands = [
     color: "#e7ad63",
     textcolor: "#20124d",
     levels: [
-        { name: "Baroness Von Bon Bon", icon: "https://myekul.com/shared-assets/cuphead/images/baronessvonbonbon.png", background: "#F57AB3", color: "#FFFFFF", fRankTime: 57 },
-        { name: "Wally Warbles", icon: "https://myekul.com/shared-assets/cuphead/images/wallywarbles.png", background: "#0000CC", color: "#FFFFFF", fRankTime: 69 },
+        { name: "Baroness Von Bon Bon", icon: "https://myekul.com/shared-assets/cuphead/images/baronessvonbonbon.png", background: "#F57AB3", color: "#FFFFFF", fRankTime: 70 },
+        { name: "Wally Warbles", icon: "https://myekul.com/shared-assets/cuphead/images/wallywarbles.png", background: "#0000CC", color: "#FFFFFF", fRankTime: 75 },
         { name: "Djimmi The Great", icon: "https://myekul.com/shared-assets/cuphead/images/djimmithegreat.png", background: "#C85D5D", color: "#4FFFD0", fRankTime: 92 },
-        { name: "Beppi The Clown", icon: "https://myekul.com/shared-assets/cuphead/images/beppitheclown.png", background: "#A61919", color: "#FFFFFF", fRankTime: 73 },
-        { name: "Grim Matchstick", icon: "https://myekul.com/shared-assets/cuphead/images/grimmatchstick.png", background: "#9ACD32", color: "#000000", fRankTime: 69 }
+        { name: "Beppi The Clown", icon: "https://myekul.com/shared-assets/cuphead/images/beppitheclown.png", background: "#A61919", color: "#FFFFFF", fRankTime: 65 },
+        { name: "Grim Matchstick", icon: "https://myekul.com/shared-assets/cuphead/images/grimmatchstick.png", background: "#9ACD32", color: "#000000", fRankTime: 78 }
     ]
 },
 {
@@ -150,13 +150,13 @@ const islands = [
     color: "#8f7dc7",
     textcolor: "#20124d",
     levels: [
-        { name: "Rumor Honeybottoms", icon: "https://myekul.com/shared-assets/cuphead/images/rumorhoneybottoms.png", background: "#F4C430", color: "#000000", fRankTime: 66.5 },
-        { name: "Dr. Kahl's Robot", icon: "https://myekul.com/shared-assets/cuphead/images/drkahlsrobot.png", background: "#B0B0B0", color: "#000000", fRankTime: 67.5 },
-        { name: "Sally Stageplay", icon: "https://myekul.com/shared-assets/cuphead/images/sallystageplay.png", background: "#2FB3B3", color: "#000000", fRankTime: 68.5 },
+        { name: "Rumor Honeybottoms", icon: "https://myekul.com/shared-assets/cuphead/images/rumorhoneybottoms.png", background: "#F4C430", color: "#000000", fRankTime: 70 },
+        { name: "Dr. Kahl's Robot", icon: "https://myekul.com/shared-assets/cuphead/images/drkahlsrobot.png", background: "#B0B0B0", color: "#000000", fRankTime: 65 },
+        { name: "Sally Stageplay", icon: "https://myekul.com/shared-assets/cuphead/images/sallystageplay.png", background: "#2FB3B3", color: "#000000", fRankTime: 76 },
         { name: "Werner Werman", icon: "https://myekul.com/shared-assets/cuphead/images/wernerwerman.png", background: "#A65628", color: "#FFFFFF", fRankTime: 65.5 },
         { name: "Captain Brineybeard", icon: "https://myekul.com/shared-assets/cuphead/images/captainbrineybeard.png", background: "#E11D48", color: "#FFFFFF", fRankTime: 66 },
-        { name: "Cala Maria", icon: "https://myekul.com/shared-assets/cuphead/images/calamaria.png", background: "#9AD0B3", color: "#4A3B69", fRankTime: 77.5 },
-        { name: "Phantom Express", icon: "https://myekul.com/shared-assets/cuphead/images/phantomexpress.png", background: "#9370DB", color: "#FFFFFF", fRankTime: 93 }
+        { name: "Cala Maria", icon: "https://myekul.com/shared-assets/cuphead/images/calamaria.png", background: "#9AD0B3", color: "#4A3B69", fRankTime: 79 },
+        { name: "Phantom Express", icon: "https://myekul.com/shared-assets/cuphead/images/phantomexpress.png", background: "#9370DB", color: "#FFFFFF", fRankTime: 86 }
     ]
 },
 {

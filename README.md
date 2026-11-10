@@ -36,6 +36,10 @@ Tracking supports Steam **1.1+** and **DLC**, with separate Lobber/Spread and Ch
 
 The automatic backup keeps one snapshot. Use **Backups → Export** for a copy you can keep or move to another PC.
 
+## To do
+
+- Balance DLC times
+
 ## Build from source
 
 Install the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) and run these commands from the folder containing `CupheadTrainingApp.csproj`.
@@ -45,6 +49,6 @@ dotnet build .\CupheadTrainingApp.csproj -c Release
 dotnet run --project .\CupheadTrainingApp.csproj -c Release
 ```
 
-Use `powershell -ExecutionPolicy Bypass -File .\scripts\Publish.ps1 -Version 1.1.6` to create a self-contained ZIP and checksum in `artifacts/`. GitHub Actions publishes a release when you push a new version tag with matching notes in `release-notes/`.
+Use `powershell -ExecutionPolicy Bypass -File .\scripts\Publish.ps1 -Version 1.1.7` to create a self-contained ZIP and checksum in `artifacts/`. GitHub Actions publishes a release when you push a new version tag with matching notes in `release-notes/`.
 
 Built with C#, Windows Forms, SQLite, and WebView2. Based on the [Cuphead Training Table](https://github.com/souldevss/CupheadTrainingTable).

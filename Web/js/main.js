@@ -1,12 +1,9 @@
 // Application entry point
 
-async function initializeApp()
+function initializeApp()
 {
+    updateReferenceTimes();
     renderCategoryControls();
-    generateAllLevelTimes();
-    renderActivePage();
-    // Render local data first; an unavailable reference site must not blank Training.
-    await fetchAndUpdateWrTimes();
     generateAllLevelTimes();
     renderActivePage();
 }
