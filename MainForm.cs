@@ -113,7 +113,7 @@ namespace CupheadTrainingApp
                 _ = CheckForUpdatesAsync(manual: false);
             };
 
-            webView.Source = new Uri($"https://{VirtualHost}/app-shell.html?v=playtime-units");
+            webView.Source = new Uri($"https://{VirtualHost}/app-shell.html?v=icon-accents");
         }
 
         private void SetWebViewMemoryTarget(bool inactive)

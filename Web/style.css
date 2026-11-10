@@ -1427,3 +1427,18 @@ body.compact-mode .time-history-chart { height:190px; }
 }
 .muted-graphs .history-chart .rank-band-fill { opacity:.07; }
 .muted-graphs .history-chart .rank-band-glow { display:none; }
+
+/* Add color to inactive navigation glyphs and reduce the largest corner radii. */
+.icon-reveal:not(:is(.active, .active-info, .is-active)) > svg { color:var(--nav-icon-color, #b9d7ee); }
+.icon-reveal:is([data-i18n-aria-label="nav.training"], [data-i18n-aria-label="nav.enter-times"]) { --nav-icon-color:#e9bd69; }
+.icon-reveal[data-i18n-aria-label="nav.time-table"] { --nav-icon-color:#9ccce4; }
+.icon-reveal:is([data-i18n-aria-label="nav.attempt-log"], [data-i18n-aria-label="projection.boss-log"]) { --nav-icon-color:#a6cfae; }
+.icon-reveal[data-i18n-aria-label="projection.title"] { --nav-icon-color:#e2a884; }
+.icon-reveal:is([data-i18n-aria-label="nav.backups"], [data-i18n-aria-label="recap.title"]) { --nav-icon-color:#c7b6e8; }
+
+table, .rank-chart, .info-page .info-section, .boss-detail-view, .history-card,
+.recent-attempt-card, .improvement-cards > div { border-radius:6px; }
+.page-tabs, body.compact-mode .page-tabs, .detail-tabs, .category-tab,
+.boss-stat-card, .boss-detail-bossbar, .data-control-btn, .game-choices { border-radius:5px; }
+.page-tabs a, .page-tabs .info-nav-btn.icon-reveal, .detail-tabs button,
+.game-picker :is(summary, button), .icon-caption { border-radius:4px; }
