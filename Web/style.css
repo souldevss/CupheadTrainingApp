@@ -62,7 +62,7 @@ html.app-shell-page body {
     margin-bottom: 12px;
     width: 100%;
     min-height: 96px;
-    padding-inline: 72px;
+    padding-inline: 96px;
 }
 
 #bigtitle {
@@ -145,7 +145,7 @@ body.compact-mode .training-brand > img {
     right: calc(120px + 100% - 100vw);
 }
 
-.lang-toggle-btn-inline {
+.header-preferences {
     position: fixed;
     top: 47px;
     right: 20px;
@@ -1190,7 +1190,7 @@ body.compact-mode { padding:12px; }
 body.compact-mode .pages { min-height:64px; margin-bottom:7px; }
 body.compact-mode #bigtitle { width:min(580px,calc(100vw - 152px)); font-size:clamp(18px,4.2vw,38px); }
 body.compact-mode .info-nav-btn { top:29px; }
-body.compact-mode .lang-toggle-btn-inline { top:29px; }
+body.compact-mode .header-preferences { top:29px; }
 body.compact-mode .nav-row { margin-bottom:9px; gap:8px; }
 body.compact-mode .page-tabs { margin-top:0; padding:3px; gap:2px; border-radius:8px; }
 body.compact-mode .page-tabs a { padding:6px 10px; border-radius:6px; font-size:14px; }

@@ -17,6 +17,9 @@ const TRANSLATIONS = {
         "ui.check-for-updates": "Check for updates",
         "ui.info-aria": "How it works",
         "ui.language-aria": "Toggle language",
+        "ui.palette": "Site palette",
+        "ui.palette-hue": "Palette hue",
+        "ui.palette-reset": "Reset to purple",
         "ui.switch-to-english": "Switch to English",
         "ui.switch-to-portuguese": "Switch to Portuguese",
 
@@ -300,6 +303,9 @@ const TRANSLATIONS = {
         "ui.check-for-updates": "Verificar atualizações",
         "ui.info-aria": "Como funciona",
         "ui.language-aria": "Trocar idioma",
+        "ui.palette": "Paleta do site",
+        "ui.palette-hue": "Matiz da paleta",
+        "ui.palette-reset": "Voltar ao roxo",
         "ui.switch-to-english": "Mudar para inglês",
         "ui.switch-to-portuguese": "Mudar para português",
 

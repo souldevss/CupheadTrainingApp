@@ -49,6 +49,6 @@ dotnet build .\CupheadTrainingApp.csproj -c Release
 dotnet run --project .\CupheadTrainingApp.csproj -c Release
 ```
 
-Use `powershell -ExecutionPolicy Bypass -File .\scripts\Publish.ps1 -Version 1.2.0` to create a self-contained ZIP and checksum in `artifacts/`. GitHub Actions publishes a release when you push a new version tag with matching notes in `release-notes/`.
+Use `powershell -ExecutionPolicy Bypass -File .\scripts\Publish.ps1 -Version 1.2.1` to create a self-contained ZIP and checksum in `artifacts/`. GitHub Actions publishes a release when you push a new version tag with matching notes in `release-notes/`.
 
 Built with C#, Windows Forms, SQLite, and WebView2. Based on the [Cuphead Training Table](https://github.com/souldevss/CupheadTrainingTable).

@@ -5,9 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cuphead Training App — Info</title>
 <link rel="icon" type="image/png" href="assets/icons/app-logo-small.png">
-    <link rel="stylesheet" href="style.css?v=1.2.0">
-    <link rel="stylesheet" href="css/info.css?v=1.2.0">
-    <link rel="stylesheet" href="css/host-bridge.css?v=1.2.0">
+    <script src="js/site-palette.js?v=flag-palette"></script>
+    <link rel="stylesheet" href="style.css?v=1.2.1">
+    <link rel="stylesheet" href="css/site-palette.css?v=flag-palette">
+    <link rel="stylesheet" href="css/info.css?v=1.2.1">
+    <link rel="stylesheet" href="css/host-bridge.css?v=1.2.1">
 </head>
 <body class="compact-mode" data-page="info">
 
@@ -15,9 +17,11 @@
     <div id="bigtitle">Cuphead Training App</div>
     <a href="info.html" class="info-nav-btn active-info" data-i18n-aria-label="ui.info-aria" aria-label="How it works">&#9432;</a>
 
-    <button id="lang-toggle-btn" class="lang-toggle-btn-inline" type="button" onclick="setActiveLanguage(getActiveLanguage() === 'pt-BR' ? 'en' : 'pt-BR')" data-i18n-aria-label="ui.language-aria" aria-label="Toggle language">
-        <img src="https://flagcdn.com/w40/us.png" srcset="https://flagcdn.com/w80/us.png 2x" alt="English" width="28" height="21">
-    </button>
+    <div class="header-preferences">
+        <button id="lang-toggle-btn" class="lang-toggle-btn-inline" type="button" onclick="setActiveLanguage(getActiveLanguage() === 'pt-BR' ? 'en' : 'pt-BR')" data-i18n-aria-label="ui.language-aria" aria-label="Toggle language">
+            <img src="https://flagcdn.com/w40/us.png" srcset="https://flagcdn.com/w80/us.png 2x" alt="English" width="28" height="21">
+        </button>
+    </div>
 </div>
 
 <div class="nav-row">
@@ -81,11 +85,11 @@
 
     </div>
 
-    <script src="js/sound-effects.js?v=1.2.0"></script>
-    <script src="js/language.js?v=1.2.0"></script>
-    <script src="data.js?v=1.2.0"></script>
-    <script src="js/info-graph.js?v=1.2.0"></script>
-    <script src="js/host-bridge.js?v=1.2.0"></script>
+    <script src="js/sound-effects.js?v=1.2.1"></script>
+    <script src="js/language.js?v=1.2.1"></script>
+    <script src="data.js?v=1.2.1"></script>
+    <script src="js/info-graph.js?v=1.2.1"></script>
+    <script src="js/host-bridge.js?v=1.2.1"></script>
 
 </body>
 </html>

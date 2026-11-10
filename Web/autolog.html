@@ -5,17 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cuphead Training App — Attempt Log</title>
 <link rel="icon" type="image/png" href="assets/icons/app-logo-small.png">
-    <link rel="stylesheet" href="style.css?v=1.2.0">
-    <link rel="stylesheet" href="css/host-bridge.css?v=1.2.0">
+    <script src="js/site-palette.js?v=flag-palette"></script>
+    <link rel="stylesheet" href="style.css?v=1.2.1">
+    <link rel="stylesheet" href="css/site-palette.css?v=flag-palette">
+    <link rel="stylesheet" href="css/host-bridge.css?v=1.2.1">
 </head>
 <body class="compact-mode" data-page="attempt-log">
 
 <div class="pages">
     <div id="bigtitle">Cuphead Training App</div>
     <a href="info.html" class="info-nav-btn" data-i18n-aria-label="ui.info-aria" aria-label="How it works">&#9432;</a>
-    <button id="lang-toggle-btn" class="lang-toggle-btn-inline" type="button" onclick="setActiveLanguage(getActiveLanguage() === 'pt-BR' ? 'en' : 'pt-BR')" data-i18n-aria-label="ui.language-aria" aria-label="Toggle language">
-        <img src="https://flagcdn.com/w40/us.png" srcset="https://flagcdn.com/w80/us.png 2x" alt="English" width="28" height="21">
-    </button>
+    <div class="header-preferences">
+        <button id="lang-toggle-btn" class="lang-toggle-btn-inline" type="button" onclick="setActiveLanguage(getActiveLanguage() === 'pt-BR' ? 'en' : 'pt-BR')" data-i18n-aria-label="ui.language-aria" aria-label="Toggle language">
+            <img src="https://flagcdn.com/w40/us.png" srcset="https://flagcdn.com/w80/us.png 2x" alt="English" width="28" height="21">
+        </button>
+    </div>
 </div>
 
 <div class="nav-row">
@@ -136,19 +140,19 @@
     </section>
 </main>
 
-<script src="js/sound-effects.js?v=1.2.0"></script>
-<script src="data.js?v=1.2.0"></script>
-<script src="js/state.js?v=1.2.0"></script>
-<script src="js/time.js?v=1.2.0"></script>
-<script src="js/ranks.js?v=1.2.0"></script>
-<script src="js/data-access.js?v=1.2.0"></script>
-<script src="js/category.js?v=1.2.0"></script>
-<script src="js/language.js?v=1.2.0"></script>
-<script src="js/host-bridge.js?v=1.2.0"></script>
-<script src="js/wr-times.js?v=1.2.0"></script>
-<script src="js/run-projection.js?v=1.2.0"></script>
-<script src="js/run-recap.js?v=1.2.0"></script>
-<script src="js/overall-progress.js?v=1.2.0"></script>
+<script src="js/sound-effects.js?v=1.2.1"></script>
+<script src="data.js?v=1.2.1"></script>
+<script src="js/state.js?v=1.2.1"></script>
+<script src="js/time.js?v=1.2.1"></script>
+<script src="js/ranks.js?v=1.2.1"></script>
+<script src="js/data-access.js?v=1.2.1"></script>
+<script src="js/category.js?v=1.2.1"></script>
+<script src="js/language.js?v=1.2.1"></script>
+<script src="js/host-bridge.js?v=1.2.1"></script>
+<script src="js/wr-times.js?v=1.2.1"></script>
+<script src="js/run-projection.js?v=1.2.1"></script>
+<script src="js/run-recap.js?v=1.2.1"></script>
+<script src="js/overall-progress.js?v=1.2.1"></script>
 <script>
 let autologRows = [];
 let selectedLogCategory = localStorage.getItem("cupheadLogCategory") || "1-1";
