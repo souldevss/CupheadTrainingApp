@@ -24,7 +24,6 @@ namespace CupheadTrainingApp
         private bool includeHistory;
         private bool publishStats = true;
         private string statsCategoryKey = "1-1";
-        private bool? compactMode;
         private string versionWarning;
         private string lastStatus = "Ready";
         private DateTime lastStatusPushUtc = DateTime.MinValue;
@@ -54,10 +53,16 @@ namespace CupheadTrainingApp
             }));
 
             Text = "Cuphead Training App";
-            Width = 1100;
-            Height = 740;
-            StartPosition = FormStartPosition.CenterScreen;
-            MinimumSize = new Size(800, 560);
+            Icon = System.Drawing.Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+            var workArea = Screen.FromPoint(Cursor.Position).WorkingArea;
+            MinimumSize = new Size(Math.Min(700, workArea.Width), Math.Min(480, workArea.Height));
+            int width = Math.Clamp(Math.Min(1088, workArea.Height * 16 / 9), MinimumSize.Width, workArea.Width);
+            int height = Math.Clamp(width * 9 / 16, MinimumSize.Height, workArea.Height);
+            StartPosition = FormStartPosition.Manual;
+            Bounds = new Rectangle(
+                workArea.Left + (workArea.Width - width) / 2,
+                workArea.Top + (workArea.Height - height) / 2,
+                width, height);
             BackColor = Color.FromArgb(17, 9, 44);
 
             webView.Dock = DockStyle.Fill;
@@ -89,14 +94,15 @@ namespace CupheadTrainingApp
         private async System.Threading.Tasks.Task InitializeWebViewAsync()
         {
             string webRoot = Path.Combine(AppContext.BaseDirectory, "Web");
-            string profile = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "CupheadTrainingLog",
-                "WebView2");
+            string profile = Path.Combine(RunDatabase.DataDirectory, "WebView2");
 
             Directory.CreateDirectory(profile);
             var env = await CoreWebView2Environment.CreateAsync(null, profile);
             await webView.EnsureCoreWebView2Async(env);
+#if DEVELOPER_BUILD
+            using var developerScript = new StreamReader(typeof(MainForm).Assembly.GetManifestResourceStream("DeveloperRanks.js"));
+            await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(await developerScript.ReadToEndAsync());
+#endif
             SetWebViewMemoryTarget(ActiveForm != this);
 
             webView.CoreWebView2.SetVirtualHostNameToFolderMapping(
@@ -113,7 +119,7 @@ namespace CupheadTrainingApp
                 _ = CheckForUpdatesAsync(manual: false);
             };
 
-            webView.Source = new Uri($"https://{VirtualHost}/app-shell.html?v=vanilla-ils");
+            webView.Source = new Uri($"https://{VirtualHost}/app-shell.html?v=1.1.8");
         }
 
         private void SetWebViewMemoryTarget(bool inactive)
@@ -145,6 +151,9 @@ namespace CupheadTrainingApp
                         Text = root.TryGetProperty("portuguese", out var portuguese) && portuguese.GetBoolean()
                             ? "App de treino de Cuphead"
                             : "Cuphead Training App";
+#if DEVELOPER_BUILD
+                        Text += " [DEV]";
+#endif
                         break;
                     case "checkForUpdates":
                         if (Uri.TryCreate(e.Source, UriKind.Absolute, out var source) &&
@@ -224,9 +233,6 @@ namespace CupheadTrainingApp
                         database.ClearAttempts();
                         PushStats();
                         break;
-                    case "setCompactMode":
-                        SetCompactMode(root.TryGetProperty("value", out var compact) && compact.GetBoolean());
-                        break;
                 }
             }
             catch
@@ -276,34 +282,12 @@ namespace CupheadTrainingApp
                 database = database.ExportBackup()
             };
 
-            string directory = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "CupheadTrainingLog",
-                "Backups");
+            string directory = Path.Combine(RunDatabase.DataDirectory, "Backups");
             Directory.CreateDirectory(directory);
             string path = Path.Combine(directory, "cuphead-training-auto-backup.json");
             string temporaryPath = path + ".tmp";
             File.WriteAllText(temporaryPath, JsonSerializer.Serialize(backup, new JsonSerializerOptions(JsonSerializerDefaults.Web) { WriteIndented = true }));
             File.Move(temporaryPath, path, true);
-        }
-
-        private void SetCompactMode(bool compact)
-        {
-            if (compactMode == compact)
-                return;
-            compactMode = compact;
-
-            var workArea = Screen.FromControl(this).WorkingArea;
-            int minWidth = Math.Min(compact ? 700 : 800, workArea.Width);
-            int minHeight = Math.Min(compact ? 480 : 560, workArea.Height);
-            MinimumSize = new Size(minWidth, minHeight);
-
-            int width = Math.Max(minWidth, Math.Min(compact ? 900 : 1100, workArea.Width));
-            int height = Math.Max(minHeight, Math.Min(compact ? 620 : 740, workArea.Height));
-            Size = new Size(width, height);
-            Location = new Point(
-                workArea.Left + Math.Max(0, (workArea.Width - width) / 2),
-                workArea.Top + Math.Max(0, (workArea.Height - height) / 2));
         }
 
         private void PushWatcherStatus()

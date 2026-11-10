@@ -7,14 +7,18 @@
         backups: document.getElementById("backups")
     };
     let activePage = "training";
+    let pendingPage = null;
+    let preloading = null;
     let initialized = false;
     let latestWatcherStatus = null;
     const backupOwners = new Map();
 
     function notifyActivity() {
-        Object.entries(pages).forEach(([name, frame]) => frame.contentWindow.postMessage({
-            type: "pageActivity", active: name === activePage
-        }, "*"));
+        for (const [name, frame] of Object.entries(pages)) {
+            if (frame.dataset.ready === "true") {
+                frame.contentWindow.postMessage({ type: "pageActivity", active: name === activePage }, "*");
+            }
+        }
     }
 
     function updateFrameTitles() {
@@ -30,9 +34,6 @@
     updateFrameTitles();
     window.addEventListener("storage", event => {
         if (event.key === "cuphead-training-lang" || event.key === null) updateFrameTitles();
-        if (event.key === "cupheadCompactMode" || event.key === null) {
-            sendToHost({ cmd: "setCompactMode", value: localStorage.getItem("cupheadCompactMode") !== "false" });
-        }
     });
 
     function sendToHost(message) {
@@ -40,14 +41,33 @@
     }
 
     function selectPage(name) {
-        if (!Object.hasOwn(pages, name) || name === activePage) return;
+        if (!Object.hasOwn(pages, name)) return;
+        pendingPage = null;
+        if (name === activePage) return;
+        const frame = pages[name];
+        if (frame.dataset.ready !== "true") {
+            pendingPage = name;
+            if (!frame.hasAttribute("src")) frame.src = frame.dataset.src;
+            return;
+        }
         activePage = name;
         Object.entries(pages).forEach(([page, frame]) => {
             frame.hidden = page !== name;
         });
-        const frame = pages[name];
-        if (!frame.hasAttribute("src")) frame.src = frame.dataset.src;
+        initializeShell();
         activatePage();
+    }
+
+    function preloadNextPage() {
+        const name = ["time-table", "attempt-log", "backups", "info"].find(name => !pages[name].hasAttribute("src"));
+        if (preloading || !name) return;
+        preloading = name;
+        const load = () => {
+            const frame = pages[name];
+            if (!frame.hasAttribute("src")) frame.src = frame.dataset.src;
+        };
+        if (window.requestIdleCallback) window.requestIdleCallback(load, { timeout: 500 });
+        else window.setTimeout(load, 50);
     }
 
     function activatePage() {
@@ -65,9 +85,13 @@
     window.addEventListener("message", event => {
         const message = event.data;
         if (message?.type === "switchPage") selectPage(message.page);
+        else if (message?.type === "pageReady" && event.origin === location.origin) {
+            const name = Object.keys(pages).find(name => pages[name].contentWindow === event.source);
+            if (name) pageReady(name, pages[name]);
+        }
         else if (message?.type === "hostCommand" && message.command) {
             // Hidden, preloaded pages must not request history or alter stats mode.
-            if (event.source !== pages[activePage].contentWindow) return;
+            if (event.source !== pages[activePage].contentWindow || pages[activePage].dataset.ready !== "true") return;
             if (["exportBackup", "importBackup"].includes(message.command.cmd)) backupOwners.set(message.command.cmd, event.source);
             sendToHost(message.command);
         }
@@ -107,21 +131,22 @@
         const saveBackup = () => sendToHost({ cmd: "autoBackup", localStorage: localStorageSnapshot() });
         saveBackup();
         window.setInterval(saveBackup, 10 * 60 * 1000);
+    }
 
-        try {
-            sendToHost({ cmd: "setCompactMode", value: localStorage.getItem("cupheadCompactMode") !== "false" });
-        } catch { /* local storage may be unavailable */ }
+    function pageReady(name, frame) {
+        if (frame.dataset.ready === "true" || !frame.contentDocument || frame.contentDocument.URL === "about:blank") return;
+        frame.dataset.ready = "true";
+        if (name === activePage) {
+            initializeShell();
+            activatePage();
+        }
+        if (name === pendingPage) selectPage(name);
+        if (name === preloading) preloading = null;
+        if (initialized) preloadNextPage();
     }
 
     for (const [name, frame] of Object.entries(pages)) {
-        function pageLoaded() {
-            if (!frame.contentDocument || frame.contentDocument.URL === "about:blank") return;
-            frame.dataset.ready = "true";
-            if (name === activePage) {
-                initializeShell();
-                activatePage();
-            }
-        }
+        const pageLoaded = () => pageReady(name, frame);
         frame.addEventListener("load", pageLoaded);
         if (frame.contentDocument?.readyState === "complete") pageLoaded();
     }

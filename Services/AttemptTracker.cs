@@ -376,10 +376,11 @@ namespace CupheadTrainingApp.Services
             }
             if (!memory.TryReadTrainingLoadout(out var loadout))
             {
-                loadoutRejected = true;
-                loadoutStatus = "Loadout unavailable — retry once equipment can be read";
+                if (recordingCategory == null)
+                    loadoutStatus = "Loadout unavailable — retry once equipment can be read";
                 return;
             }
+            loadoutStatus = null;
             bool dlc = TrainingLevels.DlcBosses.Any(boss => boss.Name == level.Name)
                 || (level.IsPlatforming && MemoryManager.Version == PointerVersion.SteamDLC);
             string category = loadout.GetCategory(dlc, peashooterOnly: level.IsPlatforming);
@@ -395,7 +396,7 @@ namespace CupheadTrainingApp.Services
         }
 
         private void ReportAttemptStatus(string status)
-            => StatusChanged?.Invoke(loadoutRejected ? loadoutStatus : status);
+            => StatusChanged?.Invoke(loadoutStatus ?? status);
 
         private static string FriendlyScene(string scene)
         {

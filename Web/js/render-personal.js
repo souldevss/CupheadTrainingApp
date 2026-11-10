@@ -53,7 +53,7 @@ function renderPersonalTimesPage()
                 class="island"
                 style="background:${island.color}; color:${island.textcolor};"
             >
-                ${island.name}
+                ${escapeAttribute(cupheadDisplayName(island.name))}
             </td>
             `;
             }
@@ -202,7 +202,7 @@ function renderPersonalTotals()
 
         totalsHtml += `
     <tr ${tooltipAttr}>
-        <td class="island sticky-col-1 isle-artwork" style="background-color: ${rowStyle.background}; color: ${rowStyle.color}; ${isleArtworkStyle(row.name, rowStyle.background)}">${row.name}</td>
+        <td class="island sticky-col-1 isle-artwork" style="background-color: ${rowStyle.background}; color: ${rowStyle.color}; ${isleArtworkStyle(row.name, rowStyle.background)}">${escapeAttribute(cupheadDisplayName(row.name))}</td>
         <td class="personal-time-col" style="background: ${rankStyle.background}; color: ${rankStyle.color};">
             <div class="time-input-wrapper" style="background: transparent !important; justify-content: space-between; padding: 1px 6px;">
                 <span>${row.total === null ? "-" : formatTime(row.total)}</span>
@@ -223,14 +223,15 @@ function renderPersonalTotals()
     totals.innerHTML = totalsHtml;
 
     const tooltipRows = totals.querySelectorAll("[data-tooltip]");
-    const infoTooltip = document.createElement("div");
+    let infoTooltip = document.querySelector(".info-tooltip");
+    if (!infoTooltip) infoTooltip = document.createElement("div");
     infoTooltip.className = "info-tooltip";
     infoTooltip.style.position = "fixed";
     infoTooltip.style.zIndex = "10000";
     infoTooltip.style.pointerEvents = "none";
     infoTooltip.style.opacity = "0";
     infoTooltip.style.transition = "opacity 0.15s ease";
-    document.body.appendChild(infoTooltip);
+    if (!infoTooltip.isConnected) document.body.appendChild(infoTooltip);
 
     tooltipRows.forEach(row => {
         row.addEventListener("mouseenter", () => {

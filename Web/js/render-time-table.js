@@ -10,13 +10,13 @@ function renderTimeTablePage()
         return;
     }
 
-    const hasIslands = true;
     let html = `
-<table>
+<table class="reference-table">
+<colgroup><col class="reference-isle"><col class="reference-boss"><col span="${ranks.length}"></colgroup>
 <thead>
 <tr>
-    ${hasIslands ? `<th class="island sticky-col-1">${t("header.islands")}</th>` : ""}
-    <th class="boss ${hasIslands ? "sticky-col-2" : "split-cell"}">${hasIslands ? t("header.levels") : t("personal.split")}</th>
+    <th class="island sticky-col-1">${t("header.islands")}</th>
+    <th class="boss sticky-col-2">${t("header.levels")}</th>
     ${ranks.map(rank => `<th class="rank-col">${rank}</th>`).join("")}
 </tr>
 </thead>
@@ -36,7 +36,7 @@ function renderTimeTablePage()
         if (island && index === 0) {
             html += `
             <td rowspan="${island.levels.length}" class="island isle-artwork" style="background-color:${island.color}; color:${island.textcolor}; ${isleArtworkStyle(island.name, island.color)}">
-                ${island.name}
+                ${escapeAttribute(cupheadDisplayName(island.name))}
             </td>`;
         }
 
@@ -59,10 +59,8 @@ function renderTimeTablePage()
         html += "</tr>";
     };
 
-    if (hasIslands) {
-        for (const island of getActiveIslands()) {
-            island.levels.forEach((boss, index) => renderLevelRow(boss, island, index));
-        }
+    for (const island of getActiveIslands()) {
+        island.levels.forEach((boss, index) => renderLevelRow(boss, island, index));
     }
 
     html += `
@@ -71,14 +69,14 @@ function renderTimeTablePage()
 `;
 
     table.innerHTML = html;
-    if (hasIslands) {
-        totals.hidden = false;
-        renderTimeTableTotals();
-    }
+    totals.hidden = false;
+    renderTimeTableTotals();
 
-    requestAnimationFrame(matchColumnWidths);
-    window.addEventListener("load", matchColumnWidths);
-    window.addEventListener("resize", matchColumnWidths);
+    getDeveloperRankEditor()?.decorateTimeTable(table, totals, getActiveLevels(), getActiveResidual(), () => {
+        refreshDeveloperRankOverrides();
+        calculateRankMultipliers();
+        renderTimeTablePage();
+    });
 }
 
 /**
@@ -87,7 +85,8 @@ function renderTimeTablePage()
 function renderTimeTableTotals()
 {
     let totalsHtml = `
-<table>
+<table class="reference-table">
+<colgroup><col class="reference-total-label"><col span="${ranks.length}"></colgroup>
 <thead>
 <tr>
     <th class="island sticky-col-1">${t("header.isle-times")}</th>
@@ -103,7 +102,7 @@ function renderTimeTableTotals()
         const rowStyle = totalsRowsStyles.find(r => r.name === activeIslands[i].name) || { background: "#333", color: "#fff" };
         totalsHtml += `
     <tr>
-        <td class="island sticky-col-1 isle-artwork" style="background-color: ${rowStyle.background}; color: ${rowStyle.color}; ${isleArtworkStyle(activeIslands[i].name, rowStyle.background)}">${activeIslands[i].name}</td>
+        <td class="island sticky-col-1 isle-artwork" style="background-color: ${rowStyle.background}; color: ${rowStyle.color}; ${isleArtworkStyle(activeIslands[i].name, rowStyle.background)}">${escapeAttribute(cupheadDisplayName(activeIslands[i].name))}</td>
         ${ranks.map((_, rankIndex) =>
         {
             const total = getIslandTotal(i, rankIndex);
@@ -122,7 +121,7 @@ function renderTimeTableTotals()
     const residualArray = getResidualRankTimes();
 
     totalsHtml += `
-<tr data-tooltip="${escapeAttribute(t("tooltip.residual"))}">
+<tr data-rank-residual data-tooltip="${escapeAttribute(t("tooltip.residual"))}">
     <td class="island sticky-col-1" style="background: ${residualStyle.background}; color: ${residualStyle.color};">${t("header.residual")}</td>
     ${residualArray.map((value, rankIndex) =>
         {

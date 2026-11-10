@@ -4,17 +4,35 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Cuphead Training App</title>
+<link rel="icon" type="image/png" href="assets/icons/app-logo-small.png">
 <style>
-html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#11092c}#pages{position:relative;width:100%;height:100%}iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#11092c}iframe[hidden]{display:none}
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#19182c}
+#pages{position:relative;width:100%;height:100%;overflow:hidden}
+#pages::before{
+    --tile-width:360px;
+    --tile-height:463px;
+    content:"";
+    position:absolute;
+    inset:calc(-1 * var(--tile-height)) 0 0 calc(-1 * var(--tile-width));
+    background:url("assets/backgrounds/cuphead-pattern.png") repeat;
+    background-size:var(--tile-width) var(--tile-height);
+    animation:pattern-drift 180s linear infinite;
+}
+@keyframes pattern-drift {
+    to { transform:translate3d(var(--tile-width),var(--tile-height),0); }
+}
+@media (prefers-reduced-motion:reduce) { #pages::before{animation:none} }
+iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+iframe[hidden]{display:none}
 </style>
 </head>
 <body><div id="pages">
-<iframe id="training" title="Training" src="index.html?v=vanilla-ils"></iframe>
-<iframe id="time-table" title="Time Table" data-src="index2.html?v=vanilla-ils" hidden></iframe>
-<iframe id="attempt-log" title="Attempt Log" data-src="autolog.html?v=vanilla-ils" hidden></iframe>
-<iframe id="info" title="Info" data-src="info.html?v=icon-accents" hidden></iframe>
-<iframe id="backups" title="Backups" data-src="backups.html?v=icon-accents" hidden></iframe>
+<iframe id="training" title="Training" src="index.html?v=1.1.8"></iframe>
+<iframe id="time-table" title="Time Table" data-src="index2.html?v=1.1.8" hidden></iframe>
+<iframe id="attempt-log" title="Attempt Log" data-src="autolog.html?v=1.1.8" hidden></iframe>
+<iframe id="info" title="Info" data-src="info.html?v=1.1.8" hidden></iframe>
+<iframe id="backups" title="Backups" data-src="backups.html?v=1.1.8" hidden></iframe>
 </div>
-<script src="js/sound-effects.js"></script>
-<script src="js/app-shell.js?v=pt-title"></script>
+<script src="js/sound-effects.js?v=1.1.8"></script>
+<script src="js/app-shell.js?v=1.1.8"></script>
 </body></html>

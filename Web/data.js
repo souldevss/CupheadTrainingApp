@@ -260,3 +260,24 @@ const speedrunCategories = [
     }
 ];
 
+function getDeveloperRankEditor()
+{
+    if (location.origin === "https://cuphead-training.local") return window.parent.developerRankEditor;
+}
+
+function refreshDeveloperRankOverrides()
+{
+    getDeveloperRankEditor()?.apply(speedrunCategories, generateRankTimes);
+}
+
+refreshDeveloperRankOverrides();
+
+if (getDeveloperRankEditor()) {
+    window.addEventListener("storage", event => {
+        if (event.key !== getDeveloperRankEditor()?.storageKey) return;
+        refreshDeveloperRankOverrides();
+        if (typeof calculateRankMultipliers === "function") calculateRankMultipliers();
+        if (typeof renderActivePage === "function") renderActivePage();
+    });
+}
+

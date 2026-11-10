@@ -55,8 +55,8 @@ function renderOverallProgress(report) {
             </svg><div class="chart-hover-tooltip" hidden></div></div>` : `<p class="history-empty">${t("autolog.no-clear-times")}</p>`}
         <div class="overall-boss-legend">
             ${entries.map(({ art, index, color }) => `
-                <span class="overall-boss-key" tabindex="0" data-series="${index}" title="${safeText(art.name)}" style="background:${safeText(color)};color:${safeText(art.color || "#121212")}">
-                    ${art.icon ? `<img src="${safeText(art.icon)}" alt="${safeText(art.name)}" loading="lazy">` : `<span aria-label="${safeText(art.name)}">${safeText(art.name.slice(0, 2))}</span>`}
+                <span class="overall-boss-key" tabindex="0" data-series="${index}" title="${safeText(cupheadDisplayName(art.name))}" style="background:${safeText(color)};color:${safeText(art.color || "#121212")}">
+                    ${art.icon ? `<img src="${safeText(art.icon)}" alt="${safeText(cupheadDisplayName(art.name))}" loading="lazy">` : `<span aria-label="${safeText(cupheadDisplayName(art.name))}">${safeText(cupheadDisplayName(art.name).slice(0, 2))}</span>`}
                 </span>`).join("")}
         </div>`;
     if (!longest) return;
@@ -275,7 +275,7 @@ function renderOverallProgress(report) {
             deathLines.push(samples.map((sample, point) => ({
                 x: position(point), y: sample.deathRate
             })));
-            return makeTrend(index, art.name, color, points);
+            return makeTrend(index, cupheadDisplayName(art.name), color, points);
         });
         deathTrend = makeTrend("death", "", "", averagePoints(deathLines), deathTrend);
         if (showOverallAverage) {

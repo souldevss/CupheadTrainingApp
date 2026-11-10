@@ -56,6 +56,7 @@ function updateReferenceTimes()
         }
     }
 
+    refreshDeveloperRankOverrides();
     calculateRankMultipliers();
 }
 

@@ -70,37 +70,3 @@ function escapeAttribute(value)
         .replaceAll("<", "&lt;")
         .replaceAll(">", "&gt;");
 }
-
-/**
- * Matches column widths between the main table and totals table for visual alignment
- */
-function matchColumnWidths()
-{
-    const tableHeaderCells = table.querySelectorAll("thead th");
-    const totalsHeaderCells = totals.querySelectorAll("thead th");
-
-    if (tableHeaderCells.length === 0 || totalsHeaderCells.length === 0) return;
-
-    // Sync rank columns (main table index 2+ → totals index 1+)
-    let tableIndex = 2;
-    let totalsIndex = 1;
-
-    while (tableIndex < tableHeaderCells.length && totalsIndex < totalsHeaderCells.length) {
-        const width = tableHeaderCells[tableIndex].getBoundingClientRect().width;
-        const th = totalsHeaderCells[totalsIndex];
-        th.style.width = `${width}px`;
-        th.style.minWidth = `${width}px`;
-        th.style.maxWidth = `${width}px`;
-        tableIndex++;
-        totalsIndex++;
-    }
-
-    // Sync first column to island + boss combined width
-    const firstIslandWidth = table.querySelector(".island")?.getBoundingClientRect().width || 0;
-    const firstBossWidth = table.querySelector(".boss")?.getBoundingClientRect().width || 0;
-    const combinedFirstWidth = firstIslandWidth + firstBossWidth;
-    const firstTh = totalsHeaderCells[0];
-    firstTh.style.width = `${combinedFirstWidth}px`;
-    firstTh.style.minWidth = `${combinedFirstWidth}px`;
-    firstTh.style.maxWidth = `${combinedFirstWidth}px`;
-}

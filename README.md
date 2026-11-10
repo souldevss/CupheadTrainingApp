@@ -15,7 +15,7 @@ A Windows app for Cuphead speedrunners. Automatically record clears and deaths, 
 
 .NET is bundled. The app requires 64-bit Windows and the [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/). Windows may show a publisher warning because the releases are unsigned.
 
-The app checks for updates on startup. You can also use **Info → Check for updates** to read the changelog and install an update.
+The app checks for updates on startup. You can also use **Backups → Check for updates** to read the changelog and install an update.
 
 ## What it tracks
 
@@ -49,6 +49,6 @@ dotnet build .\CupheadTrainingApp.csproj -c Release
 dotnet run --project .\CupheadTrainingApp.csproj -c Release
 ```
 
-Use `powershell -ExecutionPolicy Bypass -File .\scripts\Publish.ps1 -Version 1.1.7` to create a self-contained ZIP and checksum in `artifacts/`. GitHub Actions publishes a release when you push a new version tag with matching notes in `release-notes/`.
+Use `powershell -ExecutionPolicy Bypass -File .\scripts\Publish.ps1 -Version 1.1.8` to create a self-contained ZIP and checksum in `artifacts/`. GitHub Actions publishes a release when you push a new version tag with matching notes in `release-notes/`.
 
 Built with C#, Windows Forms, SQLite, and WebView2. Based on the [Cuphead Training Table](https://github.com/souldevss/CupheadTrainingTable).

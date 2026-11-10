@@ -8,16 +8,24 @@
     <RootNamespace>CupheadTrainingApp</RootNamespace>
     <AssemblyName>CupheadTrainingApp</AssemblyName>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <ApplicationIcon>App.ico</ApplicationIcon>
     <SatelliteResourceLanguages>en;pt-BR</SatelliteResourceLanguages>
-    <Version>1.1.7</Version>
+    <Version>1.1.8</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(DeveloperBuild)' == 'true'">
+    <DefineConstants>$(DefineConstants);DEVELOPER_BUILD</DefineConstants>
+    <AssemblyName>CupheadTrainingApp.Developer</AssemblyName>
+  </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="artifacts\**\*.cs" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.10" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2792.45" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="scripts\ApplyUpdate.ps1" LogicalName="ApplyUpdate.ps1" />
+    <EmbeddedResource Include="scripts\DeveloperRanks.js" LogicalName="DeveloperRanks.js"
+                      Condition="'$(DeveloperBuild)' == 'true'" />
     <Content Include="Web\**\*" Exclude="Web\README.md;Web\screenshot.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

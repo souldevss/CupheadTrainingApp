@@ -1,4 +1,4 @@
-// Auto-captured times page (desktop) — same visuals as Enter Times, no manual input
+// Desktop Training page with one table per isle and automatic times.
 
 function syncAutoRank(levelIndex) {
     const level = getLevelByFlatIndex(levelIndex);
@@ -71,43 +71,39 @@ function renderAutoTimesPage() {
 
     totals.hidden = false;
     let levelCounter = 0;
-    let html = `
-<table class="personal-table">
-<thead>
-<tr>
-    <th class="island sticky-col-1">${t("header.islands")}</th>
-    <th class="boss sticky-col-2">${t("header.levels")}</th>
-    <th class="personal-time-col"></th>
-</tr>
-</thead>
-<tbody>
-`;
-
+    const isDlc = activeCategory.id === "DLC";
+    const groups = [];
     for (const island of getActiveIslands()) {
-        island.levels.forEach((boss, index) => {
-            html += "<tr>";
-            if (index === 0) {
-                html += `
-            <td rowspan="${island.levels.length}" class="island isle-artwork"
-                style="background-color:${island.color}; color:${island.textcolor}; ${isleArtworkStyle(island.name, island.color)}">
-                ${island.name}
-            </td>`;
-            }
-
-            html += `${createBossCellMarkup(boss)}
-        <td class="personal-time-col">
-            <div class="time-input-wrapper" data-time-wrapper="${levelCounter}">
-                <span class="auto-time-display" data-auto-time="${levelCounter}">—</span>
-                <span class="time-rank-display" data-rank-output="${levelCounter}">-</span>
-            </div>
-        </td>`;
-            html += "</tr>";
-            levelCounter++;
-        });
+        if (groups.length && (isDlc || island.name === "Inkwell Hell")) groups.at(-1).push(island);
+        else groups.push([island]);
     }
 
-    html += "</tbody></table>";
-    table.innerHTML = html;
+    const renderIsle = island => `
+<table class="training-isle">
+<colgroup><col><col class="training-time-width"></colgroup>
+<thead>
+    <tr><th colspan="2" class="isle-artwork"
+        style="background-color:${island.color}; color:${island.textcolor}; ${isleArtworkStyle(island.name, island.color)}">
+        ${escapeAttribute(cupheadDisplayName(island.name))}
+    </th></tr>
+</thead>
+<tbody>
+    ${island.levels.map(boss => {
+        const index = levelCounter++;
+        return `<tr>${createBossCellMarkup(boss)}
+        <td class="personal-time-col">
+            <div class="time-input-wrapper" data-time-wrapper="${index}">
+                <span class="auto-time-display" data-auto-time="${index}">—</span>
+                <span class="time-rank-display" data-rank-output="${index}">-</span>
+            </div>
+        </td></tr>`;
+    }).join("")}
+</tbody>
+</table>`;
+
+    table.innerHTML = groups.map(group =>
+        `<div class="training-isle-group">${group.map(renderIsle).join("")}</div>`
+    ).join("");
 
     syncAllAutoRanks();
     renderPersonalTotals();

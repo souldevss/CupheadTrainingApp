@@ -7,7 +7,7 @@ function createBossCellMarkup(boss)
         <td class="boss" style="background: ${boss.background || "#ffffff"}; color: ${boss.color || "#000000"};">
             <div class="boss-content">
                 ${iconMarkup}
-                <span>${escapeAttribute(boss.name || "")}</span>
+                <span>${escapeAttribute(cupheadDisplayName(boss.name || ""))}</span>
             </div>
         </td>
     `;

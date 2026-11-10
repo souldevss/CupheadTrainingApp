@@ -16,10 +16,19 @@ function projectSplit(row, recapOutcomes = []) {
         clears,
         recapCount: recapClears.length,
         inferredDeaths,
-        clearRate: total ? clears.length / total : null,
+        practiceClearRate: outcomes.length ? practiceClears.length / outcomes.length : null,
         average: clears.length ? clears.reduce((sum, seconds) => sum + seconds, 0) / clears.length : null,
         deathRate: total ? deaths / total : null
     };
+}
+
+function firstTryProjectionOdds(route, recap) {
+    if (!route.length) return null;
+    const practiceStarts = Math.min(...route.map(split => split.count));
+    const practiceOdds = practiceStarts > 0 ? route.reduce((chance, split) => chance * split.practiceClearRate, 1) : null;
+    if (!recap?.runStarts) return practiceOdds;
+    // The least-practiced split limits the number of complete routes supported by practice data.
+    return (recap.firstTryFinishes + (practiceOdds ?? 0) * practiceStarts) / (recap.runStarts + practiceStarts);
 }
 
 function projectionResidual(route) {
@@ -121,14 +130,17 @@ function renderRunProjection(rows, categoryKey) {
             return;
         }
         const missingClears = route.filter(split => split.average === null).length;
-        const missingAttempts = route.some(split => split.deathRate === null);
         const residual = projectionResidual(route);
         const clearTime = missingClears ? "—" : formatProjectionTime(route.reduce((sum, split) => sum + split.average, residual));
-        const deathless = missingAttempts ? null : route.reduce((chance, split) => chance * split.clearRate, 1);
+        const deathless = firstTryProjectionOdds(route, includeRecap ? history : null);
+        const recordedFirstTries = includeRecap && history.runStarts ? tf("projection.recap-first-tries", {
+            hits: history.firstTryFinishes, count: history.runStarts
+        }) : "";
         summary.innerHTML = `<div class="projection-metrics">
             <div class="projection-metric"><span>${t("projection.total")}</span><strong>${clearTime}</strong>
                 <small>${tf("projection.includes-residual", { time: formatProjectionTime(residual) })}</small></div>
-            <div class="projection-metric projection-deathless"><span>${t("projection.deathless")}</span><strong>${formatOdds(deathless)}</strong></div>
+            <div class="projection-metric projection-deathless"><span>${t("projection.deathless")}</span><strong>${formatOdds(deathless)}</strong>
+                ${recordedFirstTries ? `<small>${safeText(recordedFirstTries)}</small>` : ""}</div>
         </div>${missingClears ? `<p>${tf("projection.missing-clears", { count: missingClears })}</p>` : ""}`;
 
         if (projectionTargetSeconds === null) return;
@@ -139,7 +151,7 @@ function renderRunProjection(rows, categoryKey) {
         const chance = projectionTargetChance(route, projectionTargetSeconds - residual);
         const targetLabel = requireDeathless.checked ? "projection.target-overall" : "projection.target-pace";
         const targetOdds = requireDeathless.checked ? (deathless === null ? null : chance * deathless) : chance;
-        const recordedResult = includeRecap ? tf("projection.recorded-count", {
+        const recordedResult = includeRecap && !requireDeathless.checked ? tf("projection.recorded-count", {
             hits: history.finishes.filter(time => time <= projectionTargetSeconds).length, count: history.count
         }) : "";
         targetResult.innerHTML = `<div class="projection-metric projection-target-odds">
@@ -164,7 +176,7 @@ function renderRunProjection(rows, categoryKey) {
     requireDeathless.onchange = updateSummary;
 
     function splitMarkup(split) {
-        const name = safeText(split.name);
+        const name = safeText(cupheadDisplayName(split.name));
         const art = bossArt.get(split.name);
         const icon = art?.icon ? `<img class="projection-boss-icon" src="${safeText(art.icon)}" alt="" loading="lazy">` : navigationIcon("boss");
         const warning = split.count < projectionWindow
@@ -180,7 +192,7 @@ function renderRunProjection(rows, categoryKey) {
     body.innerHTML = Array.from(groups, ([island, group]) => {
         const palette = totalsRowsStyles.find(row => row.name === island);
         const style = palette ? `background-color:${palette.background};color:${palette.color};${isleArtworkStyle(island, palette.background)}` : "";
-        return `<tr class="projection-island"><th class="isle-artwork" colspan="4" style="${style}">${safeText(island)}</th></tr>${group.map(splitMarkup).join("")}`;
+        return `<tr class="projection-island"><th class="isle-artwork" colspan="4" style="${style}">${safeText(cupheadDisplayName(island))}</th></tr>${group.map(splitMarkup).join("")}`;
     }).join("");
     updateSummary();
 }

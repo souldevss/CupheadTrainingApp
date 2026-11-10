@@ -4,10 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cuphead Training App — Attempt Log</title>
-    <link rel="stylesheet" href="style.css?v=icon-accents">
-    <link rel="stylesheet" href="css/host-bridge.css">
+<link rel="icon" type="image/png" href="assets/icons/app-logo-small.png">
+    <link rel="stylesheet" href="style.css?v=1.1.8">
+    <link rel="stylesheet" href="css/host-bridge.css?v=1.1.8">
 </head>
-<body data-page="attempt-log">
+<body class="compact-mode" data-page="attempt-log">
 
 <div class="pages">
     <div id="bigtitle">Cuphead Training App</div>
@@ -24,7 +25,6 @@
         <a href="autolog.html" class="active" data-i18n="nav.attempt-log">Attempt Log</a>
         <a href="backups.html" data-i18n="nav.backups">Backups</a>
     </div>
-    <button id="compact-mode-toggle" class="compact-mode-toggle" type="button" aria-pressed="false" data-i18n="ui.compact">Compact mode</button>
 </div>
 
 <div id="category-tabs" class="category-tabs"></div>
@@ -136,20 +136,19 @@
     </section>
 </main>
 
-<script src="js/sound-effects.js"></script>
-<script src="data.js?v=1.1.7"></script>
-<script src="js/state.js"></script>
-<script src="js/time.js"></script>
-<script src="js/ranks.js?v=wheel-ranks"></script>
-<script src="js/data-access.js"></script>
-<script src="js/category.js"></script>
-<script src="js/language.js?v=overall-offset"></script>
-<script src="js/host-bridge.js?v=overall-death-hover"></script>
-<script src="js/compact-mode.js?v=compact-default"></script>
-<script src="js/wr-times.js?v=vanilla-ils"></script>
-<script src="js/run-projection.js?v=live-average"></script>
-<script src="js/run-recap.js?v=live-average"></script>
-<script src="js/overall-progress.js?v=overall-offset"></script>
+<script src="js/sound-effects.js?v=1.1.8"></script>
+<script src="data.js?v=1.1.8"></script>
+<script src="js/state.js?v=1.1.8"></script>
+<script src="js/time.js?v=1.1.8"></script>
+<script src="js/ranks.js?v=1.1.8"></script>
+<script src="js/data-access.js?v=1.1.8"></script>
+<script src="js/category.js?v=1.1.8"></script>
+<script src="js/language.js?v=1.1.8"></script>
+<script src="js/host-bridge.js?v=1.1.8"></script>
+<script src="js/wr-times.js?v=1.1.8"></script>
+<script src="js/run-projection.js?v=1.1.8"></script>
+<script src="js/run-recap.js?v=1.1.8"></script>
+<script src="js/overall-progress.js?v=1.1.8"></script>
 <script>
 let autologRows = [];
 let selectedLogCategory = localStorage.getItem("cupheadLogCategory") || "1-1";
@@ -433,11 +432,9 @@ function drawTimeChart(history, art, limit, zoom = 1) {
         <div class="history-svg-wrap"><svg class="history-chart time-history-chart" data-low="${low}" data-high="${high}" data-base-low="${baseLow}" data-base-high="${baseHigh}" viewBox="0 0 250 100" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${t("autolog.average-aria")}">
             <defs>
                 <clipPath id="time-plot-clip"><rect x="20" y="0" width="210" height="100"/></clipPath>
-                <filter id="time-rank-glow" filterUnits="userSpaceOnUse" x="0" y="0" width="250" height="100"><feGaussianBlur stdDeviation="3.5"/></filter>
-                <g id="time-rank-fills">${rankBands.map(band => band.fill).join("")}</g>
+                <clipPath id="time-rank-clip"><rect x="20" y="8" width="210" height="84"/></clipPath>
             </defs>
-            <use href="#time-rank-fills" class="rank-band-glow" filter="url(#time-rank-glow)"/>
-            <use href="#time-rank-fills" class="rank-band-fill"/>
+            <g clip-path="url(#time-rank-clip)"><g class="rank-band-fill">${rankBands.map(band => band.fill).join("")}</g></g>
             <g class="rank-band">${rankBands.map(band => band.label).join("")}</g>
             ${timeAxis}<g class="time-plot" clip-path="url(#time-plot-clip)">${deathBars}${runLines}
             ${visible.map((a, i) => `<circle cx="${x(i)}" cy="${y(a.timeSeconds)}" r="0" data-point="${i}" data-next-color="${segmentColors[i] || rankColorForTime(a.timeSeconds)}" data-average="${a.timeSeconds}" data-run-start="${a.runStart}" data-run-end="${a.runEnd}" data-death-rate="${a.deathRate.toFixed(1)}"/>`).join("")}
@@ -587,7 +584,7 @@ function bindTimeChartControls(holder, history, art) {
         if (!previous || (low === previous.low && high === previous.high)
             || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-        const layers = [...svg.querySelectorAll(".rank-band-fill, .rank-band-glow")];
+        const layers = [svg.querySelector(".rank-band-fill")];
         if (animatePlot) layers.push(svg.querySelector(".time-plot"));
         const labels = Array.from(svg.querySelectorAll(".time-axis-mark text, .rank-band text"), element => [element, Number(element.getAttribute("y"))]);
         const grid = Array.from(svg.querySelectorAll(".time-axis-mark line"), element => [element, Number(element.getAttribute("y1"))]);
@@ -942,12 +939,12 @@ function renderBossDetail() {
         result: outcome.isDeath ? "Death" : outcome.isClear ? "Clear" : "Fail",
         time: outcome.isDeath ? null : formatTime(outcome.clearSeconds ?? outcome.failSeconds)
     }));
-    const signature = JSON.stringify({ level: boss.level, attempts: boss.attempts, clears: boss.clears, deaths: boss.deaths, best: boss.best, totalPlaytime: boss.totalPlaytime, history, outcomeHistory, avg10: boss.avg10, avg20: boss.avg20, avg50: boss.avg50, selectedDetailTab, selectedAverageWindow });
+    const signature = JSON.stringify({ level: boss.level, attempts: boss.attempts, clears: boss.clears, deaths: boss.deaths, best: boss.best, totalPlaytime: boss.totalPlaytime, history, outcomeHistory, avg10: boss.avg10, avg20: boss.avg20, avg50: boss.avg50, selectedDetailTab, selectedAverageWindow, fRankTime: art.fRankTime });
     if (signature === lastBossDetailSignature) return;
     lastBossDetailSignature = signature;
     window.stopAutologWork();
     detail.innerHTML = `<button class="detail-back" type="button" data-action="back">${t("autolog.back")}</button>
-        <div class="boss-detail-heading"><div class="boss-detail-title"><p class="attempt-eyebrow">${t("autolog.boss-progress")}</p><div class="boss-detail-bossbar" style="background:${safeText(art.background || "#493576")};color:${safeText(art.color || "#ffffff")}"><h2>${safeText(boss.level)}</h2>${art.icon ? `<img src="${safeText(art.icon)}" alt="" loading="lazy">` : ""}</div><p>${tf("autolog.boss-attempts", { attempts: boss.attempts, clears: boss.clears })}</p></div>
+        <div class="boss-detail-heading"><div class="boss-detail-title"><p class="attempt-eyebrow">${t("autolog.boss-progress")}</p><div class="boss-detail-bossbar" style="background:${safeText(art.background || "#493576")};color:${safeText(art.color || "#ffffff")}"><h2>${safeText(cupheadDisplayName(boss.level))}</h2>${art.icon ? `<img src="${safeText(art.icon)}" alt="" loading="lazy">` : ""}</div><p>${tf("autolog.boss-attempts", { attempts: boss.attempts, clears: boss.clears })}</p></div>
         <div class="detail-tabs"><button class="is-active" type="button" data-detail-tab="progress">${t("autolog.progress")}</button><button type="button" data-detail-tab="attempts">${t("autolog.attempts")}</button></div></div>
         <div class="detail-tab-content" data-panel="progress" ${selectedDetailTab === "progress" ? "" : "hidden"}>
             <div class="improvement-cards"><div><span>${t("autolog.total-playtime")}</span><strong>${safeText(boss.totalPlaytime || "0s")}</strong></div><div><span>${t("autolog.best-clear")}</span><strong>${safeText(boss.best)}</strong></div><div><span>${t("autolog.total-deaths")}</span><strong>${boss.deaths}</strong></div><div><span>${t("autolog.avg-10")}</span><strong>${safeText(completeAverage(boss.avg10, boss.clears, 10))}</strong></div><div><span>${t("autolog.avg-20")}</span><strong>${safeText(completeAverage(boss.avg20, boss.clears, 20))}</strong></div><div><span>${t("autolog.avg-50")}</span><strong>${safeText(completeAverage(boss.avg50, boss.clears, 50))}</strong></div></div>
@@ -1030,7 +1027,7 @@ function renderAttempts(attempts, includeBoss = true) {
         const resultLabel = r.result === "Clear" ? t("result.clear") : r.result === "Fail" ? t("result.fail") : t("result.death");
         return `<article class="recent-attempt-card ${isDeath ? "is-death-event" : ""}">
         <span class="attempt-result ${isDeath ? "is-death" : r.result === "Clear" ? "is-clear" : "is-fail"}">${safeText(resultLabel)}</span>
-        ${includeBoss ? `<button type="button" class="attempt-boss-link" data-boss="${safeText(r.level)}">${safeText(r.level)}</button>` : ""}
+        ${includeBoss ? `<button type="button" class="attempt-boss-link" data-boss="${safeText(r.level)}">${safeText(cupheadDisplayName(r.level))}</button>` : ""}
         <span class="attempt-detail"><small>${t("autolog.when")}</small><b>${safeText(r.when)}</b></span>${isDeath ? "" : `<span class="attempt-detail"><small>${t("autolog.clear-time")}</small><b>${safeText(r.time)}</b></span>`}
         ${Number.isFinite(Number(r.id)) ? `<button type="button" class="delete-run-button" data-delete-${isDeath ? "death" : "run"}="${r.id}" aria-label="${t(isDeath ? "autolog.delete-death-aria" : "autolog.delete-run-aria")}">${t("autolog.delete")}</button>` : ""}
     </article>`;
@@ -1069,7 +1066,7 @@ window.renderAutologStats = function(rows, recent, categoryKey, totalPlaytime) {
         const art = bossArt.get(r.level) || {};
         return `<button class="boss-stat-card" type="button" data-boss="${safeText(r.level)}">
         <span class="boss-card-header" style="background:${safeText(art.background || "#493576")};color:${safeText(art.color || "#ffffff")}">
-            <span class="boss-card-name">${safeText(r.level)}</span>
+            <span class="boss-card-name">${safeText(cupheadDisplayName(r.level))}</span>
             ${art.icon ? `<img class="boss-card-icon" src="${safeText(art.icon)}" alt="" loading="lazy">` : ""}
         </span>
         <span class="boss-card-stats"><span><small>${t("autolog.attempts-label")}</small><b>${r.attempts}</b></span><span><small>${t("autolog.clears-label")}</small><b>${r.clears}</b></span><span><small>${t("autolog.deaths-label")}</small><b>${r.deaths}</b></span></span>

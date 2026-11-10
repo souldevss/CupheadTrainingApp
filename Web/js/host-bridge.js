@@ -9,6 +9,7 @@
         try { inAppShell = !!window.parent.document.getElementById("pages"); }
         catch { /* cross-origin parent */ }
     }
+    if (inAppShell) document.documentElement.classList.add("app-shell-page");
     const desktopConnected = hasHost || inAppShell;
     let pendingBackupStorage = null;
 
@@ -84,6 +85,7 @@
             <a class="host-watcher-link" href="autolog.html">${t("nav.attempt-log")}</a>
         `;
         document.body.appendChild(dock);
+        document.body.classList.add("has-watcher-dock");
 
         const toggle = document.getElementById("host-watcher-toggle");
         toggle.addEventListener("click", () => {
@@ -244,7 +246,6 @@
             postToHost({ cmd: "importBackup", database });
             return true;
         },
-        setCompactMode(value) { postToHost({ cmd: "setCompactMode", value: !!value }); },
         setWatching(value) { postToHost({ cmd: "setWatching", value: !!value }); },
         autoBackup() {
             postToHost({
@@ -289,6 +290,7 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
-        if (hasHost) ensureWatcherDock();
+        if (desktopConnected) ensureWatcherDock();
+        if (inAppShell) window.parent.postMessage({ type: "pageReady" }, location.origin);
     });
 })();

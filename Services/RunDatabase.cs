@@ -9,9 +9,15 @@ namespace CupheadTrainingApp.Services
     {
         private readonly SqliteConnection connection;
 
-        public RunDatabase() : this(Path.Combine(
+        internal static readonly string DataDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "CupheadTrainingLog", "training.db")) { }
+#if DEVELOPER_BUILD
+            "CupheadTrainingLog-Developer");
+#else
+            "CupheadTrainingLog");
+#endif
+
+        public RunDatabase() : this(Path.Combine(DataDirectory, "training.db")) { }
 
         internal RunDatabase(string path)
         {

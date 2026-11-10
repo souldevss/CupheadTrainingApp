@@ -11,10 +11,16 @@ namespace CupheadTrainingApp
     {
         private readonly CancellationTokenSource updateLifetime = new CancellationTokenSource();
         private bool checkedForUpdates;
+#if !DEVELOPER_BUILD
         private bool updateCheckInProgress;
+#endif
 
         private async Task CheckForUpdatesAsync(bool manual)
         {
+#if DEVELOPER_BUILD
+            if (manual) MessageBox.Show(this, "Automatic updates are disabled in the developer build.", Text);
+            await Task.CompletedTask;
+#else
             if (updateCheckInProgress || updateLifetime.IsCancellationRequested) return;
             updateCheckInProgress = true;
             bool portuguese = false;
@@ -114,6 +120,7 @@ namespace CupheadTrainingApp
                         + "\r\n\r\n" + ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
             finally { updateCheckInProgress = false; }
+#endif
         }
     }
 }

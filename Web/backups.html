@@ -4,11 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cuphead Training App — Backups</title>
-    <link rel="stylesheet" href="style.css?v=icon-accents">
-    <link rel="stylesheet" href="css/info.css">
-    <link rel="stylesheet" href="css/host-bridge.css">
+<link rel="icon" type="image/png" href="assets/icons/app-logo-small.png">
+    <link rel="stylesheet" href="style.css?v=1.1.8">
+    <link rel="stylesheet" href="css/info.css?v=1.1.8">
+    <link rel="stylesheet" href="css/host-bridge.css?v=1.1.8">
 </head>
-<body data-page="backups">
+<body class="compact-mode" data-page="backups">
 
 <div class="pages">
     <div id="bigtitle">Cuphead Training App</div>
@@ -26,7 +27,6 @@
         <a href="autolog.html" data-i18n="nav.attempt-log">Attempt Log</a>
         <a href="backups.html" class="active" data-i18n="nav.backups">Backups</a>
     </div>
-    <button id="compact-mode-toggle" class="compact-mode-toggle" type="button" aria-pressed="false" data-i18n="ui.compact">Compact mode</button>
 </div>
 
     <div class="info-page">
@@ -36,15 +36,15 @@
             <div class="backup-controls">
                 <button id="export-backup" class="data-control-btn" type="button" data-i18n="info.export-all">Export all data</button>
                 <button id="import-backup" class="data-control-btn" type="button" data-i18n="info.import-backup">Import backup</button>
+                <button id="check-for-updates" class="data-control-btn" type="button" hidden data-i18n="ui.check-for-updates">Check for updates</button>
                 <input id="backup-file" type="file" accept="application/json,.json" hidden>
                 <span id="backup-status" role="status"></span>
             </div>
         </section>
     </div>
-    <script src="js/sound-effects.js"></script>
-    <script src="js/language.js?v=pt-title"></script>
-    <script src="js/host-bridge.js?v=1.1.0"></script>
-    <script src="js/backup.js"></script>
-    <script src="js/compact-mode.js?v=compact-default"></script>
+    <script src="js/sound-effects.js?v=1.1.8"></script>
+    <script src="js/language.js?v=1.1.8"></script>
+    <script src="js/host-bridge.js?v=1.1.8"></script>
+    <script src="js/backup.js?v=1.1.8"></script>
 </body>
 </html>

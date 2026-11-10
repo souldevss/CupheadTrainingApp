@@ -33,9 +33,21 @@ function recapFinish(attempt, boss) {
     return last?.name === boss && last.levelTime ? last : null;
 }
 
+function recapHadRetry(attempt, finish) {
+    const unfinished = new Set();
+    for (let index = 0; index < attempt.length; index++) {
+        const scene = attempt[index];
+        if (!Object.hasOwn(recapSceneNames, scene.name)) continue;
+        if (unfinished.has(scene.name)) return true;
+        if (scene === finish) break;
+        if (!scene.levelTime || attempt[index + 1]?.name !== "win") unfinished.add(scene.name);
+    }
+    return false;
+}
+
 function recapSceneLabel(scene) {
     if (scene === "win") return t("recap.scorecard");
-    return Object.hasOwn(recapSceneNames, scene) ? recapSceneNames[scene] : scene.replace(/_/g, " ");
+    return Object.hasOwn(recapSceneNames, scene) ? cupheadDisplayName(recapSceneNames[scene]) : scene.replace(/_/g, " ");
 }
 
 function formatRecapTime(seconds) {
@@ -157,12 +169,12 @@ function renderRecapAttempt() {
             const delta = reference === undefined ? null : Math.round((seconds - reference) * 1000) / 1000;
             const deltaLabel = delta === null ? "" : `<small class="${delta > 0 ? "recap-slower" : delta < 0 ? "recap-faster" : ""}">${delta > 0 ? "+" : delta < 0 ? "−" : ""}${Math.abs(delta).toFixed(3)}s</small>`;
             return `<div class="recap-split">
-                <span class="icon-reveal projection-boss-chip" tabindex="0" role="img" aria-label="${safeText(boss.name)}" style="background:${safeText(boss.background)}">
-                    <img src="${safeText(boss.icon)}" alt="" loading="lazy"><span class="icon-caption" aria-hidden="true">${safeText(boss.name)}</span>
+                <span class="icon-reveal projection-boss-chip" tabindex="0" role="img" aria-label="${safeText(cupheadDisplayName(boss.name))}" style="background:${safeText(boss.background)}">
+                    <img src="${safeText(boss.icon)}" alt="" loading="lazy"><span class="icon-caption" aria-hidden="true">${safeText(cupheadDisplayName(boss.name))}</span>
                 </span><strong>${formatRecapTime(seconds)}</strong>${deltaLabel}
             </div>`;
         }).join("");
-        return `<article class="recap-island"><h3 class="isle-artwork" style="background-color:${isle.color};color:${isle.textcolor};${isleArtworkStyle(isle.name, isle.color)}">${safeText(isle.name)}</h3>${cells}</article>`;
+        return `<article class="recap-island"><h3 class="isle-artwork" style="background-color:${isle.color};color:${isle.textcolor};${isleArtworkStyle(isle.name, isle.color)}">${safeText(cupheadDisplayName(isle.name))}</h3>${cells}</article>`;
     }).join("") || `<p>${t("recap.no-clears")}</p>`;
 
     document.getElementById("recap-breakdown").innerHTML = last ? `<h3>${t("recap.breakdown")}</h3><dl>${Object.entries(timing)
@@ -213,6 +225,7 @@ function showRecapFile(file, attempts) {
     const sample = (boss, compatible) => {
         const outcomesByBoss = new Map();
         const finishes = [];
+        let runStarts = 0, firstTryFinishes = 0;
         function record(name, seconds) {
             if (!outcomesByBoss.has(name)) outcomesByBoss.set(name, []);
             outcomesByBoss.get(name).push(seconds);
@@ -221,6 +234,10 @@ function showRecapFile(file, attempts) {
             const finish = recapFinish(attempt, boss);
             const { clears } = summarizeRecapAttempt(attempt, finish);
             for (const [name, seconds] of clears) record(name, seconds);
+            if (attempt.length && (finish || index < attempts.length - 1)) {
+                runStarts++;
+                if (finish && !recapHadRetry(attempt, finish)) firstTryFinishes++;
+            }
             if (finish) {
                 finishes.push(finish.endTime);
             } else if (index < attempts.length - 1) {
@@ -230,7 +247,7 @@ function showRecapFile(file, attempts) {
                 if (name && !last.levelTime && !clears.has(name)) record(name, null);
             }
         }
-        return { name: file.name, count: attempts.length, compatible, finishes, outcomesByBoss };
+        return { name: file.name, count: attempts.length, compatible, finishes, outcomesByBoss, runStarts, firstTryFinishes };
     };
     recapProjectionSamples = {
         base: sample("level_devil", !hasSaltbakerScene),

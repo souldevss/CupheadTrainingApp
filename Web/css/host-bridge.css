@@ -1,19 +1,22 @@
 .host-watcher-dock {
     position: fixed;
-    bottom: 20px;
+    bottom: 12px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 12000;
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 10px 16px;
-    border: 2px solid var(--panel-accent-bright, #e0b965);
+    padding: 5px 10px;
+    border: 1px solid var(--panel-border, #695781);
     border-radius: 999px;
-    background: linear-gradient(180deg, rgba(16, 20, 25, 0.97), rgba(23, 27, 34, 0.98));
+    background: var(--panel-bg-deep, #221737);
     box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
-    backdrop-filter: blur(6px);
     max-width: min(920px, calc(100vw - 32px));
+}
+
+body.has-watcher-dock {
+    padding-bottom: 68px;
 }
 
 .host-watcher-dot {

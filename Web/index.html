@@ -4,13 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cuphead Training App</title>
-    <link rel="stylesheet" href="style.css?v=icon-accents">
-    <link rel="stylesheet" href="css/host-bridge.css">
+<link rel="icon" type="image/png" href="assets/icons/app-logo-small.png">
+    <link rel="stylesheet" href="style.css?v=1.1.8">
+    <link rel="stylesheet" href="css/host-bridge.css?v=1.1.8">
 </head>
-<body data-page="personal-times">
+<body class="compact-mode" data-page="personal-times">
 
 <div class="pages">
-    <div id="bigtitle">Cuphead Training App</div>
+    <div class="training-brand">
+        <img src="assets/icons/app-logo.png" alt="" width="88" height="88">
+        <div id="bigtitle">Cuphead Training App</div>
+    </div>
     <a href="info.html" class="info-nav-btn" data-i18n-aria-label="ui.info-aria" aria-label="How it works">&#9432;</a>
 
     <button id="lang-toggle-btn" class="lang-toggle-btn-inline" type="button" onclick="setActiveLanguage(getActiveLanguage() === 'pt-BR' ? 'en' : 'pt-BR')" data-i18n-aria-label="ui.language-aria" aria-label="Toggle language">
@@ -25,12 +29,11 @@
             <a href="autolog.html" data-i18n="nav.attempt-log">Attempt Log</a>
         <a href="backups.html" data-i18n="nav.backups">Backups</a>
     </div>
-    <button id="compact-mode-toggle" class="compact-mode-toggle" type="button" aria-pressed="false" data-i18n="ui.compact">Compact mode</button>
 </div>
 
     <div id="category-tabs" class="category-tabs"></div>
 
-    <div class="board-layout">
+    <div class="board-layout training-board">
         <div class="scroll-wrapper">
             <div id="table"></div>
             <div id="totals"></div>
@@ -41,25 +44,24 @@
         </div>
     </div>
 
-    <script src="js/sound-effects.js"></script>
-<script src="data.js?v=1.1.7"></script>
-    <script src="js/state.js"></script>
-    <script src="js/time.js"></script>
-    <script src="js/category.js"></script>
-    <script src="js/data-access.js"></script>
-    <script src="js/ranks.js?v=wheel-ranks"></script>
-    <script src="js/calculations.js"></script>
-    <script src="js/wr-times.js?v=vanilla-ils"></script>
-    <script src="js/storage.js"></script>
-    <script src="js/render-time-table.js?v=1.1.0"></script>
-    <script src="js/render-personal.js?v=1.1.0"></script>
-    <script src="js/render-auto.js?v=1.1.0"></script>
-    <script src="js/render.js"></script>
-    <script src="js/language.js?v=pt-title"></script>
+    <script src="js/sound-effects.js?v=1.1.8"></script>
+<script src="data.js?v=1.1.8"></script>
+    <script src="js/state.js?v=1.1.8"></script>
+    <script src="js/time.js?v=1.1.8"></script>
+    <script src="js/category.js?v=1.1.8"></script>
+    <script src="js/data-access.js?v=1.1.8"></script>
+    <script src="js/ranks.js?v=1.1.8"></script>
+    <script src="js/calculations.js?v=1.1.8"></script>
+    <script src="js/wr-times.js?v=1.1.8"></script>
+    <script src="js/storage.js?v=1.1.8"></script>
+    <script src="js/render-time-table.js?v=1.1.8"></script>
+    <script src="js/render-personal.js?v=1.1.8"></script>
+    <script src="js/render-auto.js?v=1.1.8"></script>
+    <script src="js/render.js?v=1.1.8"></script>
+    <script src="js/language.js?v=1.1.8"></script>
     <script>window.autoTrainingPage = true;</script>
-    <script src="js/main.js?v=vanilla-ils"></script>
-    <script src="js/host-bridge.js?v=1.1.0"></script>
-    <script src="js/compact-mode.js?v=compact-default"></script>
+    <script src="js/main.js?v=1.1.8"></script>
+    <script src="js/host-bridge.js?v=1.1.8"></script>
 
 </body>
 </html>
