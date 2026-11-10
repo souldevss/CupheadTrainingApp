@@ -1,94 +1,50 @@
 # Cuphead Training App
 
-A Windows training companion for Cuphead speedrunners. Track clears and deaths automatically while you play, compare your times with training targets, and see your progress for each boss.
+A Windows app for Cuphead speedrunners. Automatically record clears and deaths, compare your times with training targets, and see how you improve.
 
-Built with C# / .NET 8, Windows Forms, SQLite, and a WebView2 interface. Based on [CupheadTrainingTable by souldevss](https://github.com/souldevss/CupheadTrainingTable).
+> [!WARNING]
+> **This project is fully vibe-coded.** It was built with AI assistance. If you are not OK with that, don't download. Expect bugs, especially on game builds or setups that haven’t been tested.
 
-## Download and run
+[Download for Windows](https://github.com/souldevss/CupheadTrainingApp/releases/latest) · [Web training table](https://souldevss.github.io/CupheadTrainingTable/)
 
-1. Open this repository's **Releases** page and download the latest `CupheadTrainingApp-…-win-x64.zip`.
-2. Extract the entire ZIP into a folder.
-3. Open `CupheadTrainingApp.exe`. Keep the accompanying files and `Web` folder together.
-4. Launch Cuphead. The app starts watching automatically; the watcher status shows whether it has connected.
+## Get started
 
-The release includes the .NET runtime. It requires 64-bit Windows and the [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/). Install WebView2 if the interface does not open. Releases are unsigned, so Windows may show a publisher warning.
+1. Download `CupheadTrainingApp-…-win-x64.zip` from Releases.
+2. Extract the whole ZIP and open `CupheadTrainingApp.exe`.
+3. Launch Cuphead and check the watcher status to see when it connects.
 
-The desktop app checks for stable updates on startup. You can also select **Check for updates** in **Info**. If an update is available, the prompt shows the release notes since your installed version. Select **Update and restart** to download and verify the Windows package and install it in your current app folder. Your training data stays in LocalAppData.
+.NET is bundled. The app requires 64-bit Windows and the [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/). Windows may show a publisher warning because the releases are unsigned.
 
-## Features
+The app checks for updates on startup. You can also use **Info → Check for updates** to read the changelog and install an update.
 
-- **Automatic recording:** reads game memory to capture clear times and deaths. Retries are discarded rather than treated as deaths; King Dice miniboss victories are not individual King Dice clears.
-- **Training dashboard:** personal bests, rank targets, totals, and rank distribution graphics.
-- **Time table:** category-specific target times and linked reference videos where available.
-- **Base game and DLC categories:** 1.1+, DLC Lobber/Spread, and DLC Charge/Spread, with category selection across the training, table, and log pages.
-- **Loadout checks:** category rules account for weapons, charms, and supers, with special handling for Forest Follies and Mausoleum.
-- **Boss history:** individual boss pages, clear and death history, total playtime, and deletion controls for incorrect entries.
-- **Interactive progress graph:** clear times with death-rate bars, rank colors and target lines, nearest-point hover, zooming, and panning.
-- **Moving averages:** adjust the average window to switch between individual clears and broader trends. Each clear in a window has equal weight.
-- **Live attempt marker:** the current attempt appears when it reaches the boss's best clear time. Its translucent marker moves linearly between timer samples and follows the rank colors.
-- **Backups:** export/import attempts, deaths, and settings; a local automatic backup is refreshed every ten minutes while the app is running.
-- **English and Brazilian Portuguese**, compact mode, boss colors and icons, and interface sound effects.
+## What it tracks
 
-## Supported game builds
+- **Training and Time Table** show your best clears, rank targets, and reference videos where available.
+- **Attempt Log** records clears, deaths, and playtime. Boss pages show clear-time and death-rate trends, and **Overall Progress** compares improvement across bosses.
+- **Run Projection** estimates pace and first-try odds. Import a `.rrc` file in **Run Recap** to browse runs and add matching recap data to the projection.
+- **Backups** imports or exports your history and settings. The app refreshes a local backup every ten minutes.
 
-Memory detection targets the Steam 1.1.x and DLC builds supported by the bundled pointer signatures. Other storefronts, patches, or mods may require additional signatures. A visible table does not by itself mean the watcher has connected to the game.
+Tracking supports Steam **1.1+** and **DLC**, with separate Lobber/Spread and Charge/Spread DLC categories. Match your loadout to the selected category. Forest Follies uses Peashooter, and Mausoleum has no equipment restriction.
 
-For category-based training, select the category matching your game and loadout. Forest Follies and Mausoleum are shared between the two DLC weapon categories; Forest Follies uses Peashooter, and Mausoleum has no equipment restriction.
+## Where your data lives
 
-## Your data
-
-Data stays on your PC:
-
-| Data | Location |
+| Data | Path |
 | --- | --- |
-| Attempt and death database | `%LocalAppData%\CupheadTrainingLog\training.db` |
-| Interface settings and WebView profile | `%LocalAppData%\CupheadTrainingLog\WebView2\` |
+| Training history | `%LocalAppData%\CupheadTrainingLog\training.db` |
+| Interface settings | `%LocalAppData%\CupheadTrainingLog\WebView2\` |
 | Latest automatic backup | `%LocalAppData%\CupheadTrainingLog\Backups\cuphead-training-auto-backup.json` |
 
-Open the **Backups** tab to export or import your data between PCs. Import adds run history and skips records already present; settings from the backup are restored. The automatic backup overwrites one local file, so keep separate exports for older snapshots.
-
-Updating the app does not require deleting these folders. Personal databases, backups, browser profiles, and build output are excluded from the source repository.
+The automatic backup keeps one snapshot. Use **Backups → Export** for a copy you can keep or move to another PC.
 
 ## Build from source
 
-Install the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) on Windows. From the folder containing `CupheadTrainingApp.csproj`:
+Install the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) and run these commands from the folder containing `CupheadTrainingApp.csproj`.
 
 ```powershell
 dotnet build .\CupheadTrainingApp.csproj -c Release
 dotnet run --project .\CupheadTrainingApp.csproj -c Release
 ```
 
-To make the same self-contained ZIP as the releases:
+Use `powershell -ExecutionPolicy Bypass -File .\scripts\Publish.ps1 -Version 1.1.6` to create a self-contained ZIP and checksum in `artifacts/`. GitHub Actions publishes a release when you push a new version tag with matching notes in `release-notes/`.
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\Publish.ps1 -Version 1.1.6
-```
-
-The ZIP and SHA-256 checksum appear in `artifacts/`. The script requires a fresh output directory for each version. All required source files are included here; the neighboring music-player project is not needed.
-
-## Run Projection and Run Recap
-
-Open **Attempt Log → Run Projection** to estimate target pace and first-try odds. Import a local `.rrc` file in **Run Recap** to browse attempts, compare splits, or add its clears and inferred boss resets to a matching category projection.
-
-## Automatic builds and releases
-
-GitHub Actions builds a Windows ZIP for pushes to `main`, pull requests, and manual workflow runs. These builds are downloadable from the workflow's **Artifacts** section.
-
-To publish a versioned download on the repository's **Releases** page, push a version tag:
-
-```powershell
-git tag v1.1.7
-git push origin v1.1.7
-```
-
-Write the changes for the new tag in `release-notes/vX.Y.Z.md`. The workflow builds the app, creates a GitHub release with those notes, and attaches the ZIP and checksum. Use a new version tag for each release. GitHub Pages cannot run the Windows memory-reading companion; Releases distributes the desktop app.
-
-## Troubleshooting
-
-- **MSB1011 / more than one project:** use the explicit `.csproj` commands above.
-- **MSB1009 / project does not exist:** open a terminal in this repository's root folder, where the `.csproj` file is located.
-- **Nothing is being recorded:** check the watcher status, game version, category, and equipment. The app must be able to read the running Cuphead process.
-- **Missing graphics:** some icons and reference links require an internet connection.
-- **High memory or CPU:** WebView2 runs multiple child processes. Graph interaction can still use substantial resources; this build is not advertised as a low-memory native interface.
-
-When reporting a problem, include your app version, Windows and Cuphead versions, category, and reproduction steps. Only attach an exported history if you intend to share its contents.
+Built with C#, Windows Forms, SQLite, and WebView2. Based on the [Cuphead Training Table](https://github.com/souldevss/CupheadTrainingTable).
