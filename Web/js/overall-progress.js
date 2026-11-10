@@ -266,14 +266,15 @@ function renderOverallProgress(report) {
         const next = entries.filter(entry => entry.clears.length).map(({ art, index, clears, intervals, color }) => {
             const window = 1 + Math.round((maxSmoothing(clears.length) - 1) * overallSmoothingPercent / 100);
             const samples = averageTrend(clears, intervals, window, 240);
-            const position = point => point === samples.length - 1 ? fullSpan :
-                fullSpan * (1 + (clears.length - 1) * point / (samples.length - 1)) / clears.length;
-            const points = [{ x: 0, y: 0 }, ...samples.map((sample, point) => ({
-                x: position(point), y: sample.timeSeconds
-            }))];
-            deathLines.push([{ x: 0, y: samples[0].deathRate }, ...samples.map((sample, point) => ({
+            const initialValue = samples[0].timeSeconds;
+            if (samples.length === 1) samples.push(samples[0]);
+            const position = point => fullSpan * point / (samples.length - 1);
+            const points = samples.map((sample, point) => ({
+                x: position(point), y: sample.timeSeconds - initialValue
+            }));
+            deathLines.push(samples.map((sample, point) => ({
                 x: position(point), y: sample.deathRate
-            }))]);
+            })));
             return makeTrend(index, art.name, color, points);
         });
         deathTrend = makeTrend("death", "", "", averagePoints(deathLines), deathTrend);

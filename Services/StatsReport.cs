@@ -56,7 +56,7 @@ namespace CupheadTrainingApp.Services
                     deaths,
                     best = stats.BestClearSeconds is double b ? AttemptTracker.FormatTime(b) : "—",
                     bestSeconds = stats.BestClearSeconds,
-                    totalPlaytime = AttemptTracker.FormatTime(stats.TotalPlaytimeSeconds),
+                    totalPlaytime = FormatPlaytime(stats.TotalPlaytimeSeconds),
                     avg10,
                     avg20,
                     avg50,
@@ -75,10 +75,20 @@ namespace CupheadTrainingApp.Services
                     time = r.IsDeath ? null : AttemptTracker.FormatTime(r.TimeSeconds)
                 }).ToArray() : Array.Empty<object>();
 
-            var playtime = TimeSpan.FromSeconds(database.GetTotalPlaytimeSeconds());
-            var totalPlaytime = FormattableString.Invariant($"{(long)playtime.TotalHours}:{playtime.Minutes:00}:{playtime.Seconds:00}");
+            var totalPlaytime = FormatPlaytime(database.GetTotalPlaytimeSeconds());
             return JsonSerializer.Serialize(new { type = "statsPayload", rows, recent, totalPlaytime,
                 statsCategoryKey = categoryKey, categoryBests = database.GetCategoryBests() });
+        }
+
+        private static string FormatPlaytime(double seconds)
+        {
+            var duration = TimeSpan.FromSeconds(Math.Floor(Math.Max(0, seconds)));
+            long hours = (long)duration.TotalHours;
+            if (hours > 0)
+                return $"{hours}h {duration.Minutes}m {duration.Seconds}s";
+            if (duration.Minutes > 0)
+                return $"{duration.Minutes}m {duration.Seconds}s";
+            return $"{duration.Seconds}s";
         }
 
         private static string FormatAverage(List<double> values, int requiredCount)

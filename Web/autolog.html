@@ -54,7 +54,7 @@
     <section id="overall-progress" class="history-card" hidden>
         <h2 data-i18n="autolog.overall-title">Overall progress</h2>
         <div id="overall-progress-chart"></div>
-        <p class="projection-note" data-i18n="autolog.overall-method">0% is each boss’s average clear time in this category. Lower values mean faster clears.</p>
+        <p class="projection-note" data-i18n="autolog.overall-method">Each line starts at 0%. Changes are measured from that starting point on the scale of the boss’s average clear time.</p>
     </section>
     <section id="run-projection" class="history-card" hidden>
         <h2 data-i18n="projection.title">Run Projection</h2>
@@ -143,13 +143,13 @@
 <script src="js/ranks.js?v=wheel-ranks"></script>
 <script src="js/data-access.js"></script>
 <script src="js/category.js"></script>
-<script src="js/language.js?v=overall-death-hover"></script>
+<script src="js/language.js?v=overall-offset"></script>
 <script src="js/host-bridge.js?v=overall-death-hover"></script>
 <script src="js/compact-mode.js?v=compact-default"></script>
 <script src="js/wr-times.js"></script>
 <script src="js/run-projection.js?v=live-average"></script>
 <script src="js/run-recap.js?v=live-average"></script>
-<script src="js/overall-progress.js?v=overall-death-hover"></script>
+<script src="js/overall-progress.js?v=overall-offset"></script>
 <script>
 let autologRows = [];
 let selectedLogCategory = localStorage.getItem("cupheadLogCategory") || "1-1";
@@ -950,7 +950,7 @@ function renderBossDetail() {
         <div class="boss-detail-heading"><div class="boss-detail-title"><p class="attempt-eyebrow">${t("autolog.boss-progress")}</p><div class="boss-detail-bossbar" style="background:${safeText(art.background || "#493576")};color:${safeText(art.color || "#ffffff")}"><h2>${safeText(boss.level)}</h2>${art.icon ? `<img src="${safeText(art.icon)}" alt="" loading="lazy">` : ""}</div><p>${tf("autolog.boss-attempts", { attempts: boss.attempts, clears: boss.clears })}</p></div>
         <div class="detail-tabs"><button class="is-active" type="button" data-detail-tab="progress">${t("autolog.progress")}</button><button type="button" data-detail-tab="attempts">${t("autolog.attempts")}</button></div></div>
         <div class="detail-tab-content" data-panel="progress" ${selectedDetailTab === "progress" ? "" : "hidden"}>
-            <div class="improvement-cards"><div><span>${t("autolog.total-playtime")}</span><strong>${safeText(boss.totalPlaytime || "0:00.00")}</strong></div><div><span>${t("autolog.best-clear")}</span><strong>${safeText(boss.best)}</strong></div><div><span>${t("autolog.total-deaths")}</span><strong>${boss.deaths}</strong></div><div><span>${t("autolog.avg-10")}</span><strong>${safeText(completeAverage(boss.avg10, boss.clears, 10))}</strong></div><div><span>${t("autolog.avg-20")}</span><strong>${safeText(completeAverage(boss.avg20, boss.clears, 20))}</strong></div><div><span>${t("autolog.avg-50")}</span><strong>${safeText(completeAverage(boss.avg50, boss.clears, 50))}</strong></div></div>
+            <div class="improvement-cards"><div><span>${t("autolog.total-playtime")}</span><strong>${safeText(boss.totalPlaytime || "0s")}</strong></div><div><span>${t("autolog.best-clear")}</span><strong>${safeText(boss.best)}</strong></div><div><span>${t("autolog.total-deaths")}</span><strong>${boss.deaths}</strong></div><div><span>${t("autolog.avg-10")}</span><strong>${safeText(completeAverage(boss.avg10, boss.clears, 10))}</strong></div><div><span>${t("autolog.avg-20")}</span><strong>${safeText(completeAverage(boss.avg20, boss.clears, 20))}</strong></div><div><span>${t("autolog.avg-50")}</span><strong>${safeText(completeAverage(boss.avg50, boss.clears, 50))}</strong></div></div>
             <div class="history-chart-grid combined-history-grid">
                 <article class="history-card time-history-card">
                     <div class="time-chart-heading">
@@ -1073,7 +1073,7 @@ window.renderAutologStats = function(rows, recent, categoryKey, totalPlaytime) {
             ${art.icon ? `<img class="boss-card-icon" src="${safeText(art.icon)}" alt="" loading="lazy">` : ""}
         </span>
         <span class="boss-card-stats"><span><small>${t("autolog.attempts-label")}</small><b>${r.attempts}</b></span><span><small>${t("autolog.clears-label")}</small><b>${r.clears}</b></span><span><small>${t("autolog.deaths-label")}</small><b>${r.deaths}</b></span></span>
-        <span class="boss-card-footer"><span>${t("autolog.playtime")}: <b>${safeText(r.totalPlaytime || "0:00.00")}</b></span></span>
+        <span class="boss-card-footer"><span>${t("autolog.playtime")}: <b>${safeText(r.totalPlaytime || "0s")}</b></span></span>
     </button>`;
     }).join("");
     recentEl.innerHTML = renderAttempts(recent);
