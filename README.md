@@ -3,7 +3,7 @@
 A Windows app for Cuphead speedrunners. Automatically record clears and deaths, compare your times with training targets, and see how you improve.
 
 > [!WARNING]
-> **This project is fully vibe-coded.** It was built with AI assistance. If you are not OK with that, don't download. Expect bugs, especially on game builds or setups that haven’t been tested.
+> **This project is vibe-coded.** It was built with AI assistance. If you are not OK with that, don't download. Expect bugs, especially on game builds or setups that haven’t been tested.
 
 [Download for Windows](https://github.com/souldevss/CupheadTrainingApp/releases/latest) · [Web training table](https://souldevss.github.io/CupheadTrainingTable/)
 
