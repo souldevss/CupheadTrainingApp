@@ -126,7 +126,7 @@ namespace CupheadTrainingApp
                 _ = CheckForUpdatesAsync(manual: false);
             };
 
-            webView.Source = new Uri($"https://{VirtualHost}/app-shell.html?v=table-category-update");
+            webView.Source = new Uri($"https://{VirtualHost}/app-shell.html?v=assembly-version");
         }
 
         private void SetWebViewMemoryTarget(bool inactive)

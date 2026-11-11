@@ -25,9 +25,10 @@ namespace CupheadMusicPlayer.Engine
             new FindPointerSignature(PointerVersion.SteamDLC, AutoDeref.Single, "2C01000001000000EB1348B8????????????????48630089862C01000048B8????????????????4889304883EC20", 31)
         );
 
-        private static PointerVersion installedBaseVersion = PointerVersion.Steam115;
+        private static PointerVersion detectedBaseVersion = PointerVersion.Unknown;
+        private DateTime nextVersionCheckUtc;
         public static PointerVersion Version => PlayerData.Version == PointerVersion.Steam115
-            ? installedBaseVersion : PlayerData.Version;
+            ? detectedBaseVersion : PlayerData.Version;
         public Process Program { get; set; }
         public bool IsHooked { get; set; }
         public DateTime LastHooked { get; set; }
@@ -131,6 +132,12 @@ namespace CupheadMusicPlayer.Engine
             }
         }
 
+        private void RefreshBaseVersion()
+        {
+            detectedBaseVersion = GameBuildVersion.ReadBaseVersion(Program);
+            nextVersionCheckUtc = DateTime.UtcNow.AddSeconds(1);
+        }
+
         public bool HookProcess()
         {
             IsHooked = Program != null && !Program.HasExited;
@@ -143,7 +150,7 @@ namespace CupheadMusicPlayer.Engine
                 if (Program != null && !Program.HasExited)
                 {
                     MemoryReader.Update64Bit(Program);
-                    installedBaseVersion = GameBuildVersion.ReadInstalledBaseVersion(Program);
+                    RefreshBaseVersion();
                     IsHooked = true;
                 }
             }

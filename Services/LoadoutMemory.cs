@@ -12,6 +12,8 @@ namespace CupheadMusicPlayer.Engine
             // must not be read while ProgramPointer.Version still has its default.
             if (Program == null || PlayerData.GetPointer(Program) == IntPtr.Zero) return false;
             if (SceneLoader.GetPointer(Program) == IntPtr.Zero || Level.GetPointer(Program) == IntPtr.Zero) return false;
+            if (PlayerData.Version == PointerVersion.Steam115 && detectedBaseVersion == PointerVersion.Unknown
+                && DateTime.UtcNow >= nextVersionCheckUtc) RefreshBaseVersion();
             // Legacy and 1.1 share these pointer layouts.
             return SceneLoader.Version == PlayerData.Version
                 && Level.Version == PlayerData.Version;

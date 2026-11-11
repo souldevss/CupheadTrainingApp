@@ -83,6 +83,7 @@ const LANG_KEY = "cuphead-training-lang", TRANSLATIONS = {
     "host.ready": "Ready",
     "host.loadout-unavailable": "Loadout unavailable — retry once equipment can be read",
     "host.loadout-legacy": "Run excluded — equip Lobber first, Roundabout second, no super or charm",
+    "host.version-unavailable": "Game version unavailable — waiting for Cuphead assembly",
     "host.loadout-base": "Run excluded — equip Lobber/Spread, no super or charm",
     "host.loadout-follies": "Run excluded — equip only Peashooter, no super or charm",
     "host.loadout-dlc": "Run excluded — equip Lobber/Spread or Charge/Spread, Chalice charm, no super",
@@ -364,6 +365,7 @@ const LANG_KEY = "cuphead-training-lang", TRANSLATIONS = {
     "host.ready": "Pronto",
     "host.loadout-unavailable": "Equipamento indisponível — tente novamente quando a leitura funcionar",
     "host.loadout-legacy": "Tentativa excluída — equipe Lobber primeiro, Roundabout segundo, sem super ou amuleto",
+    "host.version-unavailable": "Versão do jogo indisponível — aguardando o assembly de Cuphead",
     "host.loadout-base": "Tentativa excluída — equipe Lobber/Spread, sem super ou amuleto",
     "host.loadout-follies": "Tentativa excluída — equipe apenas Peashooter, sem super ou amuleto",
     "host.loadout-dlc": "Tentativa excluída — equipe Lobber/Spread ou Charge/Spread, amuleto da Chalice, sem super",
@@ -627,6 +629,7 @@ function translateWatcherStatus(status) {
     "Watching paused": "host.paused",
     "Loadout unavailable — retry once equipment can be read": "host.loadout-unavailable",
     "Run excluded — equip Lobber first, Roundabout second, no super or charm": "host.loadout-legacy",
+    "Game version unavailable — waiting for Cuphead assembly": "host.version-unavailable",
     "Run excluded — equip Lobber/Spread, no super or charm": "host.loadout-base",
     "Run excluded — equip only Peashooter, no super or charm": "host.loadout-follies",
     "Run excluded — equip Lobber/Spread or Charge/Spread, Chalice charm, no super": "host.loadout-dlc"

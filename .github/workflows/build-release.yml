@@ -44,6 +44,11 @@ jobs:
           $assets = Get-ChildItem -Path artifacts/*.zip, artifacts/*.sha256 | Select-Object -ExpandProperty FullName
           $notes = "release-notes/$env:GITHUB_REF_NAME.md"
           if (-not (Test-Path -LiteralPath $notes)) { throw "Write release notes at $notes before tagging." }
+          gh release view "$env:GITHUB_REF_NAME" --json tagName > $null 2>&1
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "Release already published; keeping its existing download assets."
+            exit 0
+          }
           gh release create "$env:GITHUB_REF_NAME" @assets --verify-tag --notes-file $notes --title "Cuphead Training App $env:GITHUB_REF_NAME"
           if ($LASTEXITCODE -ne 0) { throw 'Release publication failed.' }
       - name: Replace generated notes on earlier releases

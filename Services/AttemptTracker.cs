@@ -64,6 +64,11 @@ namespace CupheadTrainingApp.Services
             }
 
             PointerVersion version = MemoryManager.Version;
+            if (version == PointerVersion.Unknown)
+            {
+                StatusChanged?.Invoke("Game version unavailable — waiting for Cuphead assembly");
+                return;
+            }
             if (version != PointerVersion.Steam100 && version != PointerVersion.Steam115 && version != PointerVersion.SteamDLC)
             {
                 if (!versionWarningRaised)
