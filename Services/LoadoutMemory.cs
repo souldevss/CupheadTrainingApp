@@ -12,16 +12,18 @@ namespace CupheadMusicPlayer.Engine
             // must not be read while ProgramPointer.Version still has its default.
             if (Program == null || PlayerData.GetPointer(Program) == IntPtr.Zero) return false;
             if (SceneLoader.GetPointer(Program) == IntPtr.Zero || Level.GetPointer(Program) == IntPtr.Zero) return false;
-            return SceneLoader.Version == PlayerData.Version && Level.Version == PlayerData.Version;
+            // Legacy and 1.1 share these pointer layouts.
+            return SceneLoader.Version == PlayerData.Version
+                && Level.Version == PlayerData.Version;
         }
 
         // PlayerData.loadouts -> PlayerLoadouts.playerOne -> PlayerLoadout.
         // Mono places references first. In DLC, curseCharmPuzzleOrder and
         // usedChessBossZones precede loadouts (verified in the DLC assembly).
-        public bool TryReadTrainingLoadout(out TrainingLoadout loadout)
+        public unsafe bool TryReadTrainingLoadout(out TrainingLoadout loadout)
         {
             loadout = null;
-            if (Version != PointerVersion.Steam115 && Version != PointerVersion.SteamDLC) return false;
+            if (Version != PointerVersion.Steam100 && Version != PointerVersion.Steam115 && Version != PointerVersion.SteamDLC) return false;
             try
             {
                 int header = Version == PointerVersion.SteamDLC ? 0x10 : 0x8;
@@ -34,10 +36,11 @@ namespace CupheadMusicPlayer.Engine
                 if (player == IntPtr.Zero) return false;
 
                 // Check the entire read before treating any zero as an empty slot.
-                var equipment = new byte[4 * sizeof(int)];
-                if (!WinAPI.ReadProcessMemory(Program.Handle, player + header, equipment, equipment.Length, out int bytesRead)
-                    || bytesRead != equipment.Length) return false;
-                return TryDecodeTrainingLoadout(equipment, Version == PointerVersion.Steam115, out loadout);
+                Span<byte> equipment = stackalloc byte[4 * sizeof(int)];
+                fixed (byte* buffer = equipment)
+                    if (!WinAPI.ReadProcessMemoryFast(Program.Handle, player + header, buffer, (nuint)equipment.Length, out var bytesRead)
+                        || bytesRead != (nuint)equipment.Length) return false;
+                return TryDecodeTrainingLoadout(equipment, Version != PointerVersion.SteamDLC, out loadout);
             }
             catch { return false; }
         }

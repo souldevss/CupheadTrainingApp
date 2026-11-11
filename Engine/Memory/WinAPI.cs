@@ -9,6 +9,9 @@ namespace CupheadMusicPlayer.Engine.Memory
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, [Out] byte[] lpBuffer, int dwSize, out int lpNumberOfBytesRead);
 
+        [DllImport("kernel32.dll", EntryPoint = "ReadProcessMemory", SetLastError = true)]
+        public static extern unsafe bool ReadProcessMemoryFast(IntPtr process, IntPtr address, void* buffer, nuint size, out nuint bytesRead);
+
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool WriteProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, [Out] byte[] lpBuffer, int dwSize, out int lpNumberOfBytesWritten);
 

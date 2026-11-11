@@ -59,11 +59,9 @@ namespace CupheadMusicPlayer.Engine.Memory
             {
                 int size = sizeof(T);
                 if (typeof(T) == typeof(IntPtr)) size = is64Bit ? 8 : 4;
-                byte[] buffer = Read(targetProcess, address + last, size);
-                fixed (byte* ptr = buffer)
-                {
-                    return *(T*)ptr;
-                }
+                T value = default;
+                return WinAPI.ReadProcessMemoryFast(targetProcess.Handle, address + last, &value, (nuint)size, out var bytesRead)
+                    && bytesRead == (nuint)size ? value : default;
             }
         }
 
@@ -174,14 +172,19 @@ namespace CupheadMusicPlayer.Engine.Memory
             WinAPI.WriteProcessMemory(targetProcess.Handle, address + last, value, value.Length, out _);
         }
 
-        private static int OffsetAddress(this Process targetProcess, ref IntPtr address, params int[] offsets)
+        private static unsafe int OffsetAddress(this Process targetProcess, ref IntPtr address, params int[] offsets)
         {
-            byte[] buffer = new byte[is64Bit ? 8 : 4];
+            nuint size = is64Bit ? 8u : 4u;
             for (int i = 0; i < offsets.Length - 1; i++)
             {
-                WinAPI.ReadProcessMemory(targetProcess.Handle, address + offsets[i], buffer, buffer.Length, out _);
-                if (is64Bit) address = (IntPtr)BitConverter.ToUInt64(buffer, 0);
-                else address = (IntPtr)BitConverter.ToUInt32(buffer, 0);
+                ulong pointer = 0;
+                if (!WinAPI.ReadProcessMemoryFast(targetProcess.Handle, address + offsets[i], &pointer, size, out var bytesRead)
+                    || bytesRead != size)
+                {
+                    address = IntPtr.Zero;
+                    break;
+                }
+                address = (IntPtr)pointer;
                 if (address == IntPtr.Zero) break;
             }
             return offsets.Length > 0 ? offsets[offsets.Length - 1] : 0;

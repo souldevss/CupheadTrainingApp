@@ -16,6 +16,7 @@ namespace CupheadTrainingApp
 
         private readonly RunDatabase database = new RunDatabase();
         private readonly AttemptTracker tracker;
+        private readonly StatsReport.Cache statsReports;
         private readonly Timer pollTimer = new Timer();
         private readonly WebView2 webView = new WebView2();
 
@@ -27,10 +28,15 @@ namespace CupheadTrainingApp
         private string versionWarning;
         private string lastStatus = "Ready";
         private DateTime lastStatusPushUtc = DateTime.MinValue;
+        private (bool Watching, string Status, string Warning, AttemptTracker.LiveAttemptInfo Live)? lastWatcherState;
+        private static readonly JsonSerializerOptions BackupJsonOptions = new(JsonSerializerDefaults.Web) { WriteIndented = true };
+        private static readonly JsonSerializerOptions WebJsonOptions = new(JsonSerializerDefaults.Web);
+        private static readonly JsonSerializerOptions ImportJsonOptions = new() { PropertyNameCaseInsensitive = true };
 
         public MainForm()
         {
             tracker = new AttemptTracker(database);
+            statsReports = new StatsReport.Cache(database);
             tracker.StatusChanged += s =>
             {
                 lastStatus = s;
@@ -38,19 +44,19 @@ namespace CupheadTrainingApp
                 if ((now - lastStatusPushUtc).TotalMilliseconds < 250)
                     return;
                 lastStatusPushUtc = now;
-                BeginInvoke(new Action(PushWatcherStatus));
+                PushWatcherStatus();
             };
             tracker.VersionWarning += w =>
             {
                 versionWarning = w;
-                BeginInvoke(new Action(PushWatcherStatus));
+                PushWatcherStatus();
             };
-            tracker.AttemptLogged += e => BeginInvoke(new Action(() => OnAttemptLogged(e)));
-            tracker.DeathLogged += () => BeginInvoke(new Action(() =>
+            tracker.AttemptLogged += OnAttemptLogged;
+            tracker.DeathLogged += () =>
             {
                 if (includeRecentActivity || includeHistory) PushStats();
                 PushWatcherStatus();
-            }));
+            };
 
             Text = "Cuphead Training App";
             Icon = System.Drawing.Icon.ExtractAssociatedIcon(Application.ExecutablePath);
@@ -113,13 +119,14 @@ namespace CupheadTrainingApp
             webView.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
             webView.CoreWebView2.NavigationCompleted += (s, e) =>
             {
+                lastWatcherState = null;
                 PushWatcherStatus();
                 if (!e.IsSuccess || checkedForUpdates) return;
                 checkedForUpdates = true;
                 _ = CheckForUpdatesAsync(manual: false);
             };
 
-            webView.Source = new Uri($"https://{VirtualHost}/app-shell.html?v=1.2.1");
+            webView.Source = new Uri($"https://{VirtualHost}/app-shell.html?v=table-category-update");
         }
 
         private void SetWebViewMemoryTarget(bool inactive)
@@ -162,16 +169,10 @@ namespace CupheadTrainingApp
                             _ = CheckForUpdatesAsync(manual: true);
                         break;
                     case "toggleWatching":
-                        watching = !watching;
-                        if (watching) pollTimer.Start();
-                        else pollTimer.Stop();
-                        PushWatcherStatus();
+                        SetWatching(!watching);
                         break;
                     case "setWatching":
-                        watching = root.TryGetProperty("value", out var v) && v.GetBoolean();
-                        if (watching) pollTimer.Start();
-                        else pollTimer.Stop();
-                        PushWatcherStatus();
+                        SetWatching(root.TryGetProperty("value", out var v) && v.GetBoolean());
                         break;
                     case "getWatcherState":
                         PushWatcherStatus();
@@ -180,10 +181,11 @@ namespace CupheadTrainingApp
                         publishStats = !root.TryGetProperty("enabled", out var enabled) || enabled.GetBoolean();
                         includeRecentActivity = root.TryGetProperty("includeRecent", out var includeRecent) && includeRecent.GetBoolean();
                         includeHistory = root.TryGetProperty("includeHistory", out var withHistory) && withHistory.GetBoolean();
+                        if (!includeHistory) statsReports.ReleaseHistory();
                         break;
                     case "getStats":
                         if (root.TryGetProperty("categoryKey", out var categoryElement) && categoryElement.GetString() is string category
-                            && (category == "1-1" || category == "DLC:lobber" || category == "DLC:charge"))
+                            && (category == "1-1" || category == "legacy" || category == "DLC:lobber" || category == "DLC:charge"))
                             statsCategoryKey = category;
                         if (root.TryGetProperty("includeRecent", out var requestedRecent))
                             includeRecentActivity = requestedRecent.GetBoolean();
@@ -192,10 +194,10 @@ namespace CupheadTrainingApp
                         PushStats();
                         break;
                     case "getOverallProgress":
-                        PostJson(StatsReport.OverallProgressJson(database, statsCategoryKey));
+                        PostJson(statsReports.GetOverallJson(statsCategoryKey));
                         break;
                     case "exportBackup":
-                        PostJson(JsonSerializer.Serialize(new { type = "backupDatabase", database = database.ExportBackup() }, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
+                        PostJson(JsonSerializer.Serialize(new { type = "backupDatabase", database = database.ExportBackup() }, WebJsonOptions));
                         break;
                     case "autoBackup":
                         SaveAutomaticBackup(root);
@@ -205,7 +207,7 @@ namespace CupheadTrainingApp
                         {
                             if (!root.TryGetProperty("database", out var backupJson))
                                 throw new InvalidOperationException("The backup is missing attempt data.");
-                            var backup = JsonSerializer.Deserialize<RunDatabase.BackupPayload>(backupJson.GetRawText(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                            var backup = backupJson.Deserialize<RunDatabase.BackupPayload>(ImportJsonOptions);
                             database.ImportBackup(backup);
                             PostJson(JsonSerializer.Serialize(new { type = "backupImportComplete" }));
                             PushStats();
@@ -244,7 +246,7 @@ namespace CupheadTrainingApp
         private void PushStats()
         {
             if (publishStats)
-                PostJson(StatsReport.ToJson(database, includeRecentActivity, includeHistory, statsCategoryKey));
+                PostJson(statsReports.GetJson(includeRecentActivity, includeHistory, statsCategoryKey));
         }
 
         private void OnAttemptLogged(AttemptTracker.AttemptLoggedEvent e)
@@ -286,29 +288,38 @@ namespace CupheadTrainingApp
             Directory.CreateDirectory(directory);
             string path = Path.Combine(directory, "cuphead-training-auto-backup.json");
             string temporaryPath = path + ".tmp";
-            File.WriteAllText(temporaryPath, JsonSerializer.Serialize(backup, new JsonSerializerOptions(JsonSerializerDefaults.Web) { WriteIndented = true }));
+            File.WriteAllText(temporaryPath, JsonSerializer.Serialize(backup, BackupJsonOptions));
             File.Move(temporaryPath, path, true);
         }
 
         private void PushWatcherStatus()
         {
             var live = watching ? tracker.LiveAttempt : null;
-            PostJson(JsonSerializer.Serialize(new
+            var state = (watching, lastStatus, versionWarning, live);
+            if (lastWatcherState == state) return;
+            if (PostJson(JsonSerializer.Serialize(new
             {
                 type = "watcherStatus",
                 watching,
                 status = lastStatus,
                 warning = !string.IsNullOrEmpty(versionWarning),
                 liveAttempt = live == null ? null : new { bossName = live.BossName, categoryKey = live.CategoryKey, seconds = live.Seconds }
-            }));
+            }))) lastWatcherState = state;
         }
 
-        private void PostJson(string json)
+        private void SetWatching(bool value)
+        {
+            watching = value;
+            pollTimer.Enabled = value;
+            PushWatcherStatus();
+        }
+
+        private bool PostJson(string json)
         {
             if (webView.CoreWebView2 == null)
-                return;
-            try { webView.CoreWebView2.PostWebMessageAsJson(json); }
-            catch { /* webview not ready */ }
+                return false;
+            try { webView.CoreWebView2.PostWebMessageAsJson(json); return true; }
+            catch { return false; /* webview not ready */ }
         }
     }
 }

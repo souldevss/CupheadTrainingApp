@@ -24,7 +24,7 @@ The app checks for updates on startup. You can also use **Backups → Check for 
 - **Run Projection** estimates pace and first-try odds. Import a `.rrc` file in **Run Recap** to browse runs and add matching recap data to the projection.
 - **Backups** imports or exports your history and settings. The app refreshes a local backup every ten minutes.
 
-Tracking supports Steam **1.1+** and **DLC**, with separate Lobber/Spread and Charge/Spread DLC categories. Match your loadout to the selected category. Forest Follies uses Peashooter, and Mausoleum has no equipment restriction.
+Tracking has separate Steam **Legacy (1.0)**, **1.1+**, and **DLC** categories. Legacy requires Lobber in the first slot and Roundabout in the second; 1.1+ uses Lobber/Spread. DLC keeps separate Lobber/Spread and Charge/Spread histories. Forest Follies uses Peashooter, and Mausoleum has no equipment restriction.
 
 ## Where your data lives
 
@@ -49,6 +49,6 @@ dotnet build .\CupheadTrainingApp.csproj -c Release
 dotnet run --project .\CupheadTrainingApp.csproj -c Release
 ```
 
-Use `powershell -ExecutionPolicy Bypass -File .\scripts\Publish.ps1 -Version 1.2.1` to create a self-contained ZIP and checksum in `artifacts/`. GitHub Actions publishes a release when you push a new version tag with matching notes in `release-notes/`.
+Use `powershell -ExecutionPolicy Bypass -File .\scripts\Publish.ps1 -Version 1.2.2` to create a self-contained ZIP and checksum in `artifacts/`. GitHub Actions publishes a release when you push a new version tag with matching notes in `release-notes/`.
 
 Built with C#, Windows Forms, SQLite, and WebView2. Based on the [Cuphead Training Table](https://github.com/souldevss/CupheadTrainingTable).

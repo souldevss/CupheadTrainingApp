@@ -8,6 +8,7 @@ namespace CupheadTrainingApp.Services
     public sealed class RunDatabase : IDisposable
     {
         private readonly SqliteConnection connection;
+        public long Revision { get; private set; }
 
         internal static readonly string DataDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -90,6 +91,10 @@ THEN 'DLC:lobber' ELSE '1-1' END WHERE category_key IS NULL OR category_key = ''
             acceptHistory.ExecuteNonQuery();
             acceptHistory.CommandText = acceptHistory.CommandText.Replace("UPDATE attempts", "UPDATE death_events");
             acceptHistory.ExecuteNonQuery();
+            using var indexes = connection.CreateCommand();
+            indexes.CommandText = @"CREATE INDEX IF NOT EXISTS attempts_category_boss ON attempts(category_key, boss_name, recorded_at, id);
+CREATE INDEX IF NOT EXISTS deaths_category_boss ON death_events(category_key, boss_name, recorded_at, id);";
+            indexes.ExecuteNonQuery();
         }
 
         public void InsertAttempt(string bossName, string sceneId, bool cleared, double timeSeconds, DateTime recordedAtUtc, string categoryKey = null)
@@ -105,6 +110,7 @@ VALUES ($boss, $scene, $cleared, $time, 0, $at, $category);";
             cmd.Parameters.AddWithValue("$at", recordedAtUtc.ToString("o"));
             cmd.Parameters.AddWithValue("$category", (object)categoryKey ?? DBNull.Value);
             cmd.ExecuteNonQuery();
+            Revision++;
         }
 
         public List<object> GetCategoryBests()
@@ -121,7 +127,7 @@ CASE WHEN scene_id IN ('scene_level_old_man', 'scene_level_snow_cult',
 'The Howling Aces', 'Esther Winchester', 'Moonshine Mob', 'Chef Saltbaker')
 THEN 'DLC:lobber' ELSE '1-1' END) AS trusted_category FROM attempts)
 SELECT boss_name, trusted_category, MIN(time_seconds) FROM categorized
-WHERE cleared = 1 AND trusted_category IN ('1-1', 'DLC:lobber', 'DLC:charge', 'DLC:shared')
+WHERE cleared = 1 AND trusted_category IN ('1-1', 'legacy', 'DLC:lobber', 'DLC:charge', 'DLC:shared')
 GROUP BY boss_name, trusted_category;";
             using var reader = cmd.ExecuteReader();
             while (reader.Read()) bests.Add(new { bossName = reader.GetString(0), categoryKey = reader.GetString(1), seconds = reader.GetDouble(2) });
@@ -139,90 +145,75 @@ VALUES ($boss, $scene, $at, $category);";
             cmd.Parameters.AddWithValue("$at", recordedAtUtc.ToString("o"));
             cmd.Parameters.AddWithValue("$category", (object)categoryKey ?? DBNull.Value);
             cmd.ExecuteNonQuery();
+            Revision++;
         }
 
-        public int GetBossDeathCount(string bossName, string categoryKey = null)
+        private static string CategoryFilter(string categoryKey) => categoryKey == null
+            ? "1 = 1" : "category_key IN ($category, $shared)";
+
+        private static void AddCategoryParameters(SqliteCommand command, string categoryKey)
         {
-            using var cmd = connection.CreateCommand();
-            cmd.CommandText = "SELECT COUNT(*) FROM death_events WHERE boss_name = $boss AND ($category IS NULL OR category_key = $category OR ($category LIKE 'DLC:%' AND category_key = 'DLC:shared'));";
-            cmd.Parameters.AddWithValue("$boss", bossName);
-            cmd.Parameters.AddWithValue("$category", (object)categoryKey ?? DBNull.Value);
-            return Convert.ToInt32(cmd.ExecuteScalar());
+            command.Parameters.AddWithValue("$category", (object)categoryKey ?? DBNull.Value);
+            command.Parameters.AddWithValue("$shared", categoryKey?.StartsWith("DLC:", StringComparison.Ordinal) == true
+                ? "DLC:shared" : DBNull.Value);
         }
 
-        public List<DateTime> GetBossDeathHistory(string bossName, int limit = 200)
+        public Dictionary<string, BossStats> GetCategoryStats(string categoryKey)
         {
-            var list = new List<DateTime>();
             using var cmd = connection.CreateCommand();
-            cmd.CommandText = @"
-SELECT recorded_at FROM (
-  SELECT id, recorded_at FROM death_events WHERE boss_name = $boss
-  ORDER BY id DESC LIMIT $limit
-) ORDER BY id ASC;";
-            cmd.Parameters.AddWithValue("$boss", bossName);
-            cmd.Parameters.AddWithValue("$limit", limit);
+            string filter = CategoryFilter(categoryKey);
+            cmd.CommandText = $@"WITH activity AS (
+  SELECT boss_name, 1 AS attempts, cleared, time_seconds, 0 AS deaths FROM attempts WHERE {filter}
+  UNION ALL
+  SELECT boss_name, 0, 0, 0.0, 1 FROM death_events WHERE {filter}
+)
+SELECT boss_name, SUM(attempts), SUM(cleared), SUM(deaths),
+MIN(CASE WHEN cleared = 1 THEN time_seconds END), SUM(time_seconds)
+FROM activity GROUP BY boss_name;";
+            AddCategoryParameters(cmd, categoryKey);
+            var result = new Dictionary<string, BossStats>(StringComparer.Ordinal);
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
-                list.Add(DateTime.Parse(reader.GetString(0), null, System.Globalization.DateTimeStyles.RoundtripKind));
-            return list;
+                result.Add(reader.GetString(0), new BossStats
+                {
+                    Attempts = reader.GetInt32(1), Clears = reader.GetInt32(2), Deaths = reader.GetInt32(3),
+                    BestClearSeconds = reader.IsDBNull(4) ? null : reader.GetDouble(4),
+                    TotalPlaytimeSeconds = reader.GetDouble(5)
+                });
+            return result;
         }
 
         public List<ActivityRow> GetRecentActivity(int limit = 60, string categoryKey = null)
+            => GetActivity(categoryKey, limit);
+
+        public List<ActivityRow> GetCategoryActivity(string categoryKey)
+            => GetActivity(categoryKey, null);
+
+        private List<ActivityRow> GetActivity(string categoryKey, int? limit)
         {
-            var list = new List<ActivityRow>();
             using var cmd = connection.CreateCommand();
-            cmd.CommandText = @"
+            string filter = CategoryFilter(categoryKey);
+            string order = limit.HasValue ? "recorded_at DESC, id DESC LIMIT $limit" : "recorded_at, kind, id";
+            cmd.CommandText = $@"
 SELECT id, kind, boss_name, cleared, time_seconds, recorded_at, category_key FROM (
-  SELECT id, 0 AS kind, boss_name, cleared, time_seconds, recorded_at, category_key FROM attempts WHERE 1=1 AND ($category IS NULL OR category_key = $category OR ($category LIKE 'DLC:%' AND category_key = 'DLC:shared'))
+  SELECT id, 0 AS kind, boss_name, cleared, time_seconds, recorded_at, category_key FROM attempts WHERE {filter}
   UNION ALL
-  SELECT id, 1 AS kind, boss_name, 0 AS cleared, 0.0 AS time_seconds, recorded_at, category_key FROM death_events WHERE 1=1 AND ($category IS NULL OR category_key = $category OR ($category LIKE 'DLC:%' AND category_key = 'DLC:shared'))
-)
-ORDER BY recorded_at DESC, id DESC LIMIT $limit;";
-            cmd.Parameters.AddWithValue("$limit", limit);
-            cmd.Parameters.AddWithValue("$category", (object)categoryKey ?? DBNull.Value);
+  SELECT id, 1 AS kind, boss_name, 0, 0.0, recorded_at, category_key FROM death_events WHERE {filter}
+) ORDER BY {order};";
+            AddCategoryParameters(cmd, categoryKey);
+            if (limit.HasValue) cmd.Parameters.AddWithValue("$limit", limit.Value);
+            var rows = new List<ActivityRow>();
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
-            {
-                list.Add(new ActivityRow
+                rows.Add(new ActivityRow
                 {
-                    Id = reader.GetInt64(0),
-                    IsDeath = reader.GetInt32(1) == 1,
-                    CategoryKey = reader.IsDBNull(6) ? null : reader.GetString(6),
-                    BossName = reader.GetString(2),
-                    Cleared = reader.GetInt32(3) == 1,
+                    Id = reader.GetInt64(0), IsDeath = reader.GetInt32(1) == 1,
+                    BossName = reader.GetString(2), Cleared = reader.GetInt32(3) == 1,
                     TimeSeconds = reader.GetDouble(4),
-                    RecordedAtUtc = DateTime.Parse(reader.GetString(5), null, System.Globalization.DateTimeStyles.RoundtripKind)
+                    RecordedAtUtc = DateTime.Parse(reader.GetString(5), null, System.Globalization.DateTimeStyles.RoundtripKind),
+                    CategoryKey = reader.IsDBNull(6) ? null : reader.GetString(6)
                 });
-            }
-            return list;
-        }
-
-        public List<AttemptRow> GetRecentAttempts(int limit = 200)
-        {
-            var list = new List<AttemptRow>();
-            using var cmd = connection.CreateCommand();
-            cmd.CommandText = @"
-SELECT id, boss_name, scene_id, cleared, time_seconds, deaths, recorded_at
-FROM attempts
-ORDER BY id DESC
-LIMIT $limit;";
-            cmd.Parameters.AddWithValue("$limit", limit);
-            using var reader = cmd.ExecuteReader();
-            while (reader.Read())
-            {
-                list.Add(new AttemptRow
-                {
-                    Id = reader.GetInt64(0),
-                    BossName = reader.GetString(1),
-                    SceneId = reader.GetString(2),
-                    Cleared = reader.GetInt32(3) == 1,
-                    TimeSeconds = reader.GetDouble(4),
-                    Deaths = reader.GetInt32(5),
-                    RecordedAtUtc = DateTime.Parse(reader.GetString(6), null, System.Globalization.DateTimeStyles.RoundtripKind)
-                });
-            }
-
-            return list;
+            return rows;
         }
 
         public double GetTotalPlaytimeSeconds()
@@ -250,117 +241,14 @@ ORDER BY recorded_at, kind, id;";
                 yield return (reader.GetString(0), reader.GetInt32(1) == 1, reader.IsDBNull(2) ? null : reader.GetDouble(2));
         }
 
-        public BossStats GetBossStats(string bossName, string categoryKey = null)
-        {
-            using var cmd = connection.CreateCommand();
-            cmd.CommandText = @"
-SELECT
-  COUNT(*) AS attempts,
-  SUM(CASE WHEN cleared = 1 THEN 1 ELSE 0 END) AS clears,
-  SUM(deaths) AS total_deaths,
-  MIN(CASE WHEN cleared = 1 THEN time_seconds END) AS best_clear,
-  COALESCE(SUM(time_seconds), 0) AS total_playtime
-FROM attempts
-WHERE boss_name = $boss AND ($category IS NULL OR category_key = $category OR ($category LIKE 'DLC:%' AND category_key = 'DLC:shared'));";
-            cmd.Parameters.AddWithValue("$boss", bossName);
-            cmd.Parameters.AddWithValue("$category", (object)categoryKey ?? DBNull.Value);
-            using var reader = cmd.ExecuteReader();
-            if (!reader.Read())
-                return new BossStats();
-
-            int attempts = reader.IsDBNull(0) ? 0 : reader.GetInt32(0);
-            int clears = reader.IsDBNull(1) ? 0 : reader.GetInt32(1);
-            int deaths = reader.IsDBNull(2) ? 0 : reader.GetInt32(2);
-            double? best = reader.IsDBNull(3) ? null : reader.GetDouble(3);
-            double totalPlaytime = reader.IsDBNull(4) ? 0 : reader.GetDouble(4);
-
-            return new BossStats
-            {
-                Attempts = attempts,
-                Clears = clears,
-                TotalDeaths = deaths,
-                BestClearSeconds = best,
-                TotalPlaytimeSeconds = totalPlaytime
-            };
-        }
-
-        public List<double> GetRecentClearTimes(string bossName, int count, string categoryKey = null)
-        {
-            var list = new List<double>();
-            using var cmd = connection.CreateCommand();
-            cmd.CommandText = @"
-SELECT time_seconds FROM attempts
-WHERE boss_name = $boss AND ($category IS NULL OR category_key = $category OR ($category LIKE 'DLC:%' AND category_key = 'DLC:shared')) AND cleared = 1
-ORDER BY id DESC
-LIMIT $count;";
-            cmd.Parameters.AddWithValue("$boss", bossName);
-            cmd.Parameters.AddWithValue("$count", count);
-            cmd.Parameters.AddWithValue("$category", (object)categoryKey ?? DBNull.Value);
-            using var reader = cmd.ExecuteReader();
-            while (reader.Read())
-                list.Add(reader.GetDouble(0));
-            return list;
-        }
-
-        public List<AttemptRow> GetBossAttempts(string bossName, string categoryKey = null)
-        {
-            var list = new List<AttemptRow>();
-            using var cmd = connection.CreateCommand();
-            cmd.CommandText = @"
-SELECT id, boss_name, scene_id, cleared, time_seconds, deaths, recorded_at
-FROM attempts WHERE boss_name = $boss AND ($category IS NULL OR category_key = $category OR ($category LIKE 'DLC:%' AND category_key = 'DLC:shared'))
-ORDER BY id ASC;";
-            cmd.Parameters.AddWithValue("$boss", bossName);
-            cmd.Parameters.AddWithValue("$category", (object)categoryKey ?? DBNull.Value);
-            using var reader = cmd.ExecuteReader();
-            while (reader.Read())
-            {
-                list.Add(new AttemptRow
-                {
-                    Id = reader.GetInt64(0),
-                    BossName = reader.GetString(1),
-                    SceneId = reader.GetString(2),
-                    Cleared = reader.GetInt32(3) == 1,
-                    TimeSeconds = reader.GetDouble(4),
-                    Deaths = reader.GetInt32(5),
-                    RecordedAtUtc = DateTime.Parse(reader.GetString(6), null, System.Globalization.DateTimeStyles.RoundtripKind)
-                });
-            }
-            return list;
-        }
-
-        public List<AttemptOutcome> GetBossOutcomeHistory(string bossName, string categoryKey = null)
-        {
-            var list = new List<AttemptOutcome>();
-            using var cmd = connection.CreateCommand();
-            cmd.CommandText = @"
-SELECT id, kind, cleared, time_seconds, recorded_at FROM (
-  SELECT id, 0 AS kind, cleared, time_seconds, recorded_at FROM attempts WHERE boss_name = $boss AND ($category IS NULL OR category_key = $category OR ($category LIKE 'DLC:%' AND category_key = 'DLC:shared'))
-  UNION ALL
-  SELECT id, 1 AS kind, 0 AS cleared, 0.0 AS time_seconds, recorded_at FROM death_events WHERE boss_name = $boss AND ($category IS NULL OR category_key = $category OR ($category LIKE 'DLC:%' AND category_key = 'DLC:shared'))
-)
-ORDER BY recorded_at ASC, kind ASC, id ASC;";
-            cmd.Parameters.AddWithValue("$boss", bossName);
-            cmd.Parameters.AddWithValue("$category", (object)categoryKey ?? DBNull.Value);
-            using var reader = cmd.ExecuteReader();
-            while (reader.Read())
-                list.Add(new AttemptOutcome
-                {
-                    Id = reader.GetInt64(0),
-                    IsDeath = reader.GetInt32(1) == 1,
-                    IsClear = reader.GetInt32(2) != 0,
-                    TimeSeconds = reader.GetDouble(3),
-                    RecordedAtUtc = DateTime.Parse(reader.GetString(4), null, System.Globalization.DateTimeStyles.RoundtripKind)
-                });
-            return list;
-        }
-
         public bool DeleteAttempt(long id)
         {
             using var cmd = connection.CreateCommand();
             cmd.CommandText = "DELETE FROM attempts WHERE id = $id;";
             cmd.Parameters.AddWithValue("$id", id);
-            return cmd.ExecuteNonQuery() > 0;
+            bool changed = cmd.ExecuteNonQuery() > 0;
+            if (changed) Revision++;
+            return changed;
         }
 
         public bool DeleteDeath(long id)
@@ -368,14 +256,16 @@ ORDER BY recorded_at ASC, kind ASC, id ASC;";
             using var cmd = connection.CreateCommand();
             cmd.CommandText = "DELETE FROM death_events WHERE id = $id;";
             cmd.Parameters.AddWithValue("$id", id);
-            return cmd.ExecuteNonQuery() > 0;
+            bool changed = cmd.ExecuteNonQuery() > 0;
+            if (changed) Revision++;
+            return changed;
         }
 
         public void ClearAttempts()
         {
             using var cmd = connection.CreateCommand();
             cmd.CommandText = "DELETE FROM attempts; DELETE FROM death_events;";
-            cmd.ExecuteNonQuery();
+            if (cmd.ExecuteNonQuery() > 0) Revision++;
         }
 
         public BackupPayload ExportBackup()
@@ -413,65 +303,60 @@ ORDER BY recorded_at ASC, kind ASC, id ASC;";
                 throw new ArgumentException("Backup is missing attempt or death data.", nameof(payload));
 
             using var transaction = connection.BeginTransaction();
+            using var attemptCommand = connection.CreateCommand();
+            attemptCommand.Transaction = transaction;
+            attemptCommand.CommandText = @"INSERT INTO attempts (boss_name, scene_id, cleared, time_seconds, deaths, recorded_at, category_key)
+SELECT $boss, $scene, $cleared, $time, $deaths, $at, $category
+WHERE NOT EXISTS (SELECT 1 FROM attempts WHERE boss_name = $boss AND scene_id = $scene AND cleared = $cleared AND time_seconds = $time AND deaths = $deaths AND recorded_at = $at AND COALESCE(category_key, '') = COALESCE($category, ''));";
+            foreach (var name in new[] { "$boss", "$scene", "$at", "$category" })
+                attemptCommand.Parameters.Add(name, SqliteType.Text);
+            attemptCommand.Parameters.Add("$cleared", SqliteType.Integer);
+            attemptCommand.Parameters.Add("$time", SqliteType.Real);
+            attemptCommand.Parameters.Add("$deaths", SqliteType.Integer);
+            attemptCommand.Prepare();
+
+            using var deathCommand = connection.CreateCommand();
+            deathCommand.Transaction = transaction;
+            deathCommand.CommandText = @"INSERT INTO death_events (boss_name, scene_id, recorded_at, category_key)
+SELECT $boss, $scene, $at, $category
+WHERE NOT EXISTS (SELECT 1 FROM death_events WHERE boss_name = $boss AND scene_id = $scene AND recorded_at = $at AND COALESCE(category_key,'') = COALESCE($category,''));";
+            foreach (var name in new[] { "$boss", "$scene", "$at", "$category" })
+                deathCommand.Parameters.Add(name, SqliteType.Text);
+            deathCommand.Prepare();
+            int inserted = 0;
+
             foreach (var attempt in payload.Attempts)
             {
                 if (attempt == null || string.IsNullOrWhiteSpace(attempt.BossName) || attempt.RecordedAt == null || attempt.TimeSeconds < 0)
                     throw new ArgumentException("Backup contains an invalid attempt record.", nameof(payload));
-                using var cmd = connection.CreateCommand();
-                cmd.Transaction = transaction;
-                cmd.CommandText = @"INSERT INTO attempts (boss_name, scene_id, cleared, time_seconds, deaths, recorded_at, category_key)
-SELECT $boss, $scene, $cleared, $time, $deaths, $at, $category
-WHERE NOT EXISTS (SELECT 1 FROM attempts WHERE boss_name = $boss AND scene_id = $scene AND cleared = $cleared AND time_seconds = $time AND deaths = $deaths AND recorded_at = $at AND COALESCE(category_key, '') = COALESCE($category, ''));";
-                cmd.Parameters.AddWithValue("$boss", attempt.BossName);
-                cmd.Parameters.AddWithValue("$scene", attempt.SceneId ?? string.Empty);
-                cmd.Parameters.AddWithValue("$cleared", attempt.Cleared ? 1 : 0);
-                cmd.Parameters.AddWithValue("$time", attempt.TimeSeconds);
-                cmd.Parameters.AddWithValue("$deaths", attempt.Deaths);
-                cmd.Parameters.AddWithValue("$at", attempt.RecordedAt);
-                cmd.Parameters.AddWithValue("$category", (object)attempt.CategoryKey ?? DBNull.Value);
-                cmd.ExecuteNonQuery();
+                var cmd = attemptCommand;
+                cmd.Parameters["$boss"].Value = attempt.BossName;
+                cmd.Parameters["$scene"].Value = attempt.SceneId ?? string.Empty;
+                cmd.Parameters["$cleared"].Value = attempt.Cleared ? 1 : 0;
+                cmd.Parameters["$time"].Value = attempt.TimeSeconds;
+                cmd.Parameters["$deaths"].Value = attempt.Deaths;
+                cmd.Parameters["$at"].Value = attempt.RecordedAt;
+                cmd.Parameters["$category"].Value = (object)attempt.CategoryKey ?? DBNull.Value;
+                inserted += cmd.ExecuteNonQuery();
             }
             foreach (var death in payload.Deaths)
             {
                 if (death == null || string.IsNullOrWhiteSpace(death.BossName) || death.RecordedAt == null)
                     throw new ArgumentException("Backup contains an invalid death record.", nameof(payload));
-                using var cmd = connection.CreateCommand();
-                cmd.Transaction = transaction;
-                cmd.CommandText = @"INSERT INTO death_events (boss_name, scene_id, recorded_at, category_key)
-SELECT $boss, $scene, $at, $category
-WHERE NOT EXISTS (SELECT 1 FROM death_events WHERE boss_name = $boss AND scene_id = $scene AND recorded_at = $at AND COALESCE(category_key,'') = COALESCE($category,''));";
-                cmd.Parameters.AddWithValue("$boss", death.BossName);
-                cmd.Parameters.AddWithValue("$scene", death.SceneId ?? string.Empty);
-                cmd.Parameters.AddWithValue("$at", death.RecordedAt);
-                cmd.Parameters.AddWithValue("$category", (object)death.CategoryKey ?? DBNull.Value);
-                cmd.ExecuteNonQuery();
+                var cmd = deathCommand;
+                cmd.Parameters["$boss"].Value = death.BossName;
+                cmd.Parameters["$scene"].Value = death.SceneId ?? string.Empty;
+                cmd.Parameters["$at"].Value = death.RecordedAt;
+                cmd.Parameters["$category"].Value = (object)death.CategoryKey ?? DBNull.Value;
+                inserted += cmd.ExecuteNonQuery();
             }
             transaction.Commit();
+            if (inserted > 0) Revision++;
         }
 
         public void Dispose()
         {
             connection.Dispose();
-        }
-
-        public sealed class AttemptRow
-        {
-            public long Id { get; set; }
-            public string BossName { get; set; }
-            public string SceneId { get; set; }
-            public bool Cleared { get; set; }
-            public double TimeSeconds { get; set; }
-            public int Deaths { get; set; }
-            public DateTime RecordedAtUtc { get; set; }
-        }
-
-        public sealed class AttemptOutcome
-        {
-            public long Id { get; set; }
-            public bool IsDeath { get; set; }
-            public bool IsClear { get; set; }
-            public double TimeSeconds { get; set; }
-            public DateTime RecordedAtUtc { get; set; }
         }
 
         public sealed class ActivityRow
@@ -489,7 +374,7 @@ WHERE NOT EXISTS (SELECT 1 FROM death_events WHERE boss_name = $boss AND scene_i
         {
             public int Attempts { get; set; }
             public int Clears { get; set; }
-            public int TotalDeaths { get; set; }
+            public int Deaths { get; set; }
             public double? BestClearSeconds { get; set; }
             public double TotalPlaytimeSeconds { get; set; }
         }

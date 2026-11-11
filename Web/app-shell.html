@@ -5,36 +5,16 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Cuphead Training App</title>
 <link rel="icon" type="image/png" href="assets/icons/app-logo-small.png">
-<script src="js/site-palette.js?v=flag-palette"></script>
-<style>
-html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#19182c}
-#pages{position:relative;width:100%;height:100%;overflow:hidden}
-#pages::before{
-    --tile-width:360px;
-    --tile-height:463px;
-    content:"";
-    position:absolute;
-    inset:calc(-1 * var(--tile-height)) 0 0 calc(-1 * var(--tile-width));
-    background:url("assets/backgrounds/cuphead-pattern.png") repeat;
-    background-size:var(--tile-width) var(--tile-height);
-    filter:hue-rotate(calc((var(--site-hue, 265) - 265) * 1deg));
-    animation:pattern-drift 180s linear infinite;
-}
-@keyframes pattern-drift {
-    to { transform:translate3d(var(--tile-width),var(--tile-height),0); }
-}
-@media (prefers-reduced-motion:reduce) { #pages::before{animation:none} }
-iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
-iframe[hidden]{display:none}
-</style>
+<script src="js/site-palette.js?v=web-cleanup"></script>
+<link rel="stylesheet" href="css/app-shell.css?v=web-cleanup">
 </head>
 <body><div id="pages">
-<iframe id="training" title="Training" src="index.html?v=1.2.1"></iframe>
-<iframe id="time-table" title="Time Table" data-src="index2.html?v=1.2.1" hidden></iframe>
-<iframe id="attempt-log" title="Attempt Log" data-src="autolog.html?v=1.2.1" hidden></iframe>
-<iframe id="info" title="Info" data-src="info.html?v=1.2.1" hidden></iframe>
-<iframe id="backups" title="Backups" data-src="backups.html?v=1.2.1" hidden></iframe>
+<iframe id="training" title="Training" src="index.html?v=table-category-update"></iframe>
+<iframe id="time-table" title="Time Table" data-src="index2.html?v=table-category-update" hidden></iframe>
+<iframe id="attempt-log" title="Attempt Log" data-src="autolog.html?v=table-category-update" hidden></iframe>
+<iframe id="info" title="Info" data-src="info.html?v=table-category-update" hidden></iframe>
+<iframe id="backups" title="Backups" data-src="backups.html?v=table-category-update" hidden></iframe>
 </div>
-<script src="js/sound-effects.js?v=1.2.1"></script>
-<script src="js/app-shell.js?v=1.2.1"></script>
+<script src="js/sound-effects.js?v=web-cleanup"></script>
+<script src="js/app-shell.js?v=table-category-update"></script>
 </body></html>

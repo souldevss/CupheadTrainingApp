@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace CupheadTrainingApp.Training
 {
-    /// <summary>1.1+ category levels from CupheadTrainingTable data.js (F-rank baselines).</summary>
+    /// <summary>Cuphead scene mappings shared by tracking and statistics.</summary>
     public static class TrainingLevels
     {
         public sealed class LevelDef
@@ -14,6 +14,7 @@ namespace CupheadTrainingApp.Training
             public string CompletionSceneId { get; init; }
             public bool IsPlatforming { get; init; }
             public bool IsMausoleum { get; init; }
+            public bool IsDlc { get; init; }
         }
 
         public static readonly IReadOnlyList<LevelDef> Category11 = new List<LevelDef>
@@ -56,16 +57,18 @@ namespace CupheadTrainingApp.Training
         /// <summary>DLC boss levels mapped from the Cuphead autosplitter's scene catalog.</summary>
         public static readonly IReadOnlyList<LevelDef> DlcBosses = new List<LevelDef>
         {
-            new LevelDef { Name = "Glumstone The Giant", SceneIds = new[] { "scene_level_old_man" } },
-            new LevelDef { Name = "Mortimer Freeze", SceneIds = new[] { "scene_level_snow_cult" } },
-            new LevelDef { Name = "The Howling Aces", SceneIds = new[] { "scene_level_airplane" } },
-            new LevelDef { Name = "Esther Winchester", SceneIds = new[] { "scene_level_flying_cowboy" } },
-            new LevelDef { Name = "Moonshine Mob", SceneIds = new[] { "scene_level_rum_runners" } },
-            new LevelDef { Name = "Chef Saltbaker", SceneIds = new[] { "scene_level_saltbaker" } },
+            new LevelDef { IsDlc = true, Name = "Glumstone The Giant", SceneIds = new[] { "scene_level_old_man" } },
+            new LevelDef { IsDlc = true, Name = "Mortimer Freeze", SceneIds = new[] { "scene_level_snow_cult" } },
+            new LevelDef { IsDlc = true, Name = "The Howling Aces", SceneIds = new[] { "scene_level_airplane" } },
+            new LevelDef { IsDlc = true, Name = "Esther Winchester", SceneIds = new[] { "scene_level_flying_cowboy" } },
+            new LevelDef { IsDlc = true, Name = "Moonshine Mob", SceneIds = new[] { "scene_level_rum_runners" } },
+            new LevelDef { IsDlc = true, Name = "Chef Saltbaker", SceneIds = new[] { "scene_level_saltbaker" } },
         };
 
         public static readonly LevelDef Mausoleum = new LevelDef
         { Name = "Mausoleum", IsMausoleum = true, SceneIds = new[] { "scene_level_mausoleum" } };
+        public static readonly IReadOnlyList<LevelDef> CategoryDlc =
+            new[] { Category11[0], Mausoleum }.Concat(DlcBosses).ToArray();
         public static readonly IReadOnlyList<LevelDef> AllBosses = new List<LevelDef>(Category11.Concat(DlcBosses).Append(Mausoleum));
 
         private static readonly Dictionary<string, LevelDef> ByScene =

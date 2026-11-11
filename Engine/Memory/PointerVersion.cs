@@ -4,6 +4,7 @@ namespace CupheadMusicPlayer.Engine.Memory
     {
         Steam115,
         Steam120,
-        SteamDLC
+        SteamDLC,
+        Steam100
     }
 }

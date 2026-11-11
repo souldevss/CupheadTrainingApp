@@ -1,134 +1,20 @@
-.header-preferences { display: flex; align-items: center; gap: 4px; }
-
-.site-palette {
-    position: relative;
-    z-index: 120;
-}
-
-.site-palette summary {
-    display: grid;
-    place-items: center;
-    width: 34px;
-    height: 34px;
-    border: 1px solid var(--panel-border);
-    border-radius: 6px;
-    background: var(--panel-bg-deep);
-    cursor: pointer;
-    list-style: none;
-}
-
-.site-palette summary::-webkit-details-marker { display: none; }
-.site-palette summary::before {
-    content: "";
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: conic-gradient(#f44, #ff4, #4f4, #4ff, #44f, #f4f, #f44);
-}
-
-.site-palette-panel {
-    position: absolute;
-    top: calc(100% + 5px);
-    right: 0;
-    display: grid;
-    justify-items: center;
-    gap: 10px;
-    width: 164px;
-    padding: 12px;
-    border: 1px solid var(--panel-border);
-    border-radius: 6px;
-    background: var(--palette-popover, #221737);
-    color: #fff;
-    box-shadow: 0 4px 12px #0007;
-    font-size: 13px;
-}
-
-.site-palette-panel button {
-    padding: 4px 8px;
-    border: 1px solid var(--panel-border);
-    border-radius: 4px;
-    background: var(--panel-accent-soft);
-    color: inherit;
-    font: inherit;
-    cursor: pointer;
-}
-
-.site-palette-wheel {
-    position: relative;
-    display: grid;
-    place-items: center;
-    width: 112px;
-    aspect-ratio: 1;
-    border-radius: 50%;
-    background: conic-gradient(#f44, #ff4, #4f4, #4ff, #44f, #f4f, #f44);
-    touch-action: none;
-    cursor: crosshair;
-}
-
-.site-palette-wheel:focus-within { outline: 2px solid white; outline-offset: 3px; }
-.site-palette-wheel::before {
-    content: "";
-    width: 62%;
-    aspect-ratio: 1;
-    border-radius: 50%;
-    background: hsl(var(--site-hue, 265) 55% 32%);
-}
-
-.site-palette-wheel input {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    opacity: 0;
-    pointer-events: none;
-}
-
-.site-palette-marker {
-    position: absolute;
-    width: 12px;
-    height: 12px;
-    border: 2px solid white;
-    border-radius: 50%;
-    box-shadow: 0 0 0 1px #111;
-    transform: rotate(calc(var(--site-hue, 265) * 1deg)) translateY(-45px);
-    pointer-events: none;
-}
-
-html[data-site-palette] {
-    --panel-bg: hsl(var(--site-hue) 35% 24% / 75%);
-    --panel-bg-deep: hsl(var(--site-hue) 35% 15% / 86%);
-    --panel-border: hsl(var(--site-hue) 24% 44%);
-    --panel-accent: hsl(var(--site-hue) 33% 34%);
-    --panel-accent-soft: hsl(var(--site-hue) 35% 29% / 78%);
-    --panel-selection: hsl(var(--site-hue) 69% 84%);
-    --panel-accent-bright: hsl(var(--site-hue) 67% 76%);
-    --palette-popover: hsl(var(--site-hue) 35% 18%);
-    --palette-input: var(--panel-bg-deep);
-}
-
-html[data-site-palette] body[data-game="cuphead"]::before {
-    filter: hue-rotate(calc((var(--site-hue) - 265) * 1deg));
-}
-
-html[data-site-palette] body:is([data-game="hollow-knight"], [data-game="silksong"]) {
-    background-image: linear-gradient(hsl(var(--site-hue) 48% 16% / 24%), hsl(var(--site-hue) 48% 12% / 48%)), var(--game-background);
-}
-
-html[data-site-palette] :is(.category-tab, .category-sub-option, .data-control-btn, .rank-chart, .game-choices, .icon-caption) {
-    background: var(--panel-bg-deep);
-    border-color: var(--panel-border);
-}
-
-html[data-site-palette] :is(.category-tab, .category-sub-option, .data-control-btn):is(:hover, :focus-visible) {
-    background: var(--panel-accent);
-}
-
-html[data-site-palette] :is(.category-tab, .category-sub-option).is-active {
-    background: var(--panel-selection);
-    border-color: var(--panel-selection);
-}
-
-html[data-site-palette] :is(.reference-table thead th, .rank-chart-header) {
-    background: var(--panel-accent);
-}
-
-html[data-site-palette] .info-section h2 { color: var(--panel-accent-bright); }
+.header-preferences{display:flex;align-items:center;gap:4px}
+.site-palette{position:relative;z-index:120}
+.site-palette summary{display:grid;place-items:center;width:34px;height:34px;border:1px solid var(--panel-border);border-radius:6px;background:var(--panel-bg-deep);cursor:pointer;list-style:none}
+.site-palette summary::-webkit-details-marker{display:none}
+.site-palette summary:before{content:"";width:18px;height:18px;border-radius:50%;background:conic-gradient(#f44,#ff4,#4f4,#4ff,#44f,#f4f,#f44)}
+.site-palette-panel{position:absolute;top:calc(100% + 5px);right:0;display:grid;justify-items:center;gap:10px;width:164px;padding:12px;border:1px solid var(--panel-border);border-radius:6px;background:var(--palette-popover, #221737);color:#fff;box-shadow:0 4px 12px #0007;font-size:13px}
+.site-palette-panel button{padding:4px 8px;border:1px solid var(--panel-border);border-radius:4px;background:var(--panel-accent-soft);color:inherit;font:inherit;cursor:pointer}
+.site-palette-wheel{position:relative;display:grid;place-items:center;width:112px;aspect-ratio:1;border-radius:50%;background:conic-gradient(#f44,#ff4,#4f4,#4ff,#44f,#f4f,#f44);touch-action:none;cursor:crosshair}
+.site-palette-wheel:focus-within{outline:2px solid white;outline-offset:3px}
+.site-palette-wheel:before{content:"";width:62%;aspect-ratio:1;border-radius:50%;background:hsl(var(--site-hue, 265) 55% 32%)}
+.site-palette-wheel input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.site-palette-marker{position:absolute;width:12px;height:12px;border:2px solid white;border-radius:50%;box-shadow:0 0 0 1px #111;transform:rotate(calc(var(--site-hue, 265) * 1deg)) translateY(-45px);pointer-events:none}
+html[data-site-palette]{--panel-bg: hsl(var(--site-hue) 35% 24% / 75%);--panel-bg-deep: hsl(var(--site-hue) 35% 15% / 86%);--panel-border: hsl(var(--site-hue) 24% 44%);--panel-accent: hsl(var(--site-hue) 33% 34%);--panel-accent-soft: hsl(var(--site-hue) 35% 29% / 78%);--panel-selection: hsl(var(--site-hue) 69% 84%);--panel-accent-bright: hsl(var(--site-hue) 67% 76%);--palette-popover: hsl(var(--site-hue) 35% 18%);--palette-input: var(--panel-bg-deep)}
+html[data-site-palette] body[data-game=cuphead]:before{filter:hue-rotate(calc((var(--site-hue) - 265) * 1deg))}
+html[data-site-palette] body:is([data-game=hollow-knight],[data-game=silksong]){background-image:linear-gradient(hsl(var(--site-hue) 48% 16% / 24%),hsl(var(--site-hue) 48% 12% / 48%)),var(--game-background)}
+html[data-site-palette] :is(.category-tab,.category-sub-option,.data-control-btn,.rank-chart,.game-choices,.icon-caption){background:var(--panel-bg-deep);border-color:var(--panel-border)}
+html[data-site-palette] :is(.category-tab,.category-sub-option,.data-control-btn):is(:hover,:focus-visible){background:var(--panel-accent)}
+html[data-site-palette] :is(.category-tab,.category-sub-option).is-active{background:var(--panel-selection);border-color:var(--panel-selection)}
+html[data-site-palette] :is(.reference-table thead th,.rank-chart-header){background:var(--panel-accent)}
+html[data-site-palette] .info-section h2{color:var(--panel-accent-bright)}

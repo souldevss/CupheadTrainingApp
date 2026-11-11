@@ -1,91 +1,60 @@
-// Category tabs and localStorage migration
-
-/**
- * Retrieves the initially selected category from localStorage
- * Handles migration from old category IDs to new structure
- * @returns {Object} The active category object
- */
-function setActiveCategorySelection(nextCategoryId, nextSubOptionId = null)
-{
-    const nextCategory = categories.find(category => category.id === nextCategoryId);
-    if (!nextCategory) return false;
-
-    activeCategory = nextCategory;
-    activeSubOption = nextCategory.id === "DLC"
-        ? (nextSubOptionId || localStorage.getItem("cupheadDlcSubOption") || "lobber")
-        : null;
-
-    localStorage.setItem(
-        "cupheadSpeedrunCategory",
-        activeCategory.id
-    );
-
-    if (activeCategory.id === "DLC") {
-        localStorage.setItem("cupheadDlcSubOption", activeSubOption || "lobber");
-    }
-
-    renderCategoryControls();
-    renderActivePage();
-    return true;
+function getInitialCategory() {
+  let id = localStorage.getItem("cupheadSpeedrunCategory") || localStorage.getItem("cupheadLogCategory") || "1-1";
+  id = id.replace(/^version-/, "");
+  const dlc = /^DLC[:-](lobber|charge)$/.exec(id);
+  if (dlc) {
+    localStorage.setItem("cupheadDlcSubOption", dlc[1]);
+    id = "DLC";
+  }
+  return categories.find(category => category.id === id) || categories[0];
 }
-
-function getInitialCategory()
-{
-    const storedCategoryId = localStorage.getItem(
-        "cupheadSpeedrunCategory"
-    );
-
-    if (storedCategoryId === "version-1-1") {
-        localStorage.setItem("cupheadSpeedrunCategory", "1-1");
-        return categories.find(category => category.id === "1-1") || categories[0];
-    }
-
-    if (storedCategoryId === "version-DLC") {
-        localStorage.setItem("cupheadSpeedrunCategory", "DLC");
-        return categories.find(category => category.id === "DLC") || categories[0];
-    }
-
-    if (storedCategoryId === "version-DLC-lobber" || storedCategoryId === "version-DLC-charge") {
-        localStorage.setItem("cupheadSpeedrunCategory", "DLC");
-        const subOptionId = storedCategoryId === "version-DLC-lobber" ? "lobber" : "charge";
-        localStorage.setItem("cupheadDlcSubOption", subOptionId);
-        return categories.find(category => category.id === "DLC") || categories[0];
-    }
-
-    if (storedCategoryId === "DLC-lobber" || storedCategoryId === "DLC-charge") {
-        localStorage.setItem("cupheadSpeedrunCategory", "DLC");
-        const subOptionId = storedCategoryId === "DLC-lobber" ? "lobber" : "charge";
-        localStorage.setItem("cupheadDlcSubOption", subOptionId);
-        return categories.find(category => category.id === "DLC") || categories[0];
-    }
-
-    return categories.find(category => category.id === storedCategoryId) || categories[0];
+function getInitialSubOption(category = activeCategory, requested = null) {
+  if (!category.subOptions) return null;
+  const id = requested || localStorage.getItem("cupheadDlcSubOption") || localStorage.getItem("cupheadLogDlcSubOption");
+  return category.subOptions.find(option => option.id === id)?.id || category.subOptions[0].id;
 }
-
-/**
- * Retrieves the initially selected DLC sub-option from localStorage
- * @returns {string|null} The sub-option ID (e.g., 'lobber', 'charge') or null if not DLC
- */
-function getInitialSubOption()
-{
-    if (activeCategory.id !== "DLC") return null;
-    const storedSubOption = localStorage.getItem("cupheadDlcSubOption");
-    return storedSubOption || "lobber";
+function getSelectedCategoryKey() {
+  return activeSubOption ? activeCategory.id + ":" + activeSubOption : activeCategory.id;
 }
-
-/**
- * Renders category selection tabs
- * For DLC categories with sub-options, displays icon buttons for weapon selection
- */
-function renderCategoryControls(options = {})
-{
-    if (!categoryTabs) return;
-    const displayedCategories = options.categories || categories;
-    const selectCategory = options.onSelect || setActiveCategorySelection;
-
-    categoryTabs.innerHTML = displayedCategories.map(category => {
-        if (category.subOptions && category.id === activeCategory.id) {
-            return `
+function saveCategorySelection() {
+  localStorage.setItem("cupheadSpeedrunCategory", activeCategory.id);
+  localStorage.setItem("cupheadLogCategory", getSelectedCategoryKey());
+  if (activeSubOption) {
+    localStorage.setItem("cupheadDlcSubOption", activeSubOption);
+    localStorage.setItem("cupheadLogDlcSubOption", activeSubOption);
+  }
+}
+function setActiveCategorySelection(categoryId, subOption = null) {
+  const category = categories.find(category => category.id === categoryId);
+  if (!category) return false;
+  activeCategory = category;
+  activeSubOption = getInitialSubOption(category, subOption);
+  saveCategorySelection();
+  renderCategoryControls();
+  renderActivePage();
+  return true;
+}
+function syncCategorySelection() {
+  if (!activeCategory) return;
+  const category = getInitialCategory();
+  const subOption = getInitialSubOption(category);
+  if (category.id === activeCategory.id && subOption === activeSubOption) return;
+  if (typeof selectLogCategory === "function") selectLogCategory(category.id, subOption);
+  else setActiveCategorySelection(category.id, subOption);
+}
+let categoryPageActive = !window.frameElement?.hidden;
+window.addEventListener("storage", event => {
+  if (categoryPageActive && [null, "cupheadSpeedrunCategory", "cupheadDlcSubOption"].includes(event.key)) syncCategorySelection();
+});
+window.addEventListener("message", event => {
+  if (event.source !== window.parent || event.data?.type !== "pageActivity") return;
+  categoryPageActive = event.data.active;
+  if (categoryPageActive) syncCategorySelection();
+});
+function renderCategoryControls(options = {}) {
+  if (!categoryTabs) return;
+  const displayedCategories = options.categories || categories, selectCategory = options.onSelect || setActiveCategorySelection;
+  categoryTabs.innerHTML = displayedCategories.map((category) => category.subOptions && category.id === activeCategory.id ? `
                 <div class="category-tab-group">
                     <button
                         class="category-tab is-active"
@@ -95,7 +64,7 @@ function renderCategoryControls(options = {})
                         ${category.label}
                     </button>
                     <div class="category-sub-options">
-                        ${category.subOptions.map(sub => `
+                        ${category.subOptions.map((sub) => `
                             <button
                                 class="category-sub-option ${sub.id === activeSubOption ? "is-active" : ""}"
                                 type="button"
@@ -107,10 +76,7 @@ function renderCategoryControls(options = {})
                         `).join("")}
                     </div>
                 </div>
-            `;
-        }
-
-        return `
+            ` : `
             <button
                 class="category-tab ${category.id === activeCategory.id ? "is-active" : ""}"
                 type="button"
@@ -118,25 +84,14 @@ function renderCategoryControls(options = {})
             >
                 ${category.label}
             </button>
-        `;
-    }).join("");
-
-    categoryTabs.querySelectorAll(".category-tab").forEach(button =>
-    {
-        button.addEventListener("click", () =>
-        {
-            if (button.dataset.categoryId === activeCategory.id) return;
-            selectCategory(button.dataset.categoryId);
-        });
+        `).join(""), categoryTabs.querySelectorAll(".category-tab").forEach((button) => {
+    button.addEventListener("click", () => {
+      button.dataset.categoryId !== activeCategory.id && selectCategory(button.dataset.categoryId);
     });
-
-    categoryTabs.querySelectorAll(".category-sub-option").forEach(button =>
-    {
-        button.addEventListener("click", () =>
-        {
-            const nextSubOption = button.dataset.subOptionId;
-            if (!nextSubOption || nextSubOption === activeSubOption) return;
-            selectCategory(activeCategory.id, nextSubOption);
-        });
+  }), categoryTabs.querySelectorAll(".category-sub-option").forEach((button) => {
+    button.addEventListener("click", () => {
+      const nextSubOption = button.dataset.subOptionId;
+      !nextSubOption || nextSubOption === activeSubOption || selectCategory(activeCategory.id, nextSubOption);
     });
+  });
 }

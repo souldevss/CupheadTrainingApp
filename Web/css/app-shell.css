@@ -1,0 +1,9 @@
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#19182c}
+#pages{position:relative;width:100%;height:100%;overflow:hidden}
+#pages:before{--tile-width:360px;--tile-height:463px;content:"";position:absolute;inset:calc(-1 * var(--tile-height)) 0 0 calc(-1 * var(--tile-width));background:url(../assets/backgrounds/cuphead-pattern.png) repeat;background-size:var(--tile-width) var(--tile-height);filter:hue-rotate(calc((var(--site-hue, 265) - 265) * 1deg));animation:pattern-drift 180s linear infinite}
+@keyframes pattern-drift{
+to{transform:translate3d(var(--tile-width),var(--tile-height),0)}}
+@media(prefers-reduced-motion:reduce){
+#pages:before{animation:none}}
+iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+iframe[hidden]{display:none}

@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using CupheadMusicPlayer.Engine;
 using CupheadMusicPlayer.Engine.Memory;
 using CupheadTrainingApp.Training;
@@ -65,7 +64,7 @@ namespace CupheadTrainingApp.Services
             }
 
             PointerVersion version = MemoryManager.Version;
-            if (version != PointerVersion.Steam115 && version != PointerVersion.SteamDLC)
+            if (version != PointerVersion.Steam100 && version != PointerVersion.Steam115 && version != PointerVersion.SteamDLC)
             {
                 if (!versionWarningRaised)
                 {
@@ -371,7 +370,7 @@ namespace CupheadTrainingApp.Services
             if (loadoutRejected || attemptFinished) return;
             if (level.IsMausoleum)
             {
-                recordingCategory = MemoryManager.Version == PointerVersion.SteamDLC ? "DLC:shared" : "1-1";
+                recordingCategory = MemoryManager.Version == PointerVersion.SteamDLC ? "DLC:shared" : MemoryManager.Version == PointerVersion.Steam100 ? "legacy" : "1-1";
                 return;
             }
             if (!memory.TryReadTrainingLoadout(out var loadout))
@@ -381,14 +380,15 @@ namespace CupheadTrainingApp.Services
                 return;
             }
             loadoutStatus = null;
-            bool dlc = TrainingLevels.DlcBosses.Any(boss => boss.Name == level.Name)
+            bool dlc = level.IsDlc
                 || (level.IsPlatforming && MemoryManager.Version == PointerVersion.SteamDLC);
-            string category = loadout.GetCategory(dlc, peashooterOnly: level.IsPlatforming);
+            string category = loadout.GetCategory(dlc, peashooterOnly: level.IsPlatforming, legacy: MemoryManager.Version == PointerVersion.Steam100);
             if (category == null || (recordingCategory != null && recordingCategory != category))
             {
                 loadoutRejected = true;
                 loadoutStatus = level.IsPlatforming ? "Run excluded — equip only Peashooter, no super or charm"
                     : dlc ? "Run excluded — equip Lobber/Spread or Charge/Spread, Chalice charm, no super"
+                    : MemoryManager.Version == PointerVersion.Steam100 ? "Run excluded — equip Lobber first, Roundabout second, no super or charm"
                     : "Run excluded — equip Lobber/Spread, no super or charm";
                 return;
             }

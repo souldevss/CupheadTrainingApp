@@ -1,9 +1,6 @@
-// Page render router
-
-function createBossCellMarkup(boss)
-{
-    const iconMarkup = boss.icon ? `<img src="${boss.icon}" class="boss-icon" alt="" loading="lazy" decoding="async">` : "";
-    return `
+function createBossCellMarkup(boss) {
+  const iconMarkup = boss.icon ? `<img src="${boss.icon}" class="boss-icon" alt="" loading="lazy" decoding="async">` : "";
+  return `
         <td class="boss" style="background: ${boss.background || "#ffffff"}; color: ${boss.color || "#000000"};">
             <div class="boss-content">
                 ${iconMarkup}
@@ -12,17 +9,6 @@ function createBossCellMarkup(boss)
         </td>
     `;
 }
-
-/**
- * Routes to the appropriate page renderer based on current page type
- */
-function renderActivePage()
-{
-    if (isPersonalTimesPage) {
-        if (window.autoTrainingPage) renderAutoTimesPage();
-        else renderPersonalTimesPage();
-    } else {
-        renderTimeTablePage();
-    }
-
+function renderActivePage() {
+  isPersonalTimesPage ? window.autoTrainingPage ? renderAutoTimesPage() : renderPersonalTimesPage() : renderTimeTablePage();
 }

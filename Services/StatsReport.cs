@@ -8,46 +8,95 @@ namespace CupheadTrainingApp.Services
 {
     public static class StatsReport
     {
+        // Retain only the latest report of each kind, rather than every category's history.
+        public sealed class Cache
+        {
+            private readonly RunDatabase database;
+            private (long Revision, bool Recent, bool History, string Category)? lastRequest;
+            private (long Revision, string Category)? lastOverallRequest;
+            private string report, overallReport;
+
+            public Cache(RunDatabase database) => this.database = database;
+
+            public void ReleaseHistory()
+            {
+                if (lastRequest?.History == true)
+                {
+                    lastRequest = null;
+                    report = null;
+                }
+                lastOverallRequest = null;
+                overallReport = null;
+            }
+
+            public string GetJson(bool recent, bool history, string category)
+            {
+                var request = (database.Revision, recent, history, recent || history ? category : null);
+                if (lastRequest != request)
+                {
+                    report = ToJson(database, recent, history, category);
+                    lastRequest = request;
+                }
+                return report;
+            }
+
+            public string GetOverallJson(string category)
+            {
+                var request = (database.Revision, category);
+                if (lastOverallRequest != request)
+                {
+                    overallReport = OverallProgressJson(database, category);
+                    lastOverallRequest = request;
+                }
+                return overallReport;
+            }
+        }
+
         public static string ToJson(RunDatabase database, bool includeRecentActivity, bool includeHistory, string categoryKey = "1-1")
         {
             if (!includeRecentActivity && !includeHistory)
                 return JsonSerializer.Serialize(new { type = "statsPayload", categoryBests = database.GetCategoryBests() });
 
             var rows = new List<object>();
-            var levels = categoryKey.StartsWith("DLC:")
-                ? new[] { TrainingLevels.Category11.First(level => level.IsPlatforming), TrainingLevels.Mausoleum }.Concat(TrainingLevels.DlcBosses)
+            var categoryStats = database.GetCategoryStats(categoryKey);
+            var categoryHistory = includeHistory
+                ? database.GetCategoryActivity(categoryKey).ToLookup(activity => activity.BossName) : null;
+            var levels = categoryKey.StartsWith("DLC:", StringComparison.Ordinal)
+                ? TrainingLevels.CategoryDlc
                 : TrainingLevels.Category11;
             foreach (var level in levels)
             {
-                var stats = database.GetBossStats(level.Name, categoryKey);
+                var stats = categoryStats.TryGetValue(level.Name, out var existing) ? existing : new RunDatabase.BossStats();
                 object avg10 = "—", avg20 = "—", avg50 = "—";
                 object history = Array.Empty<object>();
                 object outcomeHistory = Array.Empty<object>();
                 if (includeHistory)
                 {
-                    var recentClears = database.GetRecentClearTimes(level.Name, 50, categoryKey);
+                    var outcomes = categoryHistory[level.Name].ToArray();
+                    var attempts = outcomes.Where(outcome => !outcome.IsDeath).OrderBy(attempt => attempt.Id).ToArray();
+                    var recentClears = attempts.Reverse().Where(attempt => attempt.Cleared).Take(50)
+                        .Select(attempt => attempt.TimeSeconds).ToList();
                     avg10 = FormatAverage(recentClears, 10);
                     avg20 = FormatAverage(recentClears, 20);
                     avg50 = FormatAverage(recentClears, 50);
-                    history = database.GetBossAttempts(level.Name, categoryKey).Select(a => (object)new
+                    history = attempts.Select(a => (object)new
                     {
                         id = a.Id,
                         timeSeconds = a.TimeSeconds,
                         cleared = a.Cleared,
                         when = a.RecordedAtUtc.ToLocalTime().ToString("g")
                     }).ToArray();
-                    var outcomes = database.GetBossOutcomeHistory(level.Name, categoryKey);
                     outcomeHistory = outcomes.Select(outcome => (object)new
                     {
                         id = outcome.Id,
                         when = outcome.RecordedAtUtc.ToLocalTime().ToString("g"),
                         isDeath = outcome.IsDeath,
-                        isClear = outcome.IsClear,
-                        clearSeconds = outcome.IsClear ? (double?)outcome.TimeSeconds : null,
-                        failSeconds = !outcome.IsDeath && !outcome.IsClear ? (double?)outcome.TimeSeconds : null
+                        isClear = outcome.Cleared,
+                        clearSeconds = outcome.Cleared ? (double?)outcome.TimeSeconds : null,
+                        failSeconds = !outcome.IsDeath && !outcome.Cleared ? (double?)outcome.TimeSeconds : null
                     }).ToArray();
                 }
-                var deaths = database.GetBossDeathCount(level.Name, categoryKey);
+                var deaths = stats.Deaths;
                 rows.Add(new
                 {
                     level = level.Name,
