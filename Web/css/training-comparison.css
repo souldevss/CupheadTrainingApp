@@ -1,0 +1,4 @@
+.training-comparison{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:8px 14px;margin:0 0 12px;color:#edf0f3;font-size:13px}
+.training-comparison label{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.training-comparison input[type=radio]{accent-color:var(--panel-selection)}
+#training-average-count{width:5.5em;padding:4px 6px;border:1px solid var(--panel-border);border-radius:4px;background:var(--panel-bg-deep);color:inherit;font:inherit;font-variant-numeric:tabular-nums}

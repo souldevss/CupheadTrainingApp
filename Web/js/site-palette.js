@@ -1,11 +1,45 @@
 (function() {
   const key = "trainingTablePaletteHue", root = document.documentElement;
-  let hue, range;
+  let hue, range, patternTimer, patternGeneration = 0, patternUrl = null, patternImage;
+  let ownsBackground = true;
+  try { ownsBackground = window.parent === window || !window.parent.document.getElementById("pages"); } catch { }
+  function updatePattern() {
+    // Tint the small tile once instead of filtering the full animated window.
+    if (!ownsBackground) return;
+    const generation = ++patternGeneration;
+    clearTimeout(patternTimer);
+    if (hue === 265) {
+      root.style.removeProperty("--pattern-image");
+      if (patternUrl) URL.revokeObjectURL(patternUrl);
+      patternUrl = null;
+      return;
+    }
+    patternTimer = setTimeout(async () => {
+      patternImage ||= new Promise((resolve, reject) => {
+        const image = new Image(); image.onload = () => resolve(image); image.onerror = reject;
+        image.src = "assets/backgrounds/cuphead-pattern.png";
+      });
+      try {
+        const image = await patternImage;
+        if (generation !== patternGeneration) return;
+        const canvas = document.createElement("canvas"); canvas.width = 360; canvas.height = 463;
+        const context = canvas.getContext("2d");
+        context.filter = "hue-rotate(" + (hue - 265) + "deg)";
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(blob => {
+          if (!blob || generation !== patternGeneration) return;
+          const previous = patternUrl; patternUrl = URL.createObjectURL(blob);
+          root.style.setProperty("--pattern-image", 'url("' + patternUrl + '")');
+          if (previous) URL.revokeObjectURL(previous);
+        });
+      } catch { patternImage = null; }
+    }, 80);
+  }
   function readHue(saved) {
     return saved !== null && /^\d{1,3}$/.test(saved) && Number(saved) <= 359 ? Number(saved) : 265;
   }
   function applyPalette(value) {
-    hue = value, root.style.setProperty("--site-hue", hue), root.toggleAttribute("data-site-palette", hue !== 265), range && (range.value = hue);
+    hue = value, root.style.setProperty("--site-hue", hue), root.toggleAttribute("data-site-palette", hue !== 265), range && (range.value = hue), updatePattern();
   }
   applyPalette(readHue(localStorage.getItem(key))), window.addEventListener("storage", (event) => {
     (event.key === key || event.key === null) && applyPalette(readHue(localStorage.getItem(key)));

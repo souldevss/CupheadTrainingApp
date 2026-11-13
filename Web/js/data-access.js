@@ -9,11 +9,6 @@ function getActiveLevels() {
   const { data } = getActiveCategoryContext();
   return data?.levels || getActiveIslands().flatMap((island) => island.levels);
 }
-function getActiveLevelRankTotals() {
-  return ranks.map(
-    (_, rankIndex) => roundTime(getActiveLevels().reduce((sum, level) => sum + (level.times?.[rankIndex] || 0), 0))
-  );
-}
 function getActiveResidual() {
   const { data } = getActiveCategoryContext();
   return data?.residual || [];

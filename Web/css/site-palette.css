@@ -11,9 +11,7 @@
 .site-palette-wheel input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
 .site-palette-marker{position:absolute;width:12px;height:12px;border:2px solid white;border-radius:50%;box-shadow:0 0 0 1px #111;transform:rotate(calc(var(--site-hue, 265) * 1deg)) translateY(-45px);pointer-events:none}
 html[data-site-palette]{--panel-bg: hsl(var(--site-hue) 35% 24% / 75%);--panel-bg-deep: hsl(var(--site-hue) 35% 15% / 86%);--panel-border: hsl(var(--site-hue) 24% 44%);--panel-accent: hsl(var(--site-hue) 33% 34%);--panel-accent-soft: hsl(var(--site-hue) 35% 29% / 78%);--panel-selection: hsl(var(--site-hue) 69% 84%);--panel-accent-bright: hsl(var(--site-hue) 67% 76%);--palette-popover: hsl(var(--site-hue) 35% 18%);--palette-input: var(--panel-bg-deep)}
-html[data-site-palette] body[data-game=cuphead]:before{filter:hue-rotate(calc((var(--site-hue) - 265) * 1deg))}
-html[data-site-palette] body:is([data-game=hollow-knight],[data-game=silksong]){background-image:linear-gradient(hsl(var(--site-hue) 48% 16% / 24%),hsl(var(--site-hue) 48% 12% / 48%)),var(--game-background)}
-html[data-site-palette] :is(.category-tab,.category-sub-option,.data-control-btn,.rank-chart,.game-choices,.icon-caption){background:var(--panel-bg-deep);border-color:var(--panel-border)}
+html[data-site-palette] :is(.category-tab,.category-sub-option,.data-control-btn,.rank-chart,.icon-caption){background:var(--panel-bg-deep);border-color:var(--panel-border)}
 html[data-site-palette] :is(.category-tab,.category-sub-option,.data-control-btn):is(:hover,:focus-visible){background:var(--panel-accent)}
 html[data-site-palette] :is(.category-tab,.category-sub-option).is-active{background:var(--panel-selection);border-color:var(--panel-selection)}
 html[data-site-palette] :is(.reference-table thead th,.rank-chart-header){background:var(--panel-accent)}

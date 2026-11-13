@@ -18,6 +18,7 @@ namespace CupheadTrainingApp
         private readonly AttemptTracker tracker;
         private readonly StatsReport.Cache statsReports;
         private readonly Timer pollTimer = new Timer();
+        private readonly Timer memoryTrimTimer = new Timer { Interval = 3000 };
         private readonly WebView2 webView = new WebView2();
 
         private bool watching;
@@ -73,8 +74,14 @@ namespace CupheadTrainingApp
 
             webView.Dock = DockStyle.Fill;
             Controls.Add(webView);
-            Activated += (s, e) => SetWebViewMemoryTarget(false);
-            Deactivate += (s, e) => SetWebViewMemoryTarget(true);
+            Activated += (s, e) => { memoryTrimTimer.Stop(); SetWebViewMemoryTarget(false); };
+            // Brief native popups/focus changes should not trigger a memory trim.
+            Deactivate += (s, e) => memoryTrimTimer.Start();
+            memoryTrimTimer.Tick += (s, e) =>
+            {
+                memoryTrimTimer.Stop();
+                if (!ContainsFocus && ActiveForm != this) SetWebViewMemoryTarget(true);
+            };
 
             pollTimer.Interval = 100;
             pollTimer.Tick += (s, e) =>
@@ -92,9 +99,11 @@ namespace CupheadTrainingApp
             {
                 updateLifetime.Cancel();
                 pollTimer.Stop();
+                memoryTrimTimer.Stop();
                 tracker.Dispose();
                 database.Dispose();
             };
+            FormClosed += (s, e) => memoryTrimTimer.Dispose();
         }
 
         private async System.Threading.Tasks.Task InitializeWebViewAsync()
@@ -126,7 +135,7 @@ namespace CupheadTrainingApp
                 _ = CheckForUpdatesAsync(manual: false);
             };
 
-            webView.Source = new Uri($"https://{VirtualHost}/app-shell.html?v=assembly-version");
+            webView.Source = new Uri($"https://{VirtualHost}/app-shell.html?v=recent-pages");
         }
 
         private void SetWebViewMemoryTarget(bool inactive)
@@ -195,6 +204,16 @@ namespace CupheadTrainingApp
                         break;
                     case "getOverallProgress":
                         PostJson(statsReports.GetOverallJson(statsCategoryKey));
+                        break;
+                    case "getRecentAttempts":
+                        if (root.TryGetProperty("categoryKey", out var recentCategory) && recentCategory.GetString() == statsCategoryKey
+                            && root.TryGetProperty("offset", out var offsetElement) && offsetElement.TryGetInt32(out int offset)
+                            && root.TryGetProperty("requestId", out var requestElement) && requestElement.TryGetInt32(out int requestId))
+                            PostJson(StatsReport.RecentPageJson(database, statsCategoryKey, Math.Max(0, offset), requestId));
+                        break;
+                    case "getTrainingComparison":
+                        if (root.TryGetProperty("count", out var countElement) && countElement.TryGetInt32(out int count))
+                            PostJson(statsReports.GetTrainingComparisonJson(count));
                         break;
                     case "exportBackup":
                         PostJson(JsonSerializer.Serialize(new { type = "backupDatabase", database = database.ExportBackup() }, WebJsonOptions));

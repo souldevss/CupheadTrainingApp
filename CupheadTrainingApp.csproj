@@ -10,7 +10,7 @@
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <ApplicationIcon>App.ico</ApplicationIcon>
     <SatelliteResourceLanguages>en;pt-BR</SatelliteResourceLanguages>
-    <Version>1.2.3</Version>
+    <Version>1.3.0</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(DeveloperBuild)' == 'true'">
@@ -26,7 +26,7 @@
     <EmbeddedResource Include="scripts\ApplyUpdate.ps1" LogicalName="ApplyUpdate.ps1" />
     <EmbeddedResource Include="scripts\DeveloperRanks.js" LogicalName="DeveloperRanks.js"
                       Condition="'$(DeveloperBuild)' == 'true'" />
-    <Content Include="Web\**\*" Exclude="Web\README.md;Web\screenshot.png">
+    <Content Include="Web\**\*" Exclude="Web\README.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

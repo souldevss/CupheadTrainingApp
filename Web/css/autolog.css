@@ -1,11 +1,6 @@
 body.compact-mode .attempt-log-page{width:min(100%,1180px);margin-top:4px}
 body.compact-mode .attempt-log-heading{margin:10px 0 14px}
 body.compact-mode .attempt-log-heading h1{font-size:28px}
-body.compact-mode .boss-stat-grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
-body.compact-mode .boss-card-header{min-height:46px;padding:6px 9px}
-body.compact-mode .boss-card-icon{width:34px;height:34px}
-body.compact-mode .boss-card-stats{padding:8px 9px 0}
-body.compact-mode .boss-card-footer{margin-top:8px;padding:8px 9px;gap:6px 12px}
 body.compact-mode .attempt-section-title{margin:18px 0 8px}
 body.compact-mode .boss-detail-view{padding:13px}
 body.compact-mode .boss-detail-bossbar{min-height:46px;padding:6px 9px}
@@ -18,7 +13,6 @@ body.compact-mode .improvement-cards>div{padding:10px}
 .attempt-log-page{width:min(1180px,100%);margin:12px auto 48px;color:#edf0f3}
 .attempt-log-heading{display:flex;justify-content:space-between;align-items:end;margin:24px 0 26px}
 .all-boss-playtime{display:inline-block;color:#edf1f5;font-size:.55em;font-variant-numeric:tabular-nums}
-#show-overall-progress{min-width:36px;font-size:20px;line-height:1}
 .overall-boss-legend{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
 .overall-boss-key{display:grid;place-items:center;width:34px;height:34px;border:1px solid #78929e;border-radius:4px;font-weight:700}
 .overall-boss-key img{width:26px;height:26px;object-fit:contain}
@@ -38,19 +32,8 @@ body.compact-mode .improvement-cards>div{padding:10px}
 .attempt-log-heading h1,.boss-detail-heading h2{margin:4px 0 8px;color:#f4cb79;font-size:clamp(28px,4vw,42px)}
 .attempt-log-heading p:not(.attempt-eyebrow),.boss-detail-heading p:not(.attempt-eyebrow){margin:0;color:#c0c7cf}
 .attempt-eyebrow{margin:0;color:#aeb8c3;font-size:11px;font-weight:800;letter-spacing:.16em}
-.boss-stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:14px}
-.boss-stat-card{display:block;min-width:0;overflow:hidden;padding:0;text-align:left;color:#edf0f3;background:var(--panel-bg);border:1px solid var(--panel-border);border-radius:8px;cursor:pointer}
-.boss-stat-card:hover,.boss-stat-card:focus-visible{border-color:#788997;outline:none}
-.boss-card-header{display:flex;min-height:58px;align-items:center;justify-content:space-between;gap:12px;padding:9px 13px}
-.boss-card-icon{flex:none;width:44px;height:44px;object-fit:contain}
-.boss-card-name{min-width:0;font-size:16px;line-height:1.2}
-.boss-card-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.boss-card-stats{padding:13px 13px 0}
-.boss-card-stats span,.improvement-cards>div{display:flex;flex-direction:column;gap:5px}
-.boss-card-stats small,.boss-card-footer,.improvement-cards span{color:#aab3bd;font-size:11px}
-.boss-card-stats b{font-size:20px}
-.boss-card-footer{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:12px;padding:11px 13px 13px;border-top:1px solid #3a444f}
-.boss-card-footer b{color:#fff;font-size:12px}
+.improvement-cards>div{display:flex;flex-direction:column;gap:5px}
+.improvement-cards span{color:#aab3bd;font-size:11px}
 .attempt-section-title{margin:32px 0 12px;color:#f4cb79;font-size:19px}
 .attempt-result{justify-self:start;padding:5px 9px;border-radius:20px;font-size:11px;font-weight:800}
 .attempt-result.is-clear{color:#d9f5d4;background:#285739}
@@ -63,18 +46,18 @@ body.compact-mode .improvement-cards>div{padding:10px}
 .attempt-detail b{overflow:hidden;color:#edf0f3;font-size:13px;font-weight:600;text-overflow:ellipsis;white-space:nowrap}
 .attempt-empty,.history-empty{padding:22px;color:#aab3bd;text-align:center;background:#25272a;border:1px dashed #3a444f;border-radius:10px}
 .boss-detail-view{padding:20px;background:var(--panel-bg);border:1px solid var(--panel-border);border-radius:15px}
-.detail-back{padding:8px 0;margin-bottom:17px;color:#d0d5dc;background:none;border:0;font:inherit;cursor:pointer}
-.detail-back:hover{color:#e0b965}
 .boss-detail-heading{display:flex;justify-content:space-between;align-items:end;gap:20px;padding-bottom:20px;border-bottom:1px solid #3a444f}
 .boss-detail-title{min-width:0}
 .boss-detail-bossbar{display:flex;min-height:58px;align-items:center;justify-content:space-between;gap:12px;padding:9px 13px;margin:7px 0 9px;border-radius:8px}
 .boss-detail-bossbar h2{min-width:0;margin:0;color:inherit;font-size:23px;line-height:1.2}
-.boss-card-name,.boss-detail-bossbar h2,.attempt-boss-link{font-family:Cuphead Poster,Alegreya Sans SC,Georgia,serif;font-weight:400;white-space:normal;overflow-wrap:normal;word-break:normal;hyphens:none}
+.boss-detail-bossbar h2,.attempt-boss-link{font-family:Cuphead Poster,Alegreya Sans SC,Georgia,serif;font-weight:400;white-space:normal;overflow-wrap:normal;word-break:normal;hyphens:none}
 .boss-detail-bossbar img{flex:none;width:44px;height:44px;object-fit:contain}
 .detail-tabs{display:flex;gap:7px;padding:4px;background:var(--panel-bg-deep);border-radius:9px}
 .detail-tabs button{padding:9px 14px;color:#c0c7cf;background:transparent;border:0;border-radius:6px;font:inherit;cursor:pointer}
 .detail-tabs button.is-active{color:#1c1233;background:var(--panel-selection);font-weight:800}
-.autolog-view-tabs{width:fit-content;margin:0 auto 12px}
+.autolog-view-tabs{position:relative;width:100%;min-height:48px;box-sizing:border-box;justify-content:center;margin:0 0 12px;background:transparent}
+.autolog-view-tabs>.nav-icon-group{padding:4px;background:var(--panel-bg-deep);border-radius:4px}
+.autolog-view-tabs #back-all-bosses{position:absolute;left:0;top:4px}
 #run-recap h2{margin:0 0 12px}
 .recap-file-picker{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:14px;border:1px dashed #77889a;border-radius:8px;cursor:pointer}
 .recap-file-picker.is-dragging{background:#304758;border-color:#a8d1fb}
@@ -188,10 +171,93 @@ body.compact-mode .time-history-chart{height:190px}
 .improvement-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
 .history-chart-grid{grid-template-columns:1fr}}
 .time-chart-heading{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:0 12px}
-.muted-graphs .time-history-chart{filter:saturate(.25)}
+.muted-graphs .time-history-chart .time-plot{opacity:.6}
 .muted-graphs .history-chart .rank-band-fill{opacity:.09}
 .icon-reveal:is([data-i18n-aria-label="nav.attempt-log"],[data-i18n-aria-label="projection.boss-log"]){--nav-icon-color:#a6cfae}
 .autolog-view-tabs button.icon-reveal{position:relative;inset:auto;padding:6px;min-width:40px;min-height:40px;box-sizing:border-box}
 .boss-detail-view,.history-card,.improvement-cards>div{border-radius:6px}
-.detail-tabs,.boss-stat-card,.boss-detail-bossbar{border-radius:5px}
+.detail-tabs,.boss-detail-bossbar{border-radius:5px}
 .detail-tabs button{border-radius:4px}
+.boss-log-workspace{display:grid;grid-template-columns:minmax(0,1fr) 46px;align-items:start;gap:12px}
+.boss-log-content{min-width:0}
+.boss-log-workspace[hidden]{display:none}
+body.compact-mode .boss-detail-view{display:block;padding:10px}
+.boss-detail-main{min-width:0}
+.boss-detail-main .boss-detail-heading{gap:10px;padding-bottom:8px}
+.boss-detail-main .boss-detail-title{flex:1}
+.boss-detail-main .attempt-eyebrow{display:none}
+.boss-detail-main .boss-detail-title>p:last-child{font-size:12px}
+body.compact-mode .boss-detail-main .boss-detail-bossbar{min-height:38px;margin:0 0 4px;padding:4px 8px}
+body.compact-mode .boss-detail-main .boss-detail-bossbar h2{font-size:18px}
+body.compact-mode .boss-detail-main .boss-detail-bossbar img{width:28px;height:28px}
+.boss-detail-main .detail-tabs button{padding:6px 8px;font-size:12px}
+body.compact-mode .boss-detail-main .improvement-cards{grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;margin:8px 0}
+body.compact-mode .boss-detail-main .improvement-cards>div{gap:3px;padding:7px}
+.boss-detail-main .improvement-cards span{font-size:10px}
+.boss-detail-main .improvement-cards strong{font-size:15px;font-variant-numeric:tabular-nums}
+body.compact-mode .boss-detail-main .history-card{padding:8px}
+body.compact-mode .boss-detail-main .time-history-card{padding:10px;background:none;border:18px solid transparent;border-image:url("../assets/backgrounds/layout%20box.png") 42 fill stretch;border-radius:0}
+.time-history-card{color:#ede4df}
+.time-history-card :is(.average-slider-label,.average-slider-ends,.chart-controls,.history-axis,.combined-chart-legend,.graph-color-setting){color:#d5c9d4}
+.time-history-card .combined-chart-legend span:last-child{color:#dbb4a5}
+.time-history-card .average-slider-label output{padding:1px 4px;background:transparent;border-radius:0;border-bottom:1px solid #ceb996;color:#f0dcb5}
+.time-history-card .average-window-slider{appearance:none;height:5px;margin:8px 0;background:#d9ccd338;border:1px solid #ded0db30;border-radius:2px;accent-color:#cdb99a}
+.time-history-card .average-window-slider::-webkit-slider-thumb{appearance:none;width:13px;height:13px;background:#d7c4a5;border:1px solid #746278;border-radius:50%;cursor:grab}
+.time-history-card .average-window-slider::-webkit-slider-thumb:active{cursor:grabbing}
+.time-history-card .chart-zoom{color:#e4d8df;background:#d6c6da0d;border-color:#c5b2c24d;border-radius:2px}
+.time-history-card .chart-zoom:not(:disabled):hover{background:#d6c6da26;border-color:#d9c6d48c}
+.time-history-card .history-chart .rank-band-fill{opacity:.1}
+.time-history-card.muted-graphs .history-chart .rank-band-fill{opacity:.07}
+.time-history-card .history-chart :is(.rank-band text,.time-axis-mark text){stroke:#54465f;stroke-width:.35px}
+.time-history-card .history-chart .time-axis-mark text{fill:#e9dfdf;font-weight:600}
+.time-history-card .history-chart .time-axis-mark line{stroke:#c8b5c9;opacity:.3}
+.time-history-card .history-chart circle{stroke:#c7b6c36b;stroke-width:.5}
+.time-history-card .combined-death-bar{fill:#cba294;opacity:.24}
+.time-history-card .chart-hover-tooltip{color:#eee4e8;background:#403449f2;border-color:#b4a1b080;border-radius:3px;box-shadow:0 3px 9px #20182b40}
+.time-history-card .chart-hover-tooltip strong{color:#e4cda7}
+body.compact-mode .boss-detail-main .time-history-chart{height:230px}
+.boss-detail-sidebar{display:grid;grid-template-rows:repeat(var(--sidebar-count),minmax(0,1fr));gap:2px;height:var(--sidebar-height,500px);margin-top:0;padding-left:8px;border-left:1px solid var(--panel-border);box-sizing:border-box}
+.boss-detail-sidebar button{position:relative;display:flex;align-items:center;justify-content:center;min-height:0;min-width:0;padding:0;border:1px solid transparent;border-radius:3px;background:var(--boss-sidebar-bg);color:var(--boss-sidebar-text);font:400 clamp(10px,calc(var(--sidebar-row-height,22px) * .58),13px)/1 "Cuphead Poster","Alegreya Sans SC",Georgia,serif;text-align:left;cursor:pointer}
+.boss-detail-sidebar button:is(:hover,:focus-visible){z-index:4;outline:1px solid var(--boss-sidebar-text)}
+.boss-detail-sidebar button[aria-current=true]{border-color:var(--boss-sidebar-text);box-shadow:inset 0 0 0 1px var(--boss-sidebar-text)}
+.boss-detail-sidebar span{position:absolute;right:calc(100% + 8px);top:50%;padding:7px 10px;border:1px solid currentColor;border-radius:3px;background:var(--boss-sidebar-bg);color:var(--boss-sidebar-text);font-size:14px;line-height:18px;white-space:nowrap;opacity:0;visibility:hidden;transform:translate(4px,-50%);pointer-events:none;transition:opacity .12s,transform .12s}
+.boss-detail-sidebar button:is(:hover,:focus-visible) span{opacity:1;visibility:visible;transform:translate(0,-50%)}
+.boss-detail-sidebar img{width:clamp(12px,calc(var(--sidebar-row-height,22px) - 2px),24px);height:clamp(12px,calc(var(--sidebar-row-height,22px) - 2px),24px);object-fit:contain;flex:none}
+@media(max-width:900px){body.compact-mode .boss-detail-main .improvement-cards{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){.boss-log-workspace{grid-template-columns:minmax(0,1fr) 42px;gap:8px}.boss-detail-main .boss-detail-heading{align-items:stretch}}
+
+body.compact-mode .boss-detail-view[hidden]{display:none}
+
+#back-all-bosses{min-height:40px;padding:6px 12px;font-size:15px;font-weight:700;color:#f2e9fc;border-right:1px solid var(--panel-border);border-radius:0}
+#back-all-bosses:hover,#back-all-bosses:focus-visible{background:var(--panel-selection);color:#211b29}
+#back-all-bosses[hidden]{display:none}
+
+@media(max-width:600px){.autolog-view-tabs{justify-content:flex-end}.autolog-view-tabs #back-all-bosses{font-size:13px;padding:6px 8px}}
+
+.autolog-view-tabs #clear-all-attempts{--nav-icon-color:#e3b6bc;position:absolute;right:0;top:4px;min-width:40px;min-height:40px;padding:6px;color:#e3b6bc;background:var(--panel-bg-deep);border:1px solid #b2718159;border-radius:4px}
+.autolog-view-tabs #clear-all-attempts:hover,.autolog-view-tabs #clear-all-attempts:focus-visible{background:#66364e;color:#ffe7ec}
+.autolog-view-tabs #clear-all-attempts[hidden]{display:none}
+@media(max-width:600px){.autolog-view-tabs{padding-right:48px}}
+.time-history-card,#overall-progress{text-shadow:0 1px 2px #1b1029b3}
+:is(.time-history-card,#overall-progress) .chart-zoom{box-shadow:0 2px 3px #1c102c66;text-shadow:0 1px 2px #1b1029b3}
+.time-history-card .average-window-slider::-webkit-slider-thumb{box-shadow:0 1px 3px #1b102999}
+.attempt-card-grid,body.compact-mode .attempt-card-grid{grid-template-columns:repeat(auto-fill,minmax(min(245px,100%),1fr));gap:8px}
+body.compact-mode .attempt-card-grid .recent-attempt-card{grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto auto;align-items:center;gap:5px 8px;padding:9px 10px;border-radius:4px;min-width:0}
+.attempt-card-grid .attempt-boss-link{grid-column:1/-1;grid-row:1;font-size:15px;line-height:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.attempt-card-grid .attempt-result{grid-column:1;grid-row:2;padding:3px 6px;border-radius:3px;font-size:10px}
+.attempt-card-grid .attempt-time{grid-column:2;grid-row:2;align-items:flex-end;gap:1px}
+.attempt-card-grid .attempt-time b{font-size:14px;font-variant-numeric:tabular-nums}
+.attempt-card-grid .attempt-time small{font-size:9px}
+.attempt-card-grid .attempt-when{grid-column:1;grid-row:3}
+.attempt-card-grid .attempt-when small{display:none}
+.attempt-card-grid .attempt-when b{font-size:11px;font-weight:400;color:#c3b7cf}
+.attempt-card-grid .delete-run-button{grid-column:2;grid-row:3;justify-self:end;padding:3px 6px;border-radius:3px;font-size:10px}
+
+.autolog-view-tabs #clear-all-attempts .icon-caption{left:auto;right:0;transform:none}
+.recent-load-more{display:block;margin:10px auto 0;padding:7px 14px;background:var(--panel-bg-deep);color:#e4d8df;border:1px solid var(--panel-border);border-radius:4px;font:inherit;font-size:12px;cursor:pointer}
+.recent-load-more:disabled{opacity:.6;cursor:wait}
+.recent-load-more[hidden]{display:none}
+
+body.compact-mode .attempt-card-grid.is-boss-attempt-grid .recent-attempt-card{grid-template-rows:auto auto}
+.attempt-card-grid.is-boss-attempt-grid :is(.attempt-result,.attempt-time){grid-row:1}
+.attempt-card-grid.is-boss-attempt-grid :is(.attempt-when,.delete-run-button){grid-row:2}

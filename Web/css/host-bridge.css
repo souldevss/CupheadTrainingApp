@@ -7,12 +7,3 @@ body.has-watcher-dock{padding-bottom:68px}
 .host-watcher-btn{border:2px solid #c5ccd5;border-radius:999px;background:var(--panel-accent-soft, #303c4c);color:#fff;font-weight:600;font-size:12px;padding:6px 14px;cursor:pointer;flex-shrink:0}
 .host-watcher-btn:hover{background:var(--panel-accent, #556579)}
 .host-watcher-btn.active{background:#9e4058;border-color:#ffb4c6}
-.host-watcher-link{color:var(--panel-accent-bright, #e0b965);text-decoration:none;font-size:12px;font-weight:600;flex-shrink:0}
-.host-watcher-link:hover{text-decoration:underline}
-.autolog-table{width:100%;border-collapse:separate;border-spacing:0;overflow:hidden;border-radius:12px;border:2px solid var(--panel-border, #333b46)}
-.autolog-table th,.autolog-table td{padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.08)}
-.autolog-table thead th{background:var(--panel-bg-deep, #101419);color:#e0b965;text-align:left}
-.autolog-table tbody tr:hover td{filter:brightness(1.05)}
-.trend-up{color:#6bff8d;font-weight:700}
-.trend-down{color:#ff7b7b;font-weight:700}
-.trend-flat{color:#b7c0ca}

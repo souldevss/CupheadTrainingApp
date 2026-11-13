@@ -5,11 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cuphead Training App — Attempt Log</title>
 <link rel="icon" type="image/png" href="assets/icons/app-logo-small.png">
-    <script src="js/site-palette.js?v=web-cleanup"></script>
-    <link rel="stylesheet" href="style.css?v=table-category-update">
-    <link rel="stylesheet" href="css/autolog.css?v=web-cleanup">
-    <link rel="stylesheet" href="css/site-palette.css?v=web-cleanup">
-    <link rel="stylesheet" href="css/host-bridge.css?v=web-cleanup">
+    <script src="js/site-palette.js?v=performance-pass"></script>
+    <link rel="stylesheet" href="style.css?v=performance-pass">
+    <link rel="stylesheet" href="css/autolog.css?v=shared-attempt-grid">
+    <link rel="stylesheet" href="css/boss-cards.css?v=recent-grid">
+    <link rel="stylesheet" href="css/site-palette.css?v=shared-attempt-grid">
+    <link rel="stylesheet" href="css/host-bridge.css?v=shared-attempt-grid">
 </head>
 <body class="compact-mode" data-page="attempt-log">
 
@@ -38,22 +39,25 @@
     <header class="attempt-log-heading">
         <div><p class="attempt-eyebrow">CUPHEAD</p><h1><span data-i18n="autolog.title">Attempt Log</span> <span class="all-boss-playtime">| <span data-i18n="autolog.playtime">Playtime</span>: <span id="autolog-total-playtime">—</span></span></h1>
         <p data-i18n="autolog.subtitle">Choose a boss to see how your clear times and deaths change over attempts.</p></div>
-        <button id="clear-all-attempts" class="clear-all-attempts" type="button" data-i18n="autolog.clear-all">Clear all records</button>
     </header>
     <div class="detail-tabs autolog-view-tabs" role="group" data-i18n-aria-label="projection.views">
-        <div class="nav-icon-group">
-            <button id="show-overall-progress" type="button" aria-controls="overall-progress" aria-pressed="false" data-i18n-aria-label="autolog.overall-title" data-i18n-title="autolog.overall-title">+</button>
-        </div>
-        <div class="nav-icon-group">
+        <button id="clear-all-attempts" class="clear-all-attempts icon-reveal" type="button" data-i18n-aria-label="autolog.clear-all" aria-label="Clear all records">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" aria-hidden="true"><path d="M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7"/></svg><span class="icon-caption" data-i18n="autolog.clear-all" aria-hidden="true">Clear all records</span>
+        </button>
+        <button id="back-all-bosses" type="button" data-i18n="autolog.back" hidden>← All bosses</button>
+<div class="nav-icon-group">
             <button id="show-boss-log" type="button" class="is-active" aria-pressed="true" data-i18n="projection.boss-log">Boss log</button>
             <button id="show-run-projection" type="button" aria-pressed="false" data-i18n="projection.title">Run Projection</button>
             <button id="show-run-recap" type="button" aria-pressed="false" data-i18n="recap.title">Run Recap</button>
         </div>
     </div>
+    <div id="boss-log-workspace" class="boss-log-workspace">
+    <div class="boss-log-content">
     <section id="autolog-list-view">
         <div id="autolog-summary" class="boss-stat-grid"></div>
         <h2 class="attempt-section-title" data-i18n="autolog.recent">Recent attempts</h2>
         <div id="autolog-recent" class="recent-attempt-list"></div>
+        <button id="load-more-recent" class="recent-load-more" type="button" aria-controls="autolog-recent" data-i18n="autolog.load-more" hidden>Load more</button>
     </section>
     <section id="autolog-detail-view" class="boss-detail-view" hidden></section>
     <section id="overall-progress" class="history-card" hidden>
@@ -61,6 +65,9 @@
         <div id="overall-progress-chart"></div>
         <p class="projection-note" data-i18n="autolog.overall-method">Each line starts at 0%. Changes are measured from that starting point on the scale of the boss’s average clear time.</p>
     </section>
+    </div>
+    <nav id="boss-log-sidebar" class="boss-detail-sidebar" data-i18n-aria-label="projection.boss-log"></nav>
+    </div>
     <section id="run-projection" class="history-card" hidden>
         <h2 data-i18n="projection.title">Run Projection</h2>
         <label class="projection-target-option"><input id="projection-use-recap" type="checkbox" disabled> <span data-i18n="projection.use-recap">Include Run Recap</span></label>
@@ -141,20 +148,24 @@
     </section>
 </main>
 
+
+
 <script src="js/sound-effects.js?v=web-cleanup"></script>
 <script src="data.js?v=web-cleanup"></script>
 <script src="js/state.js?v=web-cleanup"></script>
 <script src="js/time.js?v=web-cleanup"></script>
-<script src="js/ranks.js?v=web-cleanup"></script>
-<script src="js/data-access.js?v=web-cleanup"></script>
+<script src="js/ranks.js?v=shared-attempt-grid"></script>
+<script src="js/data-access.js?v=shared-attempt-grid"></script>
 <script src="js/category.js?v=table-category-update"></script>
-<script src="js/language.js?v=assembly-version"></script>
-<script src="js/host-bridge.js?v=web-cleanup"></script>
+<script src="js/language.js?v=recent-pages"></script>
+<script src="js/host-bridge.js?v=recent-pages"></script>
 <script src="js/wr-times.js?v=web-cleanup"></script>
 <script src="js/run-projection.js?v=web-cleanup"></script>
 <script src="js/run-recap.js?v=web-cleanup"></script>
 <script src="js/overall-progress.js?v=web-cleanup"></script>
-<script src="js/boss-chart.js?v=web-cleanup"></script>
-<script src="js/autolog.js?v=table-category-update"></script>
+<script src="js/boss-chart.js?v=performance-pass"></script>
+<script src="js/boss-card-data.js?v=recent-grid"></script>
+<script src="js/boss-cards.js?v=recent-grid"></script>
+<script src="js/autolog.js?v=shared-attempt-grid"></script>
 </body>
 </html>

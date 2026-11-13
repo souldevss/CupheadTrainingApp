@@ -8,6 +8,26 @@
     }
   inAppShell && document.documentElement.classList.add("app-shell-page");
   const desktopConnected = hasHost || inAppShell;
+  let scrollIdleTimer = null, lastScrollAt = 0;
+  function setScrolling(active) {
+    document.documentElement.classList.toggle("is-scrolling", active);
+    if (inAppShell) window.parent.postMessage({ type: "pageScrollActivity", active }, location.origin);
+  }
+  function finishScrolling() {
+    const remaining = 180 - (performance.now() - lastScrollAt);
+    if (remaining > 0) { scrollIdleTimer = setTimeout(finishScrolling, remaining); return; }
+    scrollIdleTimer = null;
+    setScrolling(false);
+  }
+  function markScrolling() {
+    lastScrollAt = performance.now();
+    if (scrollIdleTimer !== null) return;
+    setScrolling(true);
+    scrollIdleTimer = setTimeout(finishScrolling, 180);
+  }
+  window.addEventListener("scroll", markScrolling, { passive: true, capture: true });
+  window.addEventListener("wheel", markScrolling, { passive: true });
+  window.addEventListener("pointerdown", event => { if (event.button === 1) markScrolling(); }, { passive: true });
   let pendingBackupStorage = null;
   function normalizeName(name) {
     return (name || "").trim().toLowerCase().replace(/\s+/g, " ");
@@ -51,7 +71,6 @@
             <span id="host-watcher-dot" class="host-watcher-dot"></span>
             <span id="host-watcher-text" class="host-watcher-text">${t("host.desktop-connected")}</span>
             <button id="host-watcher-toggle" type="button" class="host-watcher-btn">${t("host.watch")}</button>
-            <a class="host-watcher-link" href="autolog.html">${t("nav.attempt-log")}</a>
         `, document.body.appendChild(dock), document.body.classList.add("has-watcher-dock"), document.getElementById("host-watcher-toggle").addEventListener("click", () => {
       postToHost({ cmd: "toggleWatching" });
     });
@@ -59,15 +78,18 @@
   function setWatcherUi(payload) {
     latestWatcherPayload = payload, ensureWatcherDock();
     const dot = document.getElementById("host-watcher-dot"), text = document.getElementById("host-watcher-text"), toggle = document.getElementById("host-watcher-toggle");
-    !dot || !text || !toggle || (dot.classList.remove("active", "warn"), payload.watching && dot.classList.add("active"), payload.warning && dot.classList.add("warn"), text.textContent = translateWatcherStatus(payload.status || "Ready"), toggle.textContent = payload.watching ? t("host.stop-watching") : t("host.watch"), toggle.classList.toggle("active", !!payload.watching));
+    if (!dot || !text || !toggle) return;
+    dot.classList.toggle("active", !!payload.watching); dot.classList.toggle("warn", !!payload.warning);
+    const status = translateWatcherStatus(payload.status || "Ready"), action = payload.watching ? t("host.stop-watching") : t("host.watch");
+    if (text.textContent !== status) text.textContent = status;
+    if (toggle.textContent !== action) toggle.textContent = action;
+    toggle.classList.toggle("active", !!payload.watching);
   }
   window.refreshHostLanguage = function() {
     const dock = document.getElementById("host-watcher-dock");
     if (!dock) return;
     const text = document.getElementById("host-watcher-text");
     latestWatcherPayload ? setWatcherUi(latestWatcherPayload) : text && (text.textContent = t("host.desktop-connected"));
-    const link = dock.querySelector(".host-watcher-link");
-    link && (link.textContent = t("nav.attempt-log"));
   };
   function postToHost(message) {
     inAppShell ? window.parent.postMessage({ type: "hostCommand", command: message }, "*") : hasHost && window.chrome.webview.postMessage(message);
@@ -96,6 +118,12 @@
         case "overallProgress":
           window.receiveOverallProgress?.(msg, msg.categoryKey);
           break;
+        case "recentAttemptsPage":
+          window.receiveRecentAttemptsPage?.(msg);
+          break;
+        case "trainingComparison":
+          window.receiveTrainingComparison?.(msg);
+          break;
         case "statsPayload":
           if (window.cupheadCategoryBests = {}, (msg.categoryBests || []).forEach((row) => {
             if (!Number.isFinite(row.seconds)) return;
@@ -110,7 +138,7 @@
               baseBosses.has(boss) && Number.isFinite(row.bestSeconds) && (base[boss] = row.bestSeconds);
             });
           }
-          typeof window.renderAutologStats == "function" && window.renderAutologStats(msg.rows || [], msg.recent || [], msg.statsCategoryKey, msg.totalPlaytime), window.autoTrainingPage && typeof renderAutoTimesPage == "function" && renderAutoTimesPage();
+          typeof window.renderAutologStats == "function" && window.renderAutologStats(msg.rows || [], msg.recent || [], msg.statsCategoryKey, msg.totalPlaytime, msg.recentHasMore), window.autoTrainingPage && typeof renderAutoTimesPage == "function" && (renderAutoTimesPage(), window.refreshTrainingComparison?.());
           break;
         case "backupDatabase": {
           const backup = {
@@ -146,6 +174,9 @@
     isDesktopApp: desktopConnected,
     applyPersonalTimeIfBetter,
     postToHost,
+    requestTrainingComparison(count) {
+      postToHost({ cmd: "getTrainingComparison", count });
+    },
     requestStats(categoryKey) {
       postToHost({ cmd: "getStats", categoryKey, includeHistory: !!categoryKey, includeRecent: !!categoryKey });
     },

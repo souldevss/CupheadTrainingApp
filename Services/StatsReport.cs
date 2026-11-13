@@ -15,8 +15,24 @@ namespace CupheadTrainingApp.Services
             private (long Revision, bool Recent, bool History, string Category)? lastRequest;
             private (long Revision, string Category)? lastOverallRequest;
             private string report, overallReport;
+            private (long Revision, int Count)? lastComparisonRequest;
+            private string comparisonReport;
 
             public Cache(RunDatabase database) => this.database = database;
+
+            public string GetTrainingComparisonJson(int count)
+            {
+                count = Math.Clamp(count, 1, 10000);
+                var request = (database.Revision, count);
+                if (lastComparisonRequest != request)
+                {
+                    comparisonReport = JsonSerializer.Serialize(new {
+                        type = "trainingComparison", count, rows = database.GetTrainingAverages(count)
+                    });
+                    lastComparisonRequest = request;
+                }
+                return comparisonReport;
+            }
 
             public void ReleaseHistory()
             {
@@ -114,20 +130,26 @@ namespace CupheadTrainingApp.Services
                 });
             }
 
-            object recent = includeRecentActivity ? database.GetRecentActivity(60, categoryKey).Select(r => (object)new
-                {
-                    id = r.Id,
-                    when = r.RecordedAtUtc.ToLocalTime().ToString("g"),
-                    level = r.BossName,
-                    kind = r.IsDeath ? "death" : "run",
-                    result = r.IsDeath ? "Death" : r.Cleared ? "Clear" : "Fail",
-                    time = r.IsDeath ? null : AttemptTracker.FormatTime(r.TimeSeconds)
-                }).ToArray() : Array.Empty<object>();
+            var recentActivity = includeRecentActivity ? database.GetRecentActivity(21, categoryKey) : new List<RunDatabase.ActivityRow>();
+            var recent = recentActivity.Take(20).Select(RecentRow).ToArray();
 
             var totalPlaytime = FormatPlaytime(database.GetTotalPlaytimeSeconds());
-            return JsonSerializer.Serialize(new { type = "statsPayload", rows, recent, totalPlaytime,
+            return JsonSerializer.Serialize(new { type = "statsPayload", rows, recent, recentHasMore = recentActivity.Count > 20, totalPlaytime,
                 statsCategoryKey = categoryKey, categoryBests = database.GetCategoryBests() });
         }
+
+        public static string RecentPageJson(RunDatabase database, string categoryKey, int offset, int requestId)
+        {
+            var activity = database.GetRecentActivity(21, categoryKey, offset);
+            return JsonSerializer.Serialize(new { type = "recentAttemptsPage", categoryKey, offset, requestId,
+                rows = activity.Take(20).Select(RecentRow).ToArray(), hasMore = activity.Count > 20 });
+        }
+
+        private static object RecentRow(RunDatabase.ActivityRow row) => new {
+            id = row.Id, when = row.RecordedAtUtc.ToLocalTime().ToString("g"), level = row.BossName,
+            kind = row.IsDeath ? "death" : "run", result = row.IsDeath ? "Death" : row.Cleared ? "Clear" : "Fail",
+            time = row.IsDeath ? null : AttemptTracker.FormatTime(row.TimeSeconds)
+        };
 
         private static string FormatPlaytime(double seconds)
         {

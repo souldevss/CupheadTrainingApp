@@ -110,7 +110,10 @@ function drawTimeChart(history, art, limit, zoom = 1) {
   if (!averages.length) return `<div class="history-empty">${t("autolog.no-clear-times")}</div>`;
   const key = `${selectedBossName}:trend`, zoomState = chartZoomLevels.get(key) || { zoom: 1, offset: 0 }, viewport = chartViewport(averages.length, { zoom, offset: zoomState.offset }), start = Math.floor(viewport.start), end = Math.min(averages.length, Math.ceil(viewport.start + viewport.span) + 1), visible = averages.slice(start, end);
   zoom = viewport.zoom, chartZoomLevels.set(key, { zoom, offset: viewport.offset });
-  const thresholds = timeChartThresholds(art), rankColorForTime = (seconds) => timeChartRankColor(thresholds, seconds), live = getLiveChartTime(selectedBossName), { low, high, baseLow, baseHigh } = fitTimeChartRange(visible, live), range = Math.max(high - low, 0.1), y = (value) => 92 - (value - low) / range * 84, x = (index) => viewport.span === 0 ? 125 : 20 + (start + index - viewport.start) * 210 / viewport.span, markerCount = averages.length === 1 ? 1 : Math.ceil((averages.length - 1) / limit) + 1, markers = Array.from({ length: markerCount }, (_, index) => {
+  // Retain every time for lines and hover; thin only circles that would overlap.
+  const markerBudget = Math.max(12, Math.floor(Math.min(1200, window.innerWidth) / 10));
+  const markerSpacing = Math.max(limit, viewport.span / markerBudget);
+  const thresholds = timeChartThresholds(art), rankColorForTime = (seconds) => timeChartRankColor(thresholds, seconds), live = getLiveChartTime(selectedBossName), { low, high, baseLow, baseHigh } = fitTimeChartRange(visible, live), range = Math.max(high - low, 0.1), y = (value) => 92 - (value - low) / range * 84, x = (index) => viewport.span === 0 ? 125 : 20 + (start + index - viewport.start) * 210 / viewport.span, markerCount = averages.length === 1 ? 1 : Math.ceil((averages.length - 1) / markerSpacing) + 1, markers = Array.from({ length: markerCount }, (_, index) => {
     const dataPosition = markerCount === 1 ? 0 : index * (averages.length - 1) / (markerCount - 1);
     if (dataPosition < viewport.start || dataPosition > viewport.start + viewport.span) return "";
     const position = dataPosition - start, left = Math.floor(position), right = Math.min(left + 1, visible.length - 1), fraction = position - left, time = visible[left].timeSeconds + (visible[right].timeSeconds - visible[left].timeSeconds) * fraction;
@@ -177,6 +180,7 @@ function interpolateLiveTime(samples, time) {
 function bindTimeChartControls(holder, history, art) {
   const key = `${holder.dataset.boss}:trend`, previousAnimation = chartAnimationFrames.get(key);
   previousAnimation && cancelAnimationFrame(previousAnimation), chartAnimationFrames.delete(key);
+  let hoverFrame = null, pendingHover = null;
   let animationVersion = 0, navigationFrame = null, navigationTarget = null, navigationImmediate = !1, lastNavigationTime = 0, livePointFrame = null, verticalFrame = null;
   const liveSamples = [], liveDisplayDelay = 350, liveThresholds = timeChartThresholds(art);
   function stopLivePoint() {
@@ -186,6 +190,8 @@ function bindTimeChartControls(holder, history, art) {
     navigationFrame !== null && cancelAnimationFrame(navigationFrame), navigationFrame = null, navigationTarget = null;
   };
   disposeTimeChart = () => {
+    if (hoverFrame !== null) cancelAnimationFrame(hoverFrame);
+    hoverFrame = null; pendingHover = null;
     stopNavigation(), stopLivePoint(), verticalFrame !== null && cancelAnimationFrame(verticalFrame), animationVersion++;
     const frame = chartAnimationFrames.get(key);
     frame && cancelAnimationFrame(frame), chartAnimationFrames.delete(key);
@@ -215,6 +221,7 @@ function bindTimeChartControls(holder, history, art) {
   };
   function paintLivePoint() {
     stopLivePoint();
+    if (document.hidden || holder.closest("[hidden]")) return;
     const svg = holder.querySelector(".time-history-chart");
     if (!svg) return;
     const point = svg.querySelector(".live-chart-point"), label = holder.querySelector(".live-chart-time"), seconds = getLiveChartTime(holder.dataset.boss);
@@ -230,7 +237,10 @@ function bindTimeChartControls(holder, history, art) {
       liveSamples.splice(0, liveSamples.length - 1), paint(seconds);
     else {
       const frame = (now) => {
-        paint(interpolateLiveTime(liveSamples, now - liveDisplayDelay)), livePointFrame = liveSamples.length > 1 ? requestAnimationFrame(frame) : null;
+        const time = now - liveDisplayDelay;
+        if (!holder.isConnected || document.hidden || holder.closest("[hidden]")) { livePointFrame = null; return; }
+        paint(interpolateLiveTime(liveSamples, time));
+        livePointFrame = liveSamples.length > 1 && time < liveSamples.at(-1).at ? requestAnimationFrame(frame) : null;
       };
       frame(performance.now());
     }
@@ -426,14 +436,22 @@ function bindTimeChartControls(holder, history, art) {
       navigate({ zoom: drag.zoom, offset: drag.total - 1 - drag.span - start }, !0);
       return;
     }
+    if (!event.target.closest(".time-history-chart")) return;
+    pendingHover = { clientX: event.clientX, clientY: event.clientY };
+    if (hoverFrame === null) hoverFrame = requestAnimationFrame(() => {
+      hoverFrame = null;
+      if (pendingHover) updateHover(pendingHover);
+    });
+  });
+  function updateHover(event) {
     const svg = holder.querySelector(".time-history-chart"), tooltip = holder.querySelector(".chart-hover-tooltip");
-    if (!svg || !tooltip || !event.target.closest(".time-history-chart")) return;
+    if (!svg || !tooltip || !holder.isConnected) return;
     const point = nearestChartPoint(svg, event.clientX);
     if (!point) return;
     tooltip.dataset.point !== point.dataset.point && (tooltip.innerHTML = `<strong>${t(Number(holder.dataset.limit) === 1 ? "autolog.individual-clear" : "autolog.average-time")}: ${safeText(formatTime(Number(point.dataset.average)))}</strong><span>${tf("autolog.clears-range", { start: point.dataset.runStart, end: point.dataset.runEnd })}</span><span>${tf(Number(holder.dataset.limit) === 1 ? "autolog.death-rate-value" : "autolog.average-death-rate", { percent: point.dataset.deathRate })}</span>`, tooltip.dataset.point = point.dataset.point), tooltip.hidden = !1;
     const box = holder.querySelector(".history-svg-wrap").getBoundingClientRect();
     tooltip.style.left = `${Math.min(box.width - tooltip.offsetWidth - 6, Math.max(6, event.clientX - box.left + 12))}px`, tooltip.style.top = `${Math.max(4, event.clientY - box.top - tooltip.offsetHeight - 8)}px`;
-  });
+  }
   const stopPanning = (event) => {
     if (!drag || drag.pointerId !== event.pointerId) return;
     drag = null, holder.classList.remove("is-panning");

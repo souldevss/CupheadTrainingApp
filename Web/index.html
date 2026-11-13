@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cuphead Training App</title>
 <link rel="icon" type="image/png" href="assets/icons/app-logo-small.png">
-    <script src="js/site-palette.js?v=web-cleanup"></script>
-    <link rel="stylesheet" href="style.css?v=table-category-update">
-    <link rel="stylesheet" href="css/site-palette.css?v=web-cleanup">
-    <link rel="stylesheet" href="css/host-bridge.css?v=web-cleanup">
+    <script src="js/site-palette.js?v=performance-pass"></script>
+    <link rel="stylesheet" href="style.css?v=performance-pass">
+    <link rel="stylesheet" href="css/training-comparison.css?v=training-cards">
+    <link rel="stylesheet" href="css/site-palette.css?v=boss-pages-cleanup">
+    <link rel="stylesheet" href="css/host-bridge.css?v=boss-pages-cleanup">
 </head>
 <body class="compact-mode" data-page="personal-times">
 
@@ -37,6 +38,13 @@
 
     <div id="category-tabs" class="category-tabs"></div>
 
+    <div class="training-comparison" role="group" data-i18n-aria-label="training.comparison">
+        <span data-i18n="training.comparison">Compare using</span>
+        <label><input type="radio" name="training-comparison" value="pb" checked> <span data-i18n="training.pb">PB</span></label>
+        <label><input type="radio" name="training-comparison" value="average"> <span data-i18n="training.average-of">Average of</span></label>
+        <input id="training-average-count" type="number" min="1" max="10000" step="1" value="10" data-i18n-aria-label="training.average-count" aria-label="Number of clears to average">
+    </div>
+
     <div class="board-layout training-board">
         <div class="scroll-wrapper">
             <div id="table"></div>
@@ -53,17 +61,18 @@
     <script src="js/state.js?v=web-cleanup"></script>
     <script src="js/time.js?v=web-cleanup"></script>
     <script src="js/category.js?v=table-category-update"></script>
-    <script src="js/data-access.js?v=web-cleanup"></script>
-    <script src="js/ranks.js?v=web-cleanup"></script>
-    <script src="js/calculations.js?v=web-cleanup"></script>
+    <script src="js/data-access.js?v=boss-pages-cleanup"></script>
+    <script src="js/ranks.js?v=boss-pages-cleanup"></script>
+    <script src="js/calculations.js?v=training-cards"></script>
     <script src="js/wr-times.js?v=web-cleanup"></script>
     <script src="js/storage.js?v=web-cleanup"></script>
     <script src="js/render-personal.js?v=web-cleanup"></script>
-    <script src="js/render-auto.js?v=web-cleanup"></script>
+    <script src="js/render-auto.js?v=training-cards"></script>
     <script src="js/render.js?v=web-cleanup"></script>
-    <script src="js/language.js?v=assembly-version"></script>
+    <script src="js/language.js?v=recent-pages"></script>
+    <script src="js/training-comparison.js?v=training-cards"></script>
     <script src="js/main.js?v=table-category-update"></script>
-    <script src="js/host-bridge.js?v=web-cleanup"></script>
+    <script src="js/host-bridge.js?v=recent-pages"></script>
 
 </body>
 </html>

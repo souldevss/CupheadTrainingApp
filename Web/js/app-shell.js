@@ -44,6 +44,7 @@
     window.requestIdleCallback ? window.requestIdleCallback(load, { timeout: 500 }) : window.setTimeout(load, 50);
   }
   function activatePage() {
+    document.documentElement.classList.remove("is-scrolling");
     notifyActivity();
     const frame = pages[activePage], includeHistory = activePage === "attempt-log", enabled = frame.dataset.ready === "true" && (activePage === "training" || includeHistory);
     sendToHost({ cmd: "setStatsMode", enabled, includeRecent: includeHistory, includeHistory }), frame.dataset.ready === "true" && (latestWatcherStatus && frame.contentWindow.postMessage({ type: "hostMessage", payload: latestWatcherStatus }, "*"), enabled && sendToHost({
@@ -55,7 +56,10 @@
   }
   window.addEventListener("message", (event) => {
     const message = event.data;
-    if (message?.type === "switchPage") selectPage(message.page);
+    if (message?.type === "pageScrollActivity") {
+      if (event.origin === location.origin && event.source === pages[activePage].contentWindow)
+        document.documentElement.classList.toggle("is-scrolling", message.active === true);
+    } else if (message?.type === "switchPage") selectPage(message.page);
     else if (message?.type === "pageReady" && event.origin === location.origin) {
       const name = Object.keys(pages).find((name2) => pages[name2].contentWindow === event.source);
       name && pageReady(name, pages[name]);

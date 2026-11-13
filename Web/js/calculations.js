@@ -1,7 +1,7 @@
 function getPersonalTimeEntries() {
   const storedTimes = getStoredPersonalTimes(), currentTable = document.getElementById("table");
   return (currentTable ? [...currentTable.querySelectorAll(".time-input, [data-auto-time]")] : []).map((input) => {
-    const levelIndex = Number(input.dataset.levelIndex ?? input.dataset.autoTime ?? 0), level = getLevelByFlatIndex(levelIndex), value = input.classList.contains("time-input") ? input.value.trim() : "", autoSeconds = input.dataset.autoTime !== void 0 && Number.isFinite(window.cupheadAutoTimes?.[levelIndex]) ? window.cupheadAutoTimes[levelIndex] : null, seconds = autoSeconds !== null ? autoSeconds : value ? parseTime(value) : parseTime(storedTimes[input.id] || "");
+    const levelIndex = Number(input.dataset.levelIndex ?? input.dataset.autoTime ?? 0), level = getLevelByFlatIndex(levelIndex), value = input.classList.contains("time-input") ? input.value.trim() : "", autoSeconds = input.dataset.autoTime !== void 0 && Number.isFinite(window.cupheadAutoTimes?.[levelIndex]) ? window.cupheadAutoTimes[levelIndex] : null, seconds = window.autoTrainingPage ? autoSeconds : autoSeconds !== null ? autoSeconds : value ? parseTime(value) : parseTime(storedTimes[input.id] || "");
     return level && !level.times && level.fRankTime && (level.times = generateRankTimes(level.fRankTime, {
       wrTime: level.wrTime,
       fallbackMultipliers: getActiveRankMultipliers()

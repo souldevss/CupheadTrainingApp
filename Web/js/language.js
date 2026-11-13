@@ -1,5 +1,11 @@
 const LANG_KEY = "cuphead-training-lang", TRANSLATIONS = {
   en: {
+    "training.comparison": "Compare using",
+    "training.pb": "PB",
+    "training.average-of": "Average of",
+    "training.average-count": "Number of recent clears to average",
+    "training.average-missing": "Need {required} clears ({have} recorded)",
+
     // Navigation
     "nav.enter-times": "Enter Times",
     "nav.training": "Training",
@@ -198,6 +204,8 @@ const LANG_KEY = "cuphead-training-lang", TRANSLATIONS = {
     "autolog.subtitle": "Choose a boss to see how your clear times and deaths change over attempts.",
     "autolog.clear-all": "Clear all records",
     "autolog.recent": "Recent attempts",
+    "autolog.load-more": "Load more",
+    "autolog.loading-more": "Loading…",
     "autolog.boss-progress": "BOSS PROGRESS",
     "autolog.back": "← All bosses",
     "autolog.progress": "Progress",
@@ -271,6 +279,8 @@ const LANG_KEY = "cuphead-training-lang", TRANSLATIONS = {
     "autolog.delete-death-aria": "Delete this death",
     "autolog.delete-attempt-confirm": "Delete this recorded attempt?",
     "autolog.delete-death-confirm": "Delete this death record?",
+    "autolog.delete-all-word": "DELETE",
+    "autolog.delete-all-verify": "Final confirmation: type {word} to delete ALL run and death records across all categories.",
     "autolog.delete-all-confirm": "Delete all run and death records? This cannot be undone.",
     "autolog.no-live-stats": "Open this page inside the desktop app to see live stats.",
     "autolog.boss-attempts": "{attempts} attempts · {clears} clears",
@@ -282,6 +292,12 @@ const LANG_KEY = "cuphead-training-lang", TRANSLATIONS = {
     "result.death": "Death"
   },
   "pt-BR": {
+    "training.comparison": "Comparar usando",
+    "training.pb": "PB",
+    "training.average-of": "Média de",
+    "training.average-count": "Quantidade de conclusões recentes para a média",
+    "training.average-missing": "São necessárias {required} conclusões ({have} registradas)",
+
     // Navigation
     "nav.enter-times": "Inserir Tempos",
     "nav.training": "Treino",
@@ -480,6 +496,8 @@ const LANG_KEY = "cuphead-training-lang", TRANSLATIONS = {
     "autolog.subtitle": "Escolha um chefe para acompanhar a evolução dos tempos de conclusão e das mortes.",
     "autolog.clear-all": "Limpar todos os registros",
     "autolog.recent": "Tentativas recentes",
+    "autolog.load-more": "Carregar mais",
+    "autolog.loading-more": "Carregando…",
     "autolog.boss-progress": "PROGRESSO DO CHEFE",
     "autolog.back": "← Todos os chefes",
     "autolog.progress": "Progresso",
@@ -553,6 +571,8 @@ const LANG_KEY = "cuphead-training-lang", TRANSLATIONS = {
     "autolog.delete-death-aria": "Excluir esta morte",
     "autolog.delete-attempt-confirm": "Excluir esta tentativa registrada?",
     "autolog.delete-death-confirm": "Excluir este registro de morte?",
+    "autolog.delete-all-word": "APAGAR",
+    "autolog.delete-all-verify": "Confirmação final: digite {word} para excluir TODOS os registros de partidas e mortes de todas as categorias.",
     "autolog.delete-all-confirm": "Excluir todos os registros de partidas e mortes? Esta ação não pode ser desfeita.",
     "autolog.no-live-stats": "Abra esta página no aplicativo para desktop para ver as estatísticas ao vivo.",
     "autolog.boss-attempts": "{attempts} tentativas · {clears} conclusões",

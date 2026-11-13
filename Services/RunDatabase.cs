@@ -113,25 +113,52 @@ VALUES ($boss, $scene, $cleared, $time, 0, $at, $category);";
             Revision++;
         }
 
+        private const string CategorizedAttempts = @"SELECT id, boss_name, cleared, time_seconds, recorded_at, COALESCE(category_key,
+CASE WHEN scene_id IN ('scene_level_old_man', 'scene_level_snow_cult',
+'scene_level_airplane', 'scene_level_flying_cowboy', 'scene_level_rum_runners',
+'scene_level_saltbaker') OR boss_name IN ('Glumstone The Giant', 'Mortimer Freeze',
+'The Howling Aces', 'Esther Winchester', 'Moonshine Mob', 'Chef Saltbaker')
+THEN 'DLC:lobber' ELSE '1-1' END) AS trusted_category FROM attempts";
+
         public List<object> GetCategoryBests()
         {
             var bests = new List<object>();
             using var cmd = connection.CreateCommand();
             // The user explicitly accepts all legacy attempts as trusted.
             // Untagged DLC history defaults to L/S; explicit C/S tags stay intact.
-            cmd.CommandText = @"WITH categorized AS (
-SELECT boss_name, cleared, time_seconds, COALESCE(category_key,
-CASE WHEN scene_id IN ('scene_level_old_man', 'scene_level_snow_cult',
-'scene_level_airplane', 'scene_level_flying_cowboy', 'scene_level_rum_runners',
-'scene_level_saltbaker') OR boss_name IN ('Glumstone The Giant', 'Mortimer Freeze',
-'The Howling Aces', 'Esther Winchester', 'Moonshine Mob', 'Chef Saltbaker')
-THEN 'DLC:lobber' ELSE '1-1' END) AS trusted_category FROM attempts)
+            cmd.CommandText = "WITH categorized AS (" + CategorizedAttempts + @")
 SELECT boss_name, trusted_category, MIN(time_seconds) FROM categorized
 WHERE cleared = 1 AND trusted_category IN ('1-1', 'legacy', 'DLC:lobber', 'DLC:charge', 'DLC:shared')
 GROUP BY boss_name, trusted_category;";
             using var reader = cmd.ExecuteReader();
             while (reader.Read()) bests.Add(new { bossName = reader.GetString(0), categoryKey = reader.GetString(1), seconds = reader.GetDouble(2) });
             return bests;
+        }
+
+        public List<object> GetTrainingAverages(int count)
+        {
+            count = Math.Clamp(count, 1, 10000);
+            using var command = connection.CreateCommand();
+            command.CommandText = "WITH categorized AS (" + CategorizedAttempts + @"),
+expanded AS (
+  SELECT id, boss_name, time_seconds, recorded_at, trusted_category AS category FROM categorized
+  WHERE cleared = 1 AND trusted_category IN ('1-1', 'legacy', 'DLC:lobber', 'DLC:charge')
+  UNION ALL
+  SELECT id, boss_name, time_seconds, recorded_at, 'DLC:lobber' FROM categorized WHERE cleared = 1 AND trusted_category = 'DLC:shared'
+  UNION ALL
+  SELECT id, boss_name, time_seconds, recorded_at, 'DLC:charge' FROM categorized WHERE cleared = 1 AND trusted_category = 'DLC:shared'
+), ranked AS (
+  SELECT *, ROW_NUMBER() OVER (PARTITION BY category, boss_name ORDER BY recorded_at DESC, id DESC) AS position FROM expanded
+)
+SELECT boss_name, category, COUNT(*), AVG(time_seconds) FROM ranked
+WHERE position <= $count GROUP BY category, boss_name;";
+            command.Parameters.AddWithValue("$count", count);
+            var rows = new List<object>();
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+                rows.Add(new { bossName = reader.GetString(0), categoryKey = reader.GetString(1),
+                    samples = reader.GetInt32(2), seconds = reader.GetInt32(2) == count ? (double?)reader.GetDouble(3) : null });
+            return rows;
         }
 
         public void InsertDeath(string bossName, string sceneId, DateTime recordedAtUtc, string categoryKey = null)
@@ -183,17 +210,17 @@ FROM activity GROUP BY boss_name;";
             return result;
         }
 
-        public List<ActivityRow> GetRecentActivity(int limit = 60, string categoryKey = null)
-            => GetActivity(categoryKey, limit);
+        public List<ActivityRow> GetRecentActivity(int limit = 60, string categoryKey = null, int offset = 0)
+            => GetActivity(categoryKey, limit, offset);
 
         public List<ActivityRow> GetCategoryActivity(string categoryKey)
             => GetActivity(categoryKey, null);
 
-        private List<ActivityRow> GetActivity(string categoryKey, int? limit)
+        private List<ActivityRow> GetActivity(string categoryKey, int? limit, int offset = 0)
         {
             using var cmd = connection.CreateCommand();
             string filter = CategoryFilter(categoryKey);
-            string order = limit.HasValue ? "recorded_at DESC, id DESC LIMIT $limit" : "recorded_at, kind, id";
+            string order = limit.HasValue ? "recorded_at DESC, id DESC, kind DESC LIMIT $limit OFFSET $offset" : "recorded_at, kind, id";
             cmd.CommandText = $@"
 SELECT id, kind, boss_name, cleared, time_seconds, recorded_at, category_key FROM (
   SELECT id, 0 AS kind, boss_name, cleared, time_seconds, recorded_at, category_key FROM attempts WHERE {filter}
@@ -201,7 +228,11 @@ SELECT id, kind, boss_name, cleared, time_seconds, recorded_at, category_key FRO
   SELECT id, 1 AS kind, boss_name, 0, 0.0, recorded_at, category_key FROM death_events WHERE {filter}
 ) ORDER BY {order};";
             AddCategoryParameters(cmd, categoryKey);
-            if (limit.HasValue) cmd.Parameters.AddWithValue("$limit", limit.Value);
+            if (limit.HasValue)
+            {
+                cmd.Parameters.AddWithValue("$limit", limit.Value);
+                cmd.Parameters.AddWithValue("$offset", Math.Max(0, offset));
+            }
             var rows = new List<ActivityRow>();
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
