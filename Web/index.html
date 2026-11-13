@@ -5,36 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cuphead Training App</title>
 <link rel="icon" type="image/png" href="assets/icons/app-logo-small.png">
-    <script src="js/site-palette.js?v=performance-pass"></script>
-    <link rel="stylesheet" href="style.css?v=performance-pass">
+    <script src="js/site-palette.js?v=background-hue-offset"></script>
+    <link rel="stylesheet" href="style.css?v=shared-ui-cleanup">
     <link rel="stylesheet" href="css/training-comparison.css?v=training-cards">
     <link rel="stylesheet" href="css/site-palette.css?v=boss-pages-cleanup">
     <link rel="stylesheet" href="css/host-bridge.css?v=boss-pages-cleanup">
 </head>
 <body class="compact-mode" data-page="personal-times">
 
-<div class="pages">
-    <div class="training-brand">
-        <img src="assets/icons/app-logo.png" alt="" width="88" height="88">
-        <div id="bigtitle">Cuphead Training App</div>
-    </div>
-    <a href="info.html" class="info-nav-btn" data-i18n-aria-label="ui.info-aria" aria-label="How it works">&#9432;</a>
-
-    <div class="header-preferences">
-        <button id="lang-toggle-btn" class="lang-toggle-btn-inline" type="button" data-i18n-aria-label="ui.language-aria" aria-label="Toggle language">
-            <img src="https://flagcdn.com/w40/us.png" srcset="https://flagcdn.com/w80/us.png 2x" alt="English" width="28" height="21">
-        </button>
-    </div>
-</div>
-
-<div class="nav-row">
-    <div class="page-tabs">
-            <a href="index.html" class="active" data-i18n="nav.training">Training</a>
-        <a href="index2.html" data-i18n="nav.time-table">Time Table</a>
-            <a href="autolog.html" data-i18n="nav.attempt-log">Attempt Log</a>
-        <a href="backups.html" data-i18n="nav.backups">Backups</a>
-    </div>
-</div>
+<script src="js/page-header.js?v=shared-header"></script>
 
     <div id="category-tabs" class="category-tabs"></div>
 
@@ -62,12 +41,12 @@
     <script src="js/time.js?v=web-cleanup"></script>
     <script src="js/category.js?v=table-category-update"></script>
     <script src="js/data-access.js?v=boss-pages-cleanup"></script>
-    <script src="js/ranks.js?v=boss-pages-cleanup"></script>
+    <script src="js/ranks.js?v=training-layout"></script>
     <script src="js/calculations.js?v=training-cards"></script>
     <script src="js/wr-times.js?v=web-cleanup"></script>
     <script src="js/storage.js?v=web-cleanup"></script>
-    <script src="js/render-personal.js?v=web-cleanup"></script>
-    <script src="js/render-auto.js?v=training-cards"></script>
+    <script src="js/render-personal.js?v=training-layout"></script>
+    <script src="js/render-auto.js?v=shared-ui-cleanup"></script>
     <script src="js/render.js?v=web-cleanup"></script>
     <script src="js/language.js?v=recent-pages"></script>
     <script src="js/training-comparison.js?v=training-cards"></script>

@@ -10,9 +10,8 @@ let selectedBossAttemptLimit = ATTEMPT_PAGE_SIZE;
 let recentHasMore = false, recentLoading = false, recentRequestId = 0;
 const attemptCollectionMarkup = new WeakMap();
 let lastSummaryMarkup = null, lastSidebarMarkup = null;
-let bossSidebarResizeObserver = null, timeChartResizeObserver = null, disposeTimeChart = null, pendingSmoothingFrame = null;
+let timeChartResizeObserver = null, disposeTimeChart = null, pendingSmoothingFrame = null;
 window.stopAutologWork = function() {
-  bossSidebarResizeObserver?.disconnect(); bossSidebarResizeObserver = null;
   disposeTimeChart?.(), disposeTimeChart = null, timeChartResizeObserver?.disconnect(), timeChartResizeObserver = null;
   for (const frame of chartAnimationFrames.values()) cancelAnimationFrame(frame);
   chartAnimationFrames.clear(), pendingSmoothingFrame !== null && cancelAnimationFrame(pendingSmoothingFrame), pendingSmoothingFrame = null;
@@ -77,7 +76,6 @@ function renderBossDetail() {
         </div>
         <div class="detail-tab-content" data-panel="attempts" ${selectedDetailTab === "attempts" ? "" : "hidden"}></div></div>
         `, detail.querySelectorAll(".time-chart-content").forEach((holder) => bindTimeChartControls(holder, history, art));
-  bindBossSidebar(detail);
   const mutedColors = detail.querySelector("#muted-graph-colors");
   if (mutedColors) {
     const chart = mutedColors.closest(".time-history-card");
@@ -139,22 +137,6 @@ document.getElementById("boss-log-sidebar").addEventListener("click", event => {
   if (boss) showBossDetail(boss.dataset.selectBoss);
   else if (event.target.closest("#show-overall-progress")) selectLogView("overall");
 });
-function bindBossSidebar(detail) {
-  bossSidebarResizeObserver?.disconnect();
-  const sidebar = document.getElementById("boss-log-sidebar"), main = detail.querySelector(".boss-detail-main") || detail, chart = main.querySelector(".time-history-card") || main;
-  const count = sidebar.children.length;
-  sidebar.style.setProperty("--sidebar-count", count);
-  let lastHeight = Math.max(400, count * 22);
-  function fitSidebar() {
-    if (!detail.isConnected || detail.hidden) return;
-    if (chart.getBoundingClientRect().height > 0) lastHeight = Math.max(main.getBoundingClientRect().height, count * 22);
-    sidebar.style.marginTop = (main.getBoundingClientRect().top - document.getElementById("boss-log-workspace").getBoundingClientRect().top) + "px";
-    sidebar.style.setProperty("--sidebar-height", lastHeight + "px");
-    sidebar.style.setProperty("--sidebar-row-height", (lastHeight - Math.max(0, count - 1) * 2) / Math.max(1, count) + "px");
-  }
-  bossSidebarResizeObserver = new ResizeObserver(fitSidebar);
-  bossSidebarResizeObserver.observe(main); bossSidebarResizeObserver.observe(chart); fitSidebar();
-}
 function bindAttemptDeletion(container) {
   container.querySelectorAll("[data-delete-run], [data-delete-death]").forEach((button) => button.addEventListener("click", () => {
     button.hasAttribute("data-delete-death") ? confirm(t("autolog.delete-death-confirm")) && window.cupheadHost?.deleteDeath(Number(button.dataset.deleteDeath)) : confirm(t("autolog.delete-attempt-confirm")) && window.cupheadHost?.deleteAttempt(Number(button.dataset.deleteRun));
@@ -182,7 +164,6 @@ window.receiveOverallProgress = function(bosses, categoryKey) {
   if (!(!summary || !recentEl)) {
     autologRows = rows; autologRecentRows = recent; renderBossSidebar();
     if (logView === "overall") {
-      bindBossSidebar(document.getElementById("overall-progress"));
       categoryKey ? window.cupheadHost?.postToHost({ cmd: "getOverallProgress" }) : renderOverallProgress(overallProgressBosses);
       return;
     }

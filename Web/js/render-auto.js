@@ -7,6 +7,8 @@ function syncAutoRank(levelIndex) {
   }));
   display.title = getTrainingComparisonTitle(level.name);
   const style = seconds === null ? getPersonalRankStyle(null) : getInterpolatedRankStyle(seconds, level.times), rankIndex = seconds === null ? null : getRankIndexForTime(seconds, level.times);
+  wrapper.closest("td").style.background = style.background;
+  wrapper.closest("td").style.setProperty("--rank-border", interpolateColor(style.background, style.color, .22));
   display.textContent = seconds === null ? "—" : formatTime(seconds), rankOutput.textContent = rankIndex === null ? "-" : ranks[rankIndex], rankOutput.classList.toggle("personal-rank-empty", rankIndex === null), rankOutput.style.background = style.background, rankOutput.style.color = style.color, rankOutput.style.fontWeight = style.fontWeight || "", seconds !== null ? (wrapper.style.setProperty("background", style.background, "important"), display.style.setProperty("color", style.color, "important")) : (wrapper.style.removeProperty("background"), display.style.removeProperty("color"));
 }
 function syncAllAutoRanks() {

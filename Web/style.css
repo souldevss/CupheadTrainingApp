@@ -1,6 +1,7 @@
 @font-face{font-family:Cuphead Poster;src:local("Cuphead Poster"),local("Cuphead Poster Regular");font-style:normal;font-weight:400;font-display:swap}
 @font-face{font-family:Alegreya Sans SC;src:url(assets/fonts/alegreya-sans-sc-bold.woff2) format("woff2");font-weight:700;font-display:swap}
 :root{--panel-bg: rgb(57 40 83 / 65%);--panel-bg-deep: rgb(34 23 55 / 74%);--panel-border: #695781;--panel-accent: #5b4677;--panel-accent-soft: rgb(69 49 99 / 70%);--panel-selection: #d4b9f2;--panel-accent-bright: #edbd5f}
+:root{--table-border:hsl(calc(var(--site-hue,265) + 8) 24% 62%);--table-grid:hsl(calc(var(--site-hue,265) - 12) 20% 60% / 65%);--table-divider:hsl(calc(var(--site-hue,265) + 18) 25% 40%)}
 *{box-sizing:border-box}
 html{min-height:100%}
 body{min-height:100%;margin:0;padding:20px;color:#fff;font-family:Segoe UI,-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;position:relative;background-color:#19182c}
@@ -38,7 +39,7 @@ body[data-game=cuphead] *{font-weight:700}
 .board-layout{display:flex;align-items:flex-start;gap:18px;width:100%}
 .scroll-wrapper{flex:1 1 auto;min-width:0;overflow-x:auto;border-radius:12px;overflow-y:visible;padding-bottom:8px}
 body[data-page=personal-times] .scroll-wrapper{display:flex;align-items:flex-start;gap:18px}
-body[data-page=time-table] .scroll-wrapper{display:block;--reference-isle-width: clamp(66px, 7vw, 104px);--reference-boss-width: clamp(108px, 12vw, 170px)}
+body[data-page=time-table] .scroll-wrapper{display:block}
 .reference-table{width:100%;min-width:1000px;font-variant-numeric:tabular-nums}
 .reference-isle{width:var(--reference-isle-width)}
 .reference-boss{width:var(--reference-boss-width)}
@@ -55,21 +56,21 @@ body.compact-mode:is([data-page=personal-times],[data-page=time-table]) .pages{m
 body.compact-mode .training-brand>img{width:48px;height:48px}
 body.compact-mode:is([data-page=personal-times],[data-page=time-table]) .category-tabs{margin-bottom:5px}
 body.compact-mode .reference-table :is(th,td){padding-block:0}}
-.training-board.board-layout{display:grid;grid-template-columns:minmax(0,1fr) clamp(164px,22vw,204px);width:min(100%,1000px);margin-inline:auto}
+.training-board.board-layout{display:grid;grid-template-columns:minmax(0,1fr) clamp(184px,20vw,224px);width:min(100%,1180px);margin-inline:auto}
 body[data-page=personal-times] .training-board>.scroll-wrapper{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:8px 12px}
 .training-board #table{display:contents}
 .training-isle-group{display:grid;gap:8px;min-width:0}
 .training-board :is(.training-isle,.personal-totals-table){width:100%}
 .training-board :is(.training-isle th,.training-isle .boss,.personal-totals-table .island){position:static;width:auto;min-width:0}
 .training-board :is(.training-time-width,.personal-time-col){width:clamp(104px,10.5vw,124px)}
-body.compact-mode .training-board :is(th,td){padding:2px 5px;font-size:14px}
+body.compact-mode .training-board :is(th,td){padding:3px 5px;font-size:clamp(14px,1.15vw,16px)}
 .training-board :is(.boss span,.personal-totals-table .island){white-space:normal;overflow:visible}
 .training-board .boss-icon{flex:none;width:clamp(17px,2.8vh,20px);height:clamp(17px,2.8vh,20px)}
-.training-board .time-input-wrapper{justify-content:space-between;gap:4px;font-variant-numeric:tabular-nums}
-.training-board .time-rank-display{min-width:36px;height:clamp(17px,2.8vh,20px);padding:0 3px;font-size:clamp(10px,1.05vw,12px)}
-.training-board>.rank-chart-column{min-width:0}
+.training-board .time-input-wrapper{justify-content:space-between;align-items:stretch;gap:4px;min-height:28px;height:100%;padding:3px 6px;background:transparent!important;font-size:clamp(14px,1.2vw,16px);font-variant-numeric:tabular-nums}
+.training-board .time-rank-display{min-width:28px;height:auto;align-self:stretch;padding:0 3px;font-size:14px}
+.training-board>.rank-chart-column{min-width:0;gap:6px}
 .training-board>.rank-chart-column .rank-chart{position:static}
-body.compact-mode .training-board .rank-chart-pie{width:136px;max-width:100%}
+body.compact-mode .training-board .rank-chart-pie{width:136px;height:136px;max-width:100%}
 @media(max-width:640px){
 .training-board.board-layout{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:460px){
@@ -108,11 +109,10 @@ th.personal-time-col{background:transparent}
 .rank-chart-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:14px;border-bottom:1px solid #414549;background:#556579}
 .rank-chart-header h2{margin:0;font-size:18px;line-height:1.1}
 .rank-chart-header span,.rank-chart-stats span{display:block;margin-top:3px;color:#c5ccd5;font-size:12px}
-.rank-chart-header strong{min-width:52px;padding:6px 8px;border:1px solid #414549;background:#fff;color:#414549;text-align:center;font-size:18px}
 .rank-chart-stack{display:flex;height:28px;margin:14px;overflow:hidden;border:1px solid #414549;background:#101419}
 .rank-chart-segment{display:block;min-width:4px;height:100%}
 .rank-chart-empty-segment{width:100%;background:repeating-linear-gradient(135deg,#27313d,#27313d 8px,#101419 8px 16px)}
-.rank-chart-pie{width:160px;aspect-ratio:1;margin:0 auto;border-radius:50%;border:2px solid rgba(255,255,255,.18);background:transparent;box-shadow:inset 0 0 0 9999px transparent}
+.rank-chart-pie{aspect-ratio:1;margin:0 auto;border:2px solid rgba(255,255,255,.18);background:transparent}
 .rank-chart-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 14px 14px}
 .rank-chart-stats div{border:1px solid #414549;background:#ffffff14;padding:8px}
 .rank-chart-stats strong{display:block;margin-top:2px;font-size:20px}
@@ -223,11 +223,11 @@ table,.rank-chart,.info-page .info-section,.recent-attempt-card{border-radius:6p
 .page-tabs,body.compact-mode .page-tabs,.category-tab,.data-control-btn{border-radius:5px}
 .page-tabs a,.page-tabs .info-nav-btn.icon-reveal,.icon-caption{border-radius:4px}
 body[data-page=time-table] .scroll-wrapper{--reference-isle-width: 115px;--reference-boss-width: 260px;overflow-x:auto;border-radius:0}
-body[data-page=time-table] .reference-table{width:1895px;min-width:1895px;font-weight:700;overflow:visible;border-radius:6px;border:3px solid var(--panel-border)}
-body.compact-mode[data-page=time-table] .reference-table :is(th,td){font-size:16px;font-weight:700;padding:4px 5px;line-height:1.25;letter-spacing:0;border:0;border-right:3px solid #241c3099;border-bottom:1px solid #241c3066}
-body.compact-mode[data-page=time-table] .reference-table th{font-weight:800;border-bottom:3px solid var(--panel-border)}
-body[data-page=time-table] .reference-table .isle-start>td{border-top:3px solid var(--panel-border)}
-body[data-page=time-table] .reference-table .island{font-weight:800;border-bottom:3px solid var(--panel-border)}
+body[data-page=time-table] .reference-table{width:1895px;min-width:1895px;font-weight:700;overflow:visible;border-radius:6px;border:3px solid var(--table-border)}
+body.compact-mode[data-page=time-table] .reference-table :is(th,td){font-size:16px;font-weight:700;padding:4px 5px;line-height:1.25;letter-spacing:0;border:0;border-right:3px solid var(--table-grid);border-bottom:1px solid var(--table-grid)}
+body.compact-mode[data-page=time-table] .reference-table th{font-weight:800;border-bottom:3px solid var(--table-border)}
+body[data-page=time-table] .reference-table .isle-start>td{border-top:3px solid var(--table-border)}
+body[data-page=time-table] .reference-table .island{font-weight:800;border-bottom:3px solid var(--table-border)}
 body[data-page=time-table] .reference-table .boss-icon{width:28px;height:28px}
 body[data-page=time-table] .reference-table .boss-content{gap:6px}
 
@@ -241,4 +241,21 @@ html.is-scrolling body[data-page]:before{animation-play-state:paused}
 body[data-page=time-table] .reference-table :is(.island,.boss){position:sticky}
 body[data-page=time-table] .reference-table .island{left:3px}
 body[data-page=time-table] .reference-table .boss{left:calc(var(--reference-isle-width) + 3px)}
-body.compact-mode[data-page=time-table] :is(.reference-table .boss,.reference-totals-table .island){border-right:10px solid var(--palette-popover,#221737);background-clip:padding-box;box-shadow:3px 0 0 #0004}
+body.compact-mode[data-page=time-table] :is(.reference-table .boss,.reference-totals-table .island){border-right:10px solid var(--table-divider);background-clip:padding-box;box-shadow:3px 0 0 var(--table-border)}
+
+.training-board :is(.training-isle,.personal-totals-table){border:1px solid var(--table-border)}
+.training-board :is(th,td){border-color:var(--table-grid)}
+
+.training-board :is(.scroll-wrapper,table,.time-input-wrapper,.time-input,.time-rank-display,.auto-time-display){border-radius:0}
+.training-board .personal-time-col{border-color:var(--rank-border,var(--table-grid))}
+body.compact-mode[data-page=time-table] .reference-table :is(th,td)[class*="rank-"]{border-color:var(--rank-border,var(--table-grid))}
+.training-board .rank-chart-pie-shell{padding:0}
+.training-board .rank-chart-pie-wrapper{min-height:0;padding:10px}
+body.compact-mode .training-board .rank-chart{padding:8px}
+.training-board .rank-chart-header{padding:8px}
+.training-board .rank-chart-stack{margin:8px}
+.training-board .rank-chart-stats{padding:0 8px 8px}
+.training-board .rank-chart-list{gap:6px;padding:0 8px 8px}
+.training-board .rank-chart-row{grid-template-columns:40px minmax(0,1fr) 24px;gap:5px}
+
+body.compact-mode .training-board td.personal-time-col{padding:0}

@@ -2,6 +2,7 @@
 
 `Web` is the desktop app's WebView UI. HTML files hold page markup; scripts live in `js/`.
 
+- `js/page-header.js`: shared title, language selector and page navigation for all five pages.
 - `style.css`: shared layout, navigation, Training and Time Table.
 - `css/autolog.css`: Attempt Log, boss charts, Overall Progress, projection and Run Recap.
 - `css/app-shell.css`: desktop frame and animated background.

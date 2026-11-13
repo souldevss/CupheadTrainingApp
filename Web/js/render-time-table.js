@@ -4,13 +4,13 @@ function renderTimeTablePage() {
     return;
   }
   let html = `
-<table class="reference-table">
+<table class="reference-table" style="border-right-color:${getRankBorderColor(ranks.length-1)}">
 <colgroup><col class="reference-isle"><col class="reference-boss"><col span="${ranks.length}"></colgroup>
 <thead>
 <tr>
     <th class="island sticky-col-1">${t("header.islands")}</th>
     <th class="boss sticky-col-2">${t("header.levels")}</th>
-    ${ranks.map((rank, index) => `<th class="rank-col rank-${index}" style="color:${getRankStyle(index).background}">${rank}</th>`).join("")}
+    ${ranks.map((rank, index) => `<th class="rank-col rank-${index}" style="--rank-border:${getRankBorderColor(index)};color:${getRankStyle(index).background}">${rank}</th>`).join("")}
 </tr>
 </thead>
 <tbody>
@@ -25,11 +25,11 @@ function renderTimeTablePage() {
             </td>`), html += createBossCellMarkup(boss), boss.times.forEach((time, rankIndex) => {
       const style = getRankStyle(rankIndex), fontWeight = style.fontWeight || "inherit";
       rankIndex === 0 && boss.wrUrl ? html += `
-            <td class="rank-col rank-0" style="background: ${style.background}; color: ${style.color}; font-weight: ${fontWeight};">
+            <td class="rank-col rank-0" style="--rank-border:${getRankBorderColor(rankIndex)};background: ${style.background}; color: ${style.color}; font-weight: ${fontWeight};">
                 <a class="wr-link" href="${escapeAttribute(boss.wrUrl)}" target="_blank" rel="noopener" title="${escapeAttribute(boss.wrPlayer ? boss.wrPlayer + " — " + formatTime(time) : formatTime(time))}" style="color: ${style.color}; font-weight: ${fontWeight};">
                     ${formatTime(time)}
                 </a>
-            </td>` : html += `<td class="rank-col rank-${rankIndex}" style="background: ${style.background}; color: ${style.color}; font-weight: ${fontWeight};">${formatTime(time)}</td>`;
+            </td>` : html += `<td class="rank-col rank-${rankIndex}" style="--rank-border:${getRankBorderColor(rankIndex)};background: ${style.background}; color: ${style.color}; font-weight: ${fontWeight};">${formatTime(time)}</td>`;
     }), html += "</tr>";
   };
   for (const island of getActiveIslands())
@@ -43,12 +43,12 @@ function renderTimeTablePage() {
 }
 function renderTimeTableTotals() {
   let totalsHtml = `
-<table class="reference-table reference-totals-table">
+<table class="reference-table reference-totals-table" style="border-right-color:${getRankBorderColor(ranks.length-1)}">
 <colgroup><col class="reference-total-label"><col span="${ranks.length}"></colgroup>
 <thead>
 <tr>
     <th class="island sticky-col-1">${t("header.isle-times")}</th>
-    ${ranks.map((rank, index) => `<th class="rank-col rank-${index}" style="color:${getRankStyle(index).background}">${rank}</th>`).join("")}
+    ${ranks.map((rank, index) => `<th class="rank-col rank-${index}" style="--rank-border:${getRankBorderColor(index)};color:${getRankStyle(index).background}">${rank}</th>`).join("")}
 </tr>
 </thead>
 <tbody>
@@ -62,7 +62,7 @@ function renderTimeTableTotals() {
         ${ranks.map((_, rankIndex) => {
       const total = getIslandTotal(i, rankIndex), style = getRankStyle(rankIndex);
       return `
-            <td class="rank-${rankIndex}" style="background: ${style.background}; color: ${style.color}; font-weight: ${style.fontWeight || "inherit"};">
+            <td class="rank-${rankIndex}" style="--rank-border:${getRankBorderColor(rankIndex)};background: ${style.background}; color: ${style.color}; font-weight: ${style.fontWeight || "inherit"};">
                 ${formatTime(total)}
             </td>
             `;
@@ -78,7 +78,7 @@ function renderTimeTableTotals() {
     (value, rankIndex) => {
       const style = getRankStyle(rankIndex);
       return `
-            <td class="rank-${rankIndex}" style="background: ${style.background}; color: ${style.color}; font-weight: ${style.fontWeight || "inherit"};">
+            <td class="rank-${rankIndex}" style="--rank-border:${getRankBorderColor(rankIndex)};background: ${style.background}; color: ${style.color}; font-weight: ${style.fontWeight || "inherit"};">
                 ${formatTime(value)}
             </td>
             `;
@@ -93,7 +93,7 @@ function renderTimeTableTotals() {
     ${ranks.map((_, rankIndex) => {
     const total = getSobTotal(rankIndex), style = getRankStyle(rankIndex);
     return `
-        <td class="rank-${rankIndex}" style="background: ${style.background}; color: ${style.color}; font-weight: ${style.fontWeight || "inherit"};">
+        <td class="rank-${rankIndex}" style="--rank-border:${getRankBorderColor(rankIndex)};background: ${style.background}; color: ${style.color}; font-weight: ${style.fontWeight || "inherit"};">
             ${formatTime(total)}
         </td>
         `;

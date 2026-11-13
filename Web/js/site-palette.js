@@ -7,8 +7,9 @@
     // Tint the small tile once instead of filtering the full animated window.
     if (!ownsBackground) return;
     const generation = ++patternGeneration;
+    const backgroundRotation = hue - 265 - 20;
     clearTimeout(patternTimer);
-    if (hue === 265) {
+    if (backgroundRotation === 0) {
       root.style.removeProperty("--pattern-image");
       if (patternUrl) URL.revokeObjectURL(patternUrl);
       patternUrl = null;
@@ -24,7 +25,7 @@
         if (generation !== patternGeneration) return;
         const canvas = document.createElement("canvas"); canvas.width = 360; canvas.height = 463;
         const context = canvas.getContext("2d");
-        context.filter = "hue-rotate(" + (hue - 265) + "deg)";
+        context.filter = "hue-rotate(" + backgroundRotation + "deg)";
         context.drawImage(image, 0, 0, canvas.width, canvas.height);
         canvas.toBlob(blob => {
           if (!blob || generation !== patternGeneration) return;

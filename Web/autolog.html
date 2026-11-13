@@ -5,33 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cuphead Training App — Attempt Log</title>
 <link rel="icon" type="image/png" href="assets/icons/app-logo-small.png">
-    <script src="js/site-palette.js?v=performance-pass"></script>
-    <link rel="stylesheet" href="style.css?v=performance-pass">
-    <link rel="stylesheet" href="css/autolog.css?v=shared-attempt-grid">
+    <script src="js/site-palette.js?v=background-hue-offset"></script>
+    <link rel="stylesheet" href="style.css?v=shared-ui-cleanup">
+    <link rel="stylesheet" href="css/autolog.css?v=shared-ui-cleanup">
     <link rel="stylesheet" href="css/boss-cards.css?v=recent-grid">
     <link rel="stylesheet" href="css/site-palette.css?v=shared-attempt-grid">
     <link rel="stylesheet" href="css/host-bridge.css?v=shared-attempt-grid">
 </head>
 <body class="compact-mode" data-page="attempt-log">
 
-<div class="pages">
-    <div id="bigtitle">Cuphead Training App</div>
-    <a href="info.html" class="info-nav-btn" data-i18n-aria-label="ui.info-aria" aria-label="How it works">&#9432;</a>
-    <div class="header-preferences">
-        <button id="lang-toggle-btn" class="lang-toggle-btn-inline" type="button" data-i18n-aria-label="ui.language-aria" aria-label="Toggle language">
-            <img src="https://flagcdn.com/w40/us.png" srcset="https://flagcdn.com/w80/us.png 2x" alt="English" width="28" height="21">
-        </button>
-    </div>
-</div>
-
-<div class="nav-row">
-    <div class="page-tabs">
-        <a href="index.html" data-i18n="nav.training">Training</a>
-        <a href="index2.html" data-i18n="nav.time-table">Time Table</a>
-        <a href="autolog.html" class="active" data-i18n="nav.attempt-log">Attempt Log</a>
-        <a href="backups.html" data-i18n="nav.backups">Backups</a>
-    </div>
-</div>
+<script src="js/page-header.js?v=shared-header"></script>
 
 <div id="category-tabs" class="category-tabs"></div>
 
@@ -148,13 +131,11 @@
     </section>
 </main>
 
-
-
 <script src="js/sound-effects.js?v=web-cleanup"></script>
 <script src="data.js?v=web-cleanup"></script>
 <script src="js/state.js?v=web-cleanup"></script>
 <script src="js/time.js?v=web-cleanup"></script>
-<script src="js/ranks.js?v=shared-attempt-grid"></script>
+<script src="js/ranks.js?v=training-layout"></script>
 <script src="js/data-access.js?v=shared-attempt-grid"></script>
 <script src="js/category.js?v=table-category-update"></script>
 <script src="js/language.js?v=recent-pages"></script>
@@ -163,9 +144,9 @@
 <script src="js/run-projection.js?v=web-cleanup"></script>
 <script src="js/run-recap.js?v=web-cleanup"></script>
 <script src="js/overall-progress.js?v=web-cleanup"></script>
-<script src="js/boss-chart.js?v=performance-pass"></script>
+<script src="js/boss-chart.js?v=stable-graph-points"></script>
 <script src="js/boss-card-data.js?v=recent-grid"></script>
 <script src="js/boss-cards.js?v=recent-grid"></script>
-<script src="js/autolog.js?v=shared-attempt-grid"></script>
+<script src="js/autolog.js?v=consistent-sidebar"></script>
 </body>
 </html>

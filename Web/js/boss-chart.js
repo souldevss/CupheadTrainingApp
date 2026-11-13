@@ -112,12 +112,14 @@ function drawTimeChart(history, art, limit, zoom = 1) {
   zoom = viewport.zoom, chartZoomLevels.set(key, { zoom, offset: viewport.offset });
   // Retain every time for lines and hover; thin only circles that would overlap.
   const markerBudget = Math.max(12, Math.floor(Math.min(1200, window.innerWidth) / 10));
-  const markerSpacing = Math.max(limit, viewport.span / markerBudget);
-  const thresholds = timeChartThresholds(art), rankColorForTime = (seconds) => timeChartRankColor(thresholds, seconds), live = getLiveChartTime(selectedBossName), { low, high, baseLow, baseHigh } = fitTimeChartRange(visible, live), range = Math.max(high - low, 0.1), y = (value) => 92 - (value - low) / range * 84, x = (index) => viewport.span === 0 ? 125 : 20 + (start + index - viewport.start) * 210 / viewport.span, markerCount = averages.length === 1 ? 1 : Math.ceil((averages.length - 1) / markerSpacing) + 1, markers = Array.from({ length: markerCount }, (_, index) => {
-    const dataPosition = markerCount === 1 ? 0 : index * (averages.length - 1) / (markerCount - 1);
-    if (dataPosition < viewport.start || dataPosition > viewport.start + viewport.span) return "";
-    const position = dataPosition - start, left = Math.floor(position), right = Math.min(left + 1, visible.length - 1), fraction = position - left, time = visible[left].timeSeconds + (visible[right].timeSeconds - visible[left].timeSeconds) * fraction;
-    return `<circle class="trend-marker" cx="${x(position)}" cy="${y(time)}" r="2.7" style="fill:${rankColorForTime(time)}" data-position="${dataPosition}"/>`;
+  const markerSpacing = Math.max(1, 2 ** Math.ceil(Math.log2(Math.max(limit, viewport.span / markerBudget))));
+  const markerIndices = [];
+  for (let index = Math.ceil(viewport.start / markerSpacing) * markerSpacing; index <= viewport.start + viewport.span && index < averages.length; index += markerSpacing) markerIndices.push(index);
+  const lastIndex = averages.length - 1;
+  if (lastIndex >= viewport.start && lastIndex <= viewport.start + viewport.span && markerIndices.at(-1) !== lastIndex) markerIndices.push(lastIndex);
+  const thresholds = timeChartThresholds(art), rankColorForTime = (seconds) => timeChartRankColor(thresholds, seconds), live = getLiveChartTime(selectedBossName), { low, high, baseLow, baseHigh } = fitTimeChartRange(visible, live), range = Math.max(high - low, 0.1), y = (value) => 92 - (value - low) / range * 84, x = (index) => viewport.span === 0 ? 125 : 20 + (start + index - viewport.start) * 210 / viewport.span, markers = markerIndices.map(dataPosition => {
+    const time = averages[dataPosition].timeSeconds;
+    return `<circle class="trend-marker" cx="${x(dataPosition - start)}" cy="${y(time)}" r="3.1" style="fill:${rankColorForTime(time)}" data-position="${dataPosition}" data-progress="${lastIndex ? dataPosition / lastIndex : 0}"/>`;
   }).join(""), rankBands = thresholds.map((time, i) => {
     const lower = i === 0 ? low : Math.max(low, thresholds[i - 1]), upper = i === thresholds.length - 1 ? high : Math.min(high, time);
     if (upper <= lower) return null;
@@ -279,7 +281,8 @@ function bindTimeChartControls(holder, history, art) {
       y: Number(marker.getAttribute("cy")),
       radius: Number(marker.getAttribute("r")),
       opacity: Number(marker.getAttribute("opacity") ?? 1),
-      fill: marker.style.fill
+      fill: marker.style.fill,
+      progress: Number(marker.dataset.progress)
     })).sort((a, b) => a.x - b.x) : [], startPoints = animate && oldCurve?.curveState ? oldCurve.curveState.map((point) => ({
       x: point.x * (oldCurve.coordinateScale || 1),
       y: point.y
@@ -295,27 +298,26 @@ function bindTimeChartControls(holder, history, art) {
     const targets = points.map((point) => ({ x: Number(point.getAttribute("cx")), y: Number(point.getAttribute("cy")), color: point.dataset.nextColor })), curveTween = buildTrendTween(startPoints, targets), lines = Array.from(newSvg.querySelectorAll(".ranked-run-line")), markers = Array.from(newSvg.querySelectorAll(".trend-marker")), markerTargets = markers.map((marker) => ({
       x: Number(marker.getAttribute("cx")),
       y: Number(marker.getAttribute("cy")),
-      radius: 2.7,
-      opacity: 1
+      radius: 3.1,
+      opacity: 1,
+      progress: Number(marker.dataset.progress)
     })), markerMatches = /* @__PURE__ */ new Map(), usedMarkers = /* @__PURE__ */ new Set();
-    startMarkers.length <= markers.length ? startMarkers.forEach((marker, index) => {
-      const target = Math.round(index * (markers.length - 1) / Math.max(1, startMarkers.length - 1));
-      markerMatches.set(target, marker), usedMarkers.add(index);
-    }) : markers.forEach((marker, index) => {
-      const source = Math.round(index * (startMarkers.length - 1) / Math.max(1, markers.length - 1));
-      markerMatches.set(index, startMarkers[source]), usedMarkers.add(source);
+    const progressKey = marker => marker.progress.toFixed(9), sourceByProgress = new Map(startMarkers.map((marker, index) => [progressKey(marker), {marker, index}]));
+    markerTargets.forEach((target, index) => {
+      const source = sourceByProgress.get(progressKey(target));
+      if (source) { markerMatches.set(index, source.marker); usedMarkers.add(source.index); }
     });
-    const nearest = (items, x) => items.reduce((best, item) => !best || Math.abs(item.x - x) < Math.abs(best.x - x) ? item : best, null), markerTransitions = markers.map((element, index) => {
-      const target = markerTargets[index], source = markerMatches.get(index) || { ...nearest(startMarkers, target.x) || target, radius: 0, opacity: 0 };
-      return { element, source, target, exiting: !1 };
+    const markerTransitions = markers.map((element, index) => {
+      const target = markerTargets[index], source = markerMatches.get(index) || { ...target, y: sampleTrendAtX(startPoints, target.x), radius: 0, opacity: 0 };
+      return { element, source, target, exiting: false };
     });
     startMarkers.forEach((source, index) => {
       if (usedMarkers.has(index)) return;
       const element = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-      element.setAttribute("class", "trend-marker"), element.style.fill = source.fill, element.style.pointerEvents = "none", newSvg.appendChild(element), markerTransitions.push({
+      element.setAttribute("class", "trend-marker"), element.dataset.progress = String(source.progress), element.style.fill = source.fill, element.style.pointerEvents = "none", newSvg.appendChild(element), markerTransitions.push({
         element,
         source,
-        target: { ...nearest(markerTargets, source.x) || source, radius: 0, opacity: 0 },
+        target: { ...source, y: sampleTrendAtX(targets, source.x), radius: 0, opacity: 0 },
         exiting: !0
       });
     });

@@ -5,6 +5,10 @@ function getRankIndexForTime(seconds, thresholds) {
 function getRankStyle(rankIndex) {
   return ranksStyles[rankIndex] || { background: "transparent", color: "#ffffff" };
 }
+function getRankBorderColor(rankIndex) {
+  const style = getRankStyle(rankIndex);
+  return interpolateColor(style.background, style.color, .22);
+}
 function getPersonalRankStyle(rankIndex) {
   return rankIndex === null ? {
     background: "#11092c",

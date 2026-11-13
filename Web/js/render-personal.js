@@ -92,8 +92,7 @@ function renderPersonalTotals() {
 <table class="personal-totals-table">
 <thead>
 <tr>
-    <th class="island sticky-col-1">${t("header.total")}</th>
-    <th class="personal-time-col"></th>
+    <th colspan="2" class="island sticky-col-1">${t("header.total")}</th>
 </tr>
 </thead>
 <tbody>
@@ -104,7 +103,7 @@ function renderPersonalTotals() {
     row.name === "Residual" ? tooltipAttr = `data-tooltip="${escapeAttribute(t("tooltip.residual"))}"` : row.name === "Sob" && (tooltipAttr = `data-tooltip="${escapeAttribute(t("tooltip.sob"))}"`), totalsHtml += `
     <tr ${tooltipAttr}>
         <td class="island sticky-col-1 isle-artwork" style="background-color: ${rowStyle.background}; color: ${rowStyle.color}; ${isleArtworkStyle(row.name, rowStyle.background)}">${escapeAttribute(cupheadDisplayName(row.name))}</td>
-        <td class="personal-time-col" style="background: ${rankStyle.background}; color: ${rankStyle.color};">
+        <td class="personal-time-col" style="--rank-border:${interpolateColor(rankStyle.background,rankStyle.color,.22)}; background: ${rankStyle.background}; color: ${rankStyle.color};">
             <div class="time-input-wrapper" style="background: transparent !important; justify-content: space-between; padding: 1px 6px;">
                 <span>${row.total === null ? "-" : formatTime(row.total)}</span>
                 <span class="time-rank-display" style="background: ${rankStyle.background}; color: ${rankStyle.color};">

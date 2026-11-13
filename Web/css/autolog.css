@@ -2,11 +2,9 @@ body.compact-mode .attempt-log-page{width:min(100%,1180px);margin-top:4px}
 body.compact-mode .attempt-log-heading{margin:10px 0 14px}
 body.compact-mode .attempt-log-heading h1{font-size:28px}
 body.compact-mode .attempt-section-title{margin:18px 0 8px}
-body.compact-mode .boss-detail-view{padding:13px}
 body.compact-mode .boss-detail-bossbar{min-height:46px;padding:6px 9px}
 body.compact-mode .boss-detail-bossbar h2{font-size:19px}
 body.compact-mode .boss-detail-bossbar img{width:34px;height:34px}
-body.compact-mode .history-chart{height:145px}
 body.compact-mode .history-card{padding:11px}
 body.compact-mode .improvement-cards{gap:8px;margin:12px 0}
 body.compact-mode .improvement-cards>div{padding:10px}
@@ -53,7 +51,7 @@ body.compact-mode .improvement-cards>div{padding:10px}
 .boss-detail-bossbar h2,.attempt-boss-link{font-family:Cuphead Poster,Alegreya Sans SC,Georgia,serif;font-weight:400;white-space:normal;overflow-wrap:normal;word-break:normal;hyphens:none}
 .boss-detail-bossbar img{flex:none;width:44px;height:44px;object-fit:contain}
 .detail-tabs{display:flex;gap:7px;padding:4px;background:var(--panel-bg-deep);border-radius:9px}
-.detail-tabs button{padding:9px 14px;color:#c0c7cf;background:transparent;border:0;border-radius:6px;font:inherit;cursor:pointer}
+.detail-tabs button{padding:9px 14px;color:#c0c7cf;background:transparent;border:0;font:inherit;cursor:pointer}
 .detail-tabs button.is-active{color:#1c1233;background:var(--panel-selection);font-weight:800}
 .autolog-view-tabs{position:relative;width:100%;min-height:48px;box-sizing:border-box;justify-content:center;margin:0 0 12px;background:transparent}
 .autolog-view-tabs>.nav-icon-group{padding:4px;background:var(--panel-bg-deep);border-radius:4px}
@@ -138,15 +136,13 @@ body.compact-mode .improvement-cards>div{padding:10px}
 .chart-hover-tooltip[hidden]{display:none}
 .chart-hover-tooltip strong{color:#f1c232}
 .history-chart line{stroke:#505e6b;stroke-width:.5;stroke-dasharray:2 2}
-.history-chart polyline{fill:none;stroke-width:2;vector-effect:non-scaling-stroke}
-.time-history-chart polyline,.time-history-chart .time-axis-mark{pointer-events:none}
+.time-history-chart .time-axis-mark{pointer-events:none}
 .time-history-chart .ranked-run-line{fill:none;stroke-width:2;stroke-dasharray:2 2;vector-effect:non-scaling-stroke;pointer-events:none}
 .history-chart circle{fill:#f8f5ff;stroke:#2a2c2f;stroke-width:.7;vector-effect:non-scaling-stroke}
 .history-chart .live-chart-point{fill:#8993a0;stroke:#f0fbff;stroke-width:1.2;opacity:.68}
 .live-chart-time{color:#8de5ff}
 .time-history-chart circle{cursor:pointer}
 .history-chart circle:focus{stroke:#fff;stroke-width:1.5;outline:none}
-.time-history-chart circle.is-fail{fill:#d88d6f}
 .history-chart :is(.rank-band,.rank-band-fill){pointer-events:none}
 .history-chart .rank-band-fill{opacity:.18;shape-rendering:crispEdges}
 .history-chart .rank-band text{fill:#e1e6ec;font-size:4.8px;font-weight:700;text-anchor:start;paint-order:stroke;stroke:#25272a;stroke-width:.8px;stroke-linejoin:round}
@@ -196,7 +192,6 @@ body.compact-mode .boss-detail-main .improvement-cards>div{gap:3px;padding:7px}
 .boss-detail-main .improvement-cards span{font-size:10px}
 .boss-detail-main .improvement-cards strong{font-size:15px;font-variant-numeric:tabular-nums}
 body.compact-mode .boss-detail-main .history-card{padding:8px}
-body.compact-mode .boss-detail-main .time-history-card{padding:10px;background:none;border:18px solid transparent;border-image:url("../assets/backgrounds/layout%20box.png") 42 fill stretch;border-radius:0}
 .time-history-card{color:#ede4df}
 .time-history-card :is(.average-slider-label,.average-slider-ends,.chart-controls,.history-axis,.combined-chart-legend,.graph-color-setting){color:#d5c9d4}
 .time-history-card .combined-chart-legend span:last-child{color:#dbb4a5}
@@ -212,6 +207,7 @@ body.compact-mode .boss-detail-main .time-history-card{padding:10px;background:n
 .time-history-card .history-chart .time-axis-mark text{fill:#e9dfdf;font-weight:600}
 .time-history-card .history-chart .time-axis-mark line{stroke:#c8b5c9;opacity:.3}
 .time-history-card .history-chart circle{stroke:#c7b6c36b;stroke-width:.5}
+.time-history-card .history-chart .trend-marker{stroke:#302339;stroke-width:1.1;opacity:1}
 .time-history-card .combined-death-bar{fill:#cba294;opacity:.24}
 .time-history-card .chart-hover-tooltip{color:#eee4e8;background:#403449f2;border-color:#b4a1b080;border-radius:3px;box-shadow:0 3px 9px #20182b40}
 .time-history-card .chart-hover-tooltip strong{color:#e4cda7}
