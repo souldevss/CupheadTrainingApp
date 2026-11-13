@@ -2,6 +2,13 @@
 
 A Windows app for Cuphead speedrunners. Automatically record clears and deaths, compare your times with training targets, and see how you improve.
 
+> [!CAUTION]
+> **WINDOWS MAY BLOCK THE APP — INCLUDING AFTER AN UPDATE**
+>
+> Releases are currently **unsigned**. Windows SmartScreen may show an unknown-publisher warning, and **Smart App Control can prevent the app or its DLL from running entirely**, even if previous versions worked. An automatic update can install successfully and then be blocked when the app restarts.
+>
+> This can also begin when Smart App Control switches from **Evaluation** to **On**. Waiting a few minutes or downloading the same release again does **not** guarantee it will be allowed. Smart App Control has no per-app “allow anyway” exception. See [Microsoft’s Smart App Control FAQ](https://support.microsoft.com/en-gb/windows/security/threat-malware-protection/smart-app-control-frequently-asked-questions) for details.
+
 > [!WARNING]
 > **This project is vibe-coded.** It was built with AI assistance. If you are not OK with that, don't download. Expect bugs, especially on game builds or setups that haven’t been tested.
 
