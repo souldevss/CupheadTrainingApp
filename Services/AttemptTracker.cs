@@ -18,6 +18,7 @@ namespace CupheadTrainingApp.Services
         private bool attemptHasProgress;
         private bool loadingObserved;
         private bool nonWinningEndingObserved;
+        private bool deathRecorded;
         private bool versionWarningRaised;
         private bool clearArmed;
         private float platformingWinTime;
@@ -152,6 +153,7 @@ namespace CupheadTrainingApp.Services
                 attemptHasProgress = false;
                 loadingObserved = false;
                 nonWinningEndingObserved = false;
+                deathRecorded = false;
                 clearArmed = false;
                 platformingWinTime = 0;
                 ResetLoadout();
@@ -169,6 +171,7 @@ namespace CupheadTrainingApp.Services
                 attemptHasProgress = false;
                 loadingObserved = false;
                 nonWinningEndingObserved = false;
+                deathRecorded = false;
                 clearArmed = false;
                 platformingWinTime = 0;
                 ResetLoadout();
@@ -237,7 +240,14 @@ namespace CupheadTrainingApp.Services
                 ResetLoadout();
             }
             else if (levelTime > 0.5f)
+            {
                 attemptHasProgress = true;
+                // A loss can reset the timer and then change Dice Palace scenes,
+                // with the losing flag still present in both. Keep its latch until
+                // consecutive gameplay samples show a new attempt progressing.
+                if (!ending && !won && lastLevelTime > 0.5f && levelTime > lastLevelTime)
+                    deathRecorded = false;
+            }
 
             lastLevelTime = levelTime;
             ValidateLoadout(levelDef);
@@ -302,11 +312,12 @@ namespace CupheadTrainingApp.Services
 
         private void RecordDeath()
         {
-            if (loadoutRejected || recordingCategory == null) return;
+            if (deathRecorded || loadoutRejected || recordingCategory == null) return;
             database.InsertDeath(
                 BossNameNormalizer.ToTrainingTableName(activeBossName),
                 activeSceneId ?? string.Empty,
                 DateTime.UtcNow, recordingCategory);
+            deathRecorded = true;
             DeathLogged?.Invoke();
         }
 
@@ -357,6 +368,7 @@ namespace CupheadTrainingApp.Services
             attemptHasProgress = false;
             loadingObserved = false;
             nonWinningEndingObserved = false;
+            deathRecorded = false;
             clearArmed = false;
             platformingWinTime = 0;
             ResetLoadout();
