@@ -135,7 +135,7 @@ namespace CupheadTrainingApp
                 _ = CheckForUpdatesAsync(manual: false);
             };
 
-            webView.Source = new Uri($"https://{VirtualHost}/app-shell.html?v=stable-graph-points");
+            webView.Source = new Uri($"https://{VirtualHost}/app-shell.html?v=1.4.0");
         }
 
         private void SetWebViewMemoryTarget(bool inactive)

@@ -8,26 +8,6 @@
     }
   inAppShell && document.documentElement.classList.add("app-shell-page");
   const desktopConnected = hasHost || inAppShell;
-  let scrollIdleTimer = null, lastScrollAt = 0;
-  function setScrolling(active) {
-    document.documentElement.classList.toggle("is-scrolling", active);
-    if (inAppShell) window.parent.postMessage({ type: "pageScrollActivity", active }, location.origin);
-  }
-  function finishScrolling() {
-    const remaining = 180 - (performance.now() - lastScrollAt);
-    if (remaining > 0) { scrollIdleTimer = setTimeout(finishScrolling, remaining); return; }
-    scrollIdleTimer = null;
-    setScrolling(false);
-  }
-  function markScrolling() {
-    lastScrollAt = performance.now();
-    if (scrollIdleTimer !== null) return;
-    setScrolling(true);
-    scrollIdleTimer = setTimeout(finishScrolling, 180);
-  }
-  window.addEventListener("scroll", markScrolling, { passive: true, capture: true });
-  window.addEventListener("wheel", markScrolling, { passive: true });
-  window.addEventListener("pointerdown", event => { if (event.button === 1) markScrolling(); }, { passive: true });
   let pendingBackupStorage = null;
   function normalizeName(name) {
     return (name || "").trim().toLowerCase().replace(/\s+/g, " ");

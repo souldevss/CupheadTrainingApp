@@ -5,32 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cuphead Training App — Backups</title>
 <link rel="icon" type="image/png" href="assets/icons/app-logo-small.png">
-    <script src="js/site-palette.js?v=background-hue-offset"></script>
-    <link rel="stylesheet" href="style.css?v=shared-ui-cleanup">
-    <link rel="stylesheet" href="css/site-palette.css?v=boss-pages-cleanup">
-    <link rel="stylesheet" href="css/info.css?v=web-cleanup">
-    <link rel="stylesheet" href="css/host-bridge.css?v=boss-pages-cleanup">
+    <link rel="stylesheet" href="style.css?v=1.4.0">
+    <link rel="stylesheet" href="css/host-bridge.css?v=1.4.0">
+<link rel="stylesheet" href="css/app-ui.css?v=1.4.0">
+<script src="js/appearance.js?v=1.4.0"></script>
 </head>
 <body class="compact-mode" data-page="backups">
 
-<script src="js/page-header.js?v=shared-header"></script>
+<script src="js/page-header.js?v=1.4.0"></script>
 
-    <div class="info-page">
-        <section class="info-section">
+    <main class="backup-page">
+        <h1 data-i18n="nav.backups">Backups</h1>
+        <section class="backup-section">
             <h2 data-i18n-content="info.backup-title">Back up your data</h2>
             <p><span data-i18n-content="info.backup-description">Export your personal times, preferences, boss attempts, and deaths in one backup file. The desktop app also refreshes an automatic backup every 10 minutes at</span> <code>%LocalAppData%\CupheadTrainingLog\Backups\cuphead-training-auto-backup.json</code>. <span data-i18n-content="info.backup-description-end">Importing adds run history and skips records that are already present.</span></p>
             <div class="backup-controls">
                 <button id="export-backup" class="data-control-btn" type="button" data-i18n="info.export-all">Export all data</button>
                 <button id="import-backup" class="data-control-btn" type="button" data-i18n="info.import-backup">Import backup</button>
-                <button id="check-for-updates" class="data-control-btn" type="button" hidden data-i18n="ui.check-for-updates">Check for updates</button>
                 <input id="backup-file" type="file" accept="application/json,.json" hidden>
                 <span id="backup-status" role="status"></span>
             </div>
         </section>
-    </div>
-    <script src="js/sound-effects.js?v=web-cleanup"></script>
-    <script src="js/language.js?v=recent-pages"></script>
-    <script src="js/host-bridge.js?v=recent-pages"></script>
-    <script src="js/backup.js?v=web-cleanup"></script>
+    </main>
+    <script src="js/sound-effects.js?v=1.4.0"></script>
+    <script src="js/language.js?v=1.4.0"></script>
+    <script src="js/host-bridge.js?v=1.4.0"></script>
+    <script src="js/backup.js?v=1.4.0"></script>
 </body>
 </html>

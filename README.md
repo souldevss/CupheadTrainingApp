@@ -1,59 +1,53 @@
 # Cuphead Training App
 
-A Windows app for Cuphead speedrunners. Automatically record clears and deaths, compare your times with training targets, and see how you improve.
+Practice tracker for Cuphead speedruns on Windows. Records clears, deaths, and playtime automatically, with graphs to follow your progress.
+
+**[Download v1.4.0](https://github.com/souldevss/CupheadTrainingApp/releases/tag/v1.4.0)** · [Release notes](release-notes/v1.4.0.md) · [Web training table](https://souldevss.github.io/CupheadTrainingTable/)
 
 > [!CAUTION]
-> **Windows may block the app.**
-> Releases are currently **unsigned**. Windows SmartScreen may show an unknown-publisher warning, and **Smart App Control can prevent the app or its DLL from running entirely.**
-> Fix it by doing: Windows Security → App & browser control → Smart App Control settings → Off
+> **Windows may block the app, even if an earlier version worked.**
+> Releases are unsigned. SmartScreen can show an unknown-publisher warning, and Smart App Control can block the executable or its DLLs. This project does not currently have a trusted signing certificate.
 
 > [!WARNING]
-> **This project is vibe-coded.** It was built with AI assistance. If you are not OK with that, don't download. Expect bugs, especially on game builds or setups that haven’t been tested.
+> **This project is fully vibe-coded with AI assistance.** Expect bugs, particularly on game versions and setups that have not been tested.
 
-[Download for Windows](https://github.com/souldevss/CupheadTrainingApp/releases/latest) · [Web training table](https://souldevss.github.io/CupheadTrainingTable/)
+## Install
 
-## Get started
+1. Download `CupheadTrainingApp-1.4.0-win-x64.zip` from the release page.
+2. Extract the **whole ZIP** and open `CupheadTrainingApp.exe`.
+3. Launch Cuphead. The watcher status shows when the app connects.
 
-1. Download `CupheadTrainingApp-…-win-x64.zip` from Releases.
-2. Extract the whole ZIP and open `CupheadTrainingApp.exe`.
-3. Launch Cuphead and check the watcher status to see when it connects.
+Requires 64-bit Windows and [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/). **.NET is included.** The app checks for updates on startup; use **Check for updates** at the top left to review and install a release.
 
-.NET is bundled. The app requires 64-bit Windows and the [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/). Windows may show a publisher warning because the releases are unsigned.
+## Inside the app
 
-The app checks for updates on startup. You can also use **Backups → Check for updates** to read the changelog and install an update.
-
-## What it tracks
-
-- **Training** compares your PB or the average of your latest chosen number of clears with rank targets. **Time Table** shows targets and reference videos where available.
-- **Attempt Log** records clears, deaths, and playtime. Boss pages show clear-time and death-rate trends. Use the boss sidebar to switch bosses or open **Overall Progress**. Recent and individual boss attempts use compact grids, loading 20 entries at a time.
-- **Run Projection** estimates pace and first-try odds. Import a `.rrc` file in **Run Recap** to browse runs and add matching recap data to the projection.
-- **Backups** imports or exports your history and settings. The app refreshes a local backup every ten minutes.
-
-Tracking has separate Steam **Legacy (1.0)**, **1.1+**, and **DLC** categories. Legacy requires Lobber in the first slot and Roundabout in the second; 1.1+ uses Lobber/Spread. DLC keeps separate Lobber/Spread and Charge/Spread histories. Forest Follies uses Peashooter, and Mausoleum has no equipment restriction.
-
-## Where your data lives
-
-| Data | Path |
+| Page | What it does |
 | --- | --- |
-| Training history | `%LocalAppData%\CupheadTrainingLog\training.db` |
-| Interface settings | `%LocalAppData%\CupheadTrainingLog\WebView2\` |
-| Latest automatic backup | `%LocalAppData%\CupheadTrainingLog\Backups\cuphead-training-auto-backup.json` |
+| Training | Compare your PB or a chosen number of recent clears with rank targets. |
+| Attempt Log | Boss cards, clear/death history, playtime, averages, and interactive progress graphs. |
+| Time Table | Rank targets and reference videos. |
+| Backups | Import or export your data. A local backup refreshes every 10 minutes. |
+| How it Works | Rank explanations and the distribution curve. |
 
-The automatic backup keeps one snapshot. Use **Backups → Export** for a copy you can keep or move to another PC.
+Supports **Legacy (1.0)**, **1.1+**, and **DLC**, with separate DLC Lobber/Spread and Charge/Spread histories. Legacy uses Lobber/Roundabout; 1.1+ uses Lobber/Spread. Forest Follies uses Peashooter, and Mausoleum has no equipment restriction.
 
-## To do
+## Your data
 
-- Balance DLC times
+History stays in `%LocalAppData%\CupheadTrainingLog\training.db`. Automatic backups are in `%LocalAppData%\CupheadTrainingLog\Backups\cuphead-training-auto-backup.json`; interface settings are in the adjacent `WebView2` folder.
 
-## Build from source
+The automatic backup keeps one snapshot. Use **Backups → Export** to keep another copy or move your data to another PC. Importing merges history and skips duplicates.
 
-Install the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) and run these commands from the folder containing `CupheadTrainingApp.csproj`.
+## Build
+
+Install the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0), then run from the folder containing `CupheadTrainingApp.csproj`:
 
 ```powershell
 dotnet build .\CupheadTrainingApp.csproj -c Release
 dotnet run --project .\CupheadTrainingApp.csproj -c Release
 ```
 
-Use `powershell -ExecutionPolicy Bypass -File .\scripts\Publish.ps1 -Version 1.3.2` to create a self-contained ZIP and checksum in `artifacts/`. GitHub Actions publishes a release when you push a new version tag with matching notes in `release-notes/`.
+For a ZIP with .NET included, run `powershell -ExecutionPolicy Bypass -File .\scripts\Publish.ps1 -Version 1.4.0`. The ZIP and SHA-256 checksum appear in `artifacts/`. Releases are built automatically when a version tag is pushed with matching notes in `release-notes/`.
 
-Built with C#, Windows Forms, SQLite, and WebView2. Based on the [Cuphead Training Table](https://github.com/souldevss/CupheadTrainingTable).
+**To do:** Balance DLC times.
+
+Built with C#, Windows Forms, SQLite, and WebView2. Based on [Cuphead Training Table](https://github.com/souldevss/CupheadTrainingTable). See [third-party credits](THIRD-PARTY-NOTICES.md).

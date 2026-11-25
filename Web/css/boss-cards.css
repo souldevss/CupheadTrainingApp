@@ -1,15 +1,14 @@
-#autolog-summary.boss-stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(175px,100%),1fr));gap:12px}
-.boss-stat-card{position:relative;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);align-items:center;gap:6px;min-height:176px;padding:18px 17px 27px;border:0;border-radius:0;background:transparent;color:#211c14;cursor:pointer;text-align:left;min-width:0;text-shadow:none;box-sizing:border-box}
+#autolog-summary.boss-stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(210px,100%),1fr));gap:12px}
+.boss-stat-card{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 58px;grid-template-areas:"name name" "info portrait" "playtime playtime";align-items:center;gap:7px 8px;min-height:164px;padding:6px 7px 5px;border:12px solid transparent;border-bottom-width:19px;border-image:url("../assets/backgrounds/boss%20card.png") 45 45 70 45 fill / 12px 12px 19px 12px stretch;border-radius:0;background:#ddd0b6;color:#211c14;box-shadow:3px 3px 0 #09070c;cursor:pointer;text-align:left;min-width:0;box-sizing:border-box}
 .boss-stat-card:hover,.boss-stat-card:focus-visible{outline:2px solid var(--panel-selection);outline-offset:1px}
-.boss-paper-card{position:absolute;inset:0;z-index:0;width:100%;height:100%;pointer-events:none}
 .boss-card-information,.boss-card-identity{position:relative;z-index:1;min-width:0;max-width:100%}
-.boss-card-information{display:flex;flex-direction:column;gap:6px;font:400 13px/1.1 "Segoe UI",sans-serif;overflow-wrap:anywhere}
-.boss-card-information>span{display:flex;flex-direction:column;gap:1px;min-width:0}
-.boss-card-information small{font-size:13px;line-height:18px;white-space:normal}
-.boss-card-information b{font-size:19px;line-height:21px;font-variant-numeric:tabular-nums}
-.boss-paper-playtime{position:relative;z-index:1;grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 5px;min-width:0;font:400 13px/18px "Segoe UI",sans-serif;overflow-wrap:anywhere}
-.boss-paper-playtime small{font-size:13px}
-.boss-paper-playtime b{font-size:13px;font-variant-numeric:tabular-nums}
-.boss-card-identity{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;text-align:center}
-.boss-card-portrait{display:block;width:100%;height:auto;object-fit:contain;pointer-events:none}
-.boss-card-name{display:block;width:100%;color:inherit;font:400 13px/1.25 "Cuphead Poster","Alegreya Sans SC",Georgia,serif;overflow-wrap:anywhere}
+.boss-card-information{grid-area:info;display:flex;flex-direction:column;gap:5px;font:400 14px/1.2 var(--ui-font);overflow-wrap:normal}
+.boss-card-information>span{display:flex;align-items:baseline;justify-content:space-between;gap:5px;min-width:0}
+.boss-card-information small{font-size:14px;line-height:20px;white-space:normal}
+.boss-card-information b{font-size:19px;line-height:22px;font-variant-numeric:tabular-nums}
+.boss-paper-playtime{position:relative;z-index:1;grid-area:playtime;display:flex;flex-wrap:wrap;align-items:baseline;gap:3px 6px;min-width:0;font:400 14px/20px var(--ui-font);overflow-wrap:normal}
+.boss-paper-playtime small{font-size:14px}
+.boss-paper-playtime b{font-size:15px;font-variant-numeric:tabular-nums}
+.boss-card-identity{grid-area:portrait;display:flex;align-items:center;justify-content:center;text-align:center}
+.boss-card-portrait{display:block;width:58px;height:58px;object-fit:contain;pointer-events:none}
+.boss-card-name{position:relative;z-index:1;grid-area:name;display:block;width:100%;padding:5px 6px;border:1px solid color-mix(in srgb,var(--boss-card-bg) 55%,#756752);background:color-mix(in srgb,var(--boss-card-bg) 45%,transparent);color:#211c14;font:400 18px/1.2 var(--ui-font);overflow-wrap:normal;word-break:normal;hyphens:none;text-wrap:balance;text-align:center}

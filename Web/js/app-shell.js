@@ -14,7 +14,7 @@
   }
   function updateFrameTitles() {
     const portuguese = localStorage.getItem("cuphead-training-lang") === "pt-BR";
-    document.documentElement.lang = portuguese ? "pt-BR" : "en", document.title = portuguese ? "App de treino de Cuphead" : "Cuphead Training App", sendToHost({ cmd: "setAppLanguage", portuguese }), pages.training.title = portuguese ? "Treino" : "Training", pages["time-table"].title = portuguese ? "Tabela de Tempos" : "Time Table", pages["attempt-log"].title = portuguese ? "Registro de tentativas" : "Attempt Log";
+    document.documentElement.lang = portuguese ? "pt-BR" : "en", document.title = portuguese ? "App de treino de Cuphead" : "Cuphead Training App", sendToHost({ cmd: "setAppLanguage", portuguese }), pages.training.title = portuguese ? "Treino" : "Training", pages["time-table"].title = portuguese ? "Tabela de Tempos" : "Time Table", pages["attempt-log"].title = portuguese ? "Registro de tentativas" : "Attempt Log", pages.backups.title = "Backups";
   }
   updateFrameTitles(), window.addEventListener("storage", (event) => {
     (event.key === "cuphead-training-lang" || event.key === null) && updateFrameTitles();
@@ -34,7 +34,7 @@
     }), initializeShell(), activatePage();
   }
   function preloadNextPage() {
-    const name = ["time-table", "attempt-log", "backups", "info"].find((name2) => !pages[name2].hasAttribute("src"));
+    const name = ["attempt-log", "time-table", "backups", "info"].find((name2) => !pages[name2].hasAttribute("src"));
     if (preloading || !name) return;
     preloading = name;
     const load = () => {
@@ -44,7 +44,7 @@
     window.requestIdleCallback ? window.requestIdleCallback(load, { timeout: 500 }) : window.setTimeout(load, 50);
   }
   function activatePage() {
-    document.documentElement.classList.remove("is-scrolling");
+
     notifyActivity();
     const frame = pages[activePage], includeHistory = activePage === "attempt-log", enabled = frame.dataset.ready === "true" && (activePage === "training" || includeHistory);
     sendToHost({ cmd: "setStatsMode", enabled, includeRecent: includeHistory, includeHistory }), frame.dataset.ready === "true" && (latestWatcherStatus && frame.contentWindow.postMessage({ type: "hostMessage", payload: latestWatcherStatus }, "*"), enabled && sendToHost({
@@ -56,10 +56,7 @@
   }
   window.addEventListener("message", (event) => {
     const message = event.data;
-    if (message?.type === "pageScrollActivity") {
-      if (event.origin === location.origin && event.source === pages[activePage].contentWindow)
-        document.documentElement.classList.toggle("is-scrolling", message.active === true);
-    } else if (message?.type === "switchPage") selectPage(message.page);
+    if (message?.type === "switchPage") selectPage(message.page);
     else if (message?.type === "pageReady" && event.origin === location.origin) {
       const name = Object.keys(pages).find((name2) => pages[name2].contentWindow === event.source);
       name && pageReady(name, pages[name]);

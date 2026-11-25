@@ -5,22 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cuphead Training App — Info</title>
 <link rel="icon" type="image/png" href="assets/icons/app-logo-small.png">
-    <script src="js/site-palette.js?v=background-hue-offset"></script>
-    <link rel="stylesheet" href="style.css?v=shared-ui-cleanup">
-    <link rel="stylesheet" href="css/site-palette.css?v=boss-pages-cleanup">
-    <link rel="stylesheet" href="css/info.css?v=web-cleanup">
-    <link rel="stylesheet" href="css/host-bridge.css?v=boss-pages-cleanup">
+    <link rel="stylesheet" href="style.css?v=1.4.0">
+    <link rel="stylesheet" href="css/info.css?v=1.4.0">
+    <link rel="stylesheet" href="css/host-bridge.css?v=1.4.0">
+<link rel="stylesheet" href="css/app-ui.css?v=1.4.0">
+<script src="js/appearance.js?v=1.4.0"></script>
 </head>
 <body class="compact-mode" data-page="info">
 
-<script src="js/page-header.js?v=shared-header"></script>
+<script src="js/page-header.js?v=1.4.0"></script>
 
     <div class="info-page">
 
-        <section class="info-section">
-            <h2 data-i18n="info.loadout-title">Equipment checks</h2>
-            <p data-i18n="info.loadout-text"></p>
-        </section>
 
         <section class="info-section">
 
@@ -57,17 +53,17 @@
             </ul>
             <p data-i18n-content="info.distribution.graph-desc">The graph below shows how the curve maps rank index to the fraction of the WR&rarr;F range used for each threshold. Tick marks on the axis show where each rank falls.</p>
             <div class="info-graph-wrap">
-                <canvas id="curve-graph" width="680" height="260"></canvas>
+                <svg id="curve-graph" viewBox="0 0 680 260" role="img" aria-label="Rank distribution curve"></svg>
             </div>
         </section>
 
     </div>
 
-    <script src="js/sound-effects.js?v=web-cleanup"></script>
-    <script src="js/language.js?v=recent-pages"></script>
-    <script src="data.js?v=web-cleanup"></script>
-    <script src="js/info-graph.js?v=web-cleanup"></script>
-    <script src="js/host-bridge.js?v=recent-pages"></script>
+    <script src="js/sound-effects.js?v=1.4.0"></script>
+    <script src="js/language.js?v=1.4.0"></script>
+    <script src="data.js?v=1.4.0"></script>
+    <script src="js/info-graph.js?v=1.4.0"></script>
+    <script src="js/host-bridge.js?v=1.4.0"></script>
 
 </body>
 </html>

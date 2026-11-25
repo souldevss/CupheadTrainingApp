@@ -5,40 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cuphead Training App — Attempt Log</title>
 <link rel="icon" type="image/png" href="assets/icons/app-logo-small.png">
-    <script src="js/site-palette.js?v=background-hue-offset"></script>
-    <link rel="stylesheet" href="style.css?v=shared-ui-cleanup">
-    <link rel="stylesheet" href="css/autolog.css?v=shared-ui-cleanup">
-    <link rel="stylesheet" href="css/boss-cards.css?v=recent-grid">
-    <link rel="stylesheet" href="css/site-palette.css?v=shared-attempt-grid">
-    <link rel="stylesheet" href="css/host-bridge.css?v=shared-attempt-grid">
+    <link rel="stylesheet" href="style.css?v=1.4.0">
+    <link rel="stylesheet" href="css/autolog.css?v=1.4.0">
+    <link rel="stylesheet" href="css/boss-cards.css?v=1.4.0">
+    <link rel="stylesheet" href="css/host-bridge.css?v=1.4.0">
+<link rel="stylesheet" href="css/app-ui.css?v=1.4.0">
+<script src="js/appearance.js?v=1.4.0"></script>
 </head>
 <body class="compact-mode" data-page="attempt-log">
 
-<script src="js/page-header.js?v=shared-header"></script>
+<script src="js/page-header.js?v=1.4.0"></script>
 
-<div id="category-tabs" class="category-tabs"></div>
 
 <main class="attempt-log-page">
     <header class="attempt-log-heading">
-        <div><p class="attempt-eyebrow">CUPHEAD</p><h1><span data-i18n="autolog.title">Attempt Log</span> <span class="all-boss-playtime">| <span data-i18n="autolog.playtime">Playtime</span>: <span id="autolog-total-playtime">—</span></span></h1>
-        <p data-i18n="autolog.subtitle">Choose a boss to see how your clear times and deaths change over attempts.</p></div>
-    </header>
-    <div class="detail-tabs autolog-view-tabs" role="group" data-i18n-aria-label="projection.views">
-        <button id="clear-all-attempts" class="clear-all-attempts icon-reveal" type="button" data-i18n-aria-label="autolog.clear-all" aria-label="Clear all records">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" aria-hidden="true"><path d="M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7"/></svg><span class="icon-caption" data-i18n="autolog.clear-all" aria-hidden="true">Clear all records</span>
-        </button>
-        <button id="back-all-bosses" type="button" data-i18n="autolog.back" hidden>← All bosses</button>
-<div class="nav-icon-group">
-            <button id="show-boss-log" type="button" class="is-active" aria-pressed="true" data-i18n="projection.boss-log">Boss log</button>
-            <button id="show-run-projection" type="button" aria-pressed="false" data-i18n="projection.title">Run Projection</button>
-            <button id="show-run-recap" type="button" aria-pressed="false" data-i18n="recap.title">Run Recap</button>
+        <div><h1><span data-i18n="autolog.title">Attempt Log</span> <span class="all-boss-playtime">| <span data-i18n="autolog.playtime">Playtime</span>: <span id="autolog-total-playtime">—</span></span></h1>
         </div>
+    </header>
+    <div class="autolog-view-tabs" role="group" data-i18n-aria-label="autolog.actions">
+        <button id="back-all-bosses" type="button" data-i18n="autolog.back" hidden>← All bosses</button>
     </div>
     <div id="boss-log-workspace" class="boss-log-workspace">
     <div class="boss-log-content">
     <section id="autolog-list-view">
         <div id="autolog-summary" class="boss-stat-grid"></div>
-        <h2 class="attempt-section-title" data-i18n="autolog.recent">Recent attempts</h2>
+        <div class="recent-attempt-heading"><h2 class="attempt-section-title" data-i18n="autolog.recent">Recent attempts</h2><button id="clear-all-attempts" class="clear-all-attempts" type="button" data-i18n="autolog.clear-all">Clear all records</button></div>
         <div id="autolog-recent" class="recent-attempt-list"></div>
         <button id="load-more-recent" class="recent-load-more" type="button" aria-controls="autolog-recent" data-i18n="autolog.load-more" hidden>Load more</button>
     </section>
@@ -46,107 +37,36 @@
     <section id="overall-progress" class="history-card" hidden>
         <h2 data-i18n="autolog.overall-title">Overall progress</h2>
         <div id="overall-progress-chart"></div>
-        <p class="projection-note" data-i18n="autolog.overall-method">Each line starts at 0%. Changes are measured from that starting point on the scale of the boss’s average clear time.</p>
+        <p class="section-note" data-i18n="autolog.overall-method">Each line starts at 0%. Changes are measured from that starting point on the scale of the boss’s average clear time.</p>
     </section>
     </div>
-    <nav id="boss-log-sidebar" class="boss-detail-sidebar" data-i18n-aria-label="projection.boss-log"></nav>
+    <nav id="boss-log-sidebar" class="boss-detail-sidebar" data-i18n-aria-label="autolog.boss-list"></nav>
     </div>
-    <section id="run-projection" class="history-card" hidden>
-        <h2 data-i18n="projection.title">Run Projection</h2>
-        <label class="projection-target-option"><input id="projection-use-recap" type="checkbox" disabled> <span data-i18n="projection.use-recap">Include Run Recap</span></label>
-        <p id="projection-source" class="projection-note" role="status"></p>
-        <div id="projection-summary" role="status"></div>
-        <form id="projection-target-form" class="projection-target-form">
-            <label for="projection-target" data-i18n="projection.target">Target time</label>
-            <input id="projection-target" type="text" placeholder="25:30.00" required>
-            <button class="data-control-btn" type="submit" data-i18n="projection.estimate">Estimate odds</button>
-            <label class="projection-target-option"><input id="projection-target-deathless" type="checkbox"> <span data-i18n="projection.include-deathless">Include first-try risk</span></label>
-        </form>
-        <div id="projection-target-result" role="status"></div>
-        <details class="projection-breakdown">
-            <summary data-i18n="projection.breakdown">Split breakdown</summary>
-            <div class="projection-table-wrap">
-            <table class="projection-table">
-                <thead><tr>
-                    <th scope="col" data-i18n="projection.split">Split</th>
-                    <th scope="col" data-i18n="projection.clear">Average clear</th>
-                    <th scope="col" data-i18n="projection.death-rate">Death odds</th>
-                    <th scope="col" data-i18n="projection.sample">Attempts used</th>
-                </tr></thead>
-                <tbody id="projection-splits"></tbody>
-            </table>
-            </div>
-        </details>
-        <details class="projection-breakdown projection-note">
-            <summary data-i18n="projection.help">How it’s calculated</summary>
-            <p data-i18n="projection.note"></p>
-        </details>
-    </section>
-    <section id="run-recap" class="history-card" hidden>
-        <h2 data-i18n="recap.title">Run Recap</h2>
-        <label id="recap-drop-zone" class="recap-file-picker">
-            <span data-i18n="recap.drop">Drop a .rrc file here or choose a file</span>
-            <input id="recap-file" type="file" accept=".rrc">
-        </label>
-        <p id="recap-status" role="status"></p>
-        <div id="recap-data" hidden>
-            <div class="recap-browser">
-                <button id="recap-previous" type="button" class="chart-zoom" data-i18n-aria-label="recap.previous">‹</button>
-                <div id="recap-attempt-dots" class="recap-attempt-dots" role="group" data-i18n-aria-label="recap.attempts"></div>
-                <button id="recap-next" type="button" class="chart-zoom" data-i18n-aria-label="recap.next">›</button>
-                <label><span data-i18n="recap.attempt">Attempt</span> <input id="recap-attempt" type="number" min="1" step="1"></label>
-                <span id="recap-attempt-count"></span>
-            </div>
-            <div class="recap-toolbar">
-                <label><span data-i18n="recap.final-boss">Final boss</span>
-                    <select id="recap-final-boss"><option value="level_devil">The Devil</option><option value="level_saltbaker">Chef Saltbaker</option></select>
-                </label>
-                <label><span data-i18n="recap.compare">Compare</span>
-                    <select id="recap-compare"><option value="none" data-i18n="recap.compare-none">None</option><option value="best" data-i18n="recap.compare-best">Fastest recorded finish</option></select>
-                </label>
-            </div>
-            <div id="recap-attempt-header" class="recap-attempt-header"></div>
-            <div id="recap-islands" class="recap-island-grid"></div>
-            <div id="recap-breakdown" class="recap-breakdown"></div>
-            <details class="projection-breakdown">
-                <summary data-i18n="recap.scenes">Raw scene history</summary>
-                <div class="projection-table-wrap"><table class="projection-table">
-                    <thead><tr><th scope="col" data-i18n="recap.scene">Scene</th><th scope="col" data-i18n="recap.elapsed">Run time</th><th scope="col" data-i18n="recap.level-time">Level time</th></tr></thead>
-                    <tbody id="recap-scenes"></tbody>
-                </table></div>
-            </details>
-            <details class="recap-file-history">
-            <summary data-i18n="recap.file-history">File history and reset points</summary>
-            <div id="recap-summary" class="projection-metrics"></div>
-            <form id="recap-target-form" class="projection-target-form">
-                <label for="recap-target" data-i18n="projection.target">Target time</label>
-                <input id="recap-target" type="text" placeholder="25:30.00" required>
-                <button class="data-control-btn" type="submit" data-i18n="recap.check-target">Check history</button>
-            </form>
-            <p id="recap-target-result" role="status"></p>
-            <details class="projection-breakdown"><summary data-i18n="recap.reset-points">Last scenes in unfinished attempts</summary><ul id="recap-resets"></ul></details>
-            <p class="projection-note" data-i18n="recap.note"></p>
-            </details>
-        </div>
-    </section>
 </main>
+<dialog id="delete-history-dialog" aria-labelledby="delete-history-title">
+    <h2 id="delete-history-title" data-i18n="autolog.final-delete">Delete all history</h2>
+    <button id="backup-before-clear" class="data-control-btn" type="button" data-i18n="autolog.backup-first">Export a backup first</button>
+    <label class="delete-acknowledge"><input id="delete-history-acknowledge" type="checkbox"><span data-i18n="autolog.delete-acknowledge">I understand this removes every clear and death from all categories.</span></label>
+    <div class="dialog-actions">
+        <button id="cancel-clear" class="data-control-btn" type="button" data-i18n="ui.cancel">Cancel</button>
+        <button id="confirm-clear" class="data-control-btn danger-button" type="button" disabled data-i18n="autolog.delete-permanently">Delete permanently</button>
+    </div>
+</dialog>
 
-<script src="js/sound-effects.js?v=web-cleanup"></script>
-<script src="data.js?v=web-cleanup"></script>
-<script src="js/state.js?v=web-cleanup"></script>
-<script src="js/time.js?v=web-cleanup"></script>
-<script src="js/ranks.js?v=training-layout"></script>
-<script src="js/data-access.js?v=shared-attempt-grid"></script>
-<script src="js/category.js?v=table-category-update"></script>
-<script src="js/language.js?v=recent-pages"></script>
-<script src="js/host-bridge.js?v=recent-pages"></script>
-<script src="js/wr-times.js?v=web-cleanup"></script>
-<script src="js/run-projection.js?v=web-cleanup"></script>
-<script src="js/run-recap.js?v=web-cleanup"></script>
-<script src="js/overall-progress.js?v=web-cleanup"></script>
-<script src="js/boss-chart.js?v=stable-graph-points"></script>
-<script src="js/boss-card-data.js?v=recent-grid"></script>
-<script src="js/boss-cards.js?v=recent-grid"></script>
-<script src="js/autolog.js?v=consistent-sidebar"></script>
+<script src="js/sound-effects.js?v=1.4.0"></script>
+<script src="data.js?v=1.4.0"></script>
+<script src="js/state.js?v=1.4.0"></script>
+<script src="js/time.js?v=1.4.0"></script>
+<script src="js/ranks.js?v=1.4.0"></script>
+<script src="js/data-access.js?v=1.4.0"></script>
+<script src="js/category.js?v=1.4.0"></script>
+<script src="js/language.js?v=1.4.0"></script>
+<script src="js/host-bridge.js?v=1.4.0"></script>
+<script src="js/wr-times.js?v=1.4.0"></script>
+<script src="js/overall-progress.js?v=1.4.0"></script>
+<script src="js/boss-chart.js?v=1.4.0"></script>
+<script src="js/boss-card-data.js?v=1.4.0"></script>
+<script src="js/boss-cards.js?v=1.4.0"></script>
+<script src="js/autolog.js?v=1.4.0"></script>
 </body>
 </html>

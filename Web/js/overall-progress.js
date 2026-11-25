@@ -1,13 +1,15 @@
-let overallSmoothingPercent = 0, overallViewport, showOverallAverage = !1;
+let overallSmoothingPercent = 0, overallViewport, showOverallAverage = !1, selectedOverallBoss = null;
 function renderOverallProgress(report) {
   const chart = document.getElementById("overall-progress-chart");
   if (!report) {
-    chart.textContent = t("projection.loading");
+    chart.textContent = t("autolog.loading-history");
     return;
   }
   let longest = 0;
   const entries = Array.from(bossArt.values(), (art, index) => {
-    const history = Object.hasOwn(report.bosses, art.name) ? report.bosses[art.name] : null, clears = (history?.clears || []).map((timeSeconds) => ({ timeSeconds }));
+    // Reuse the averaging helper's value field; these values are percentage
+    // points from StatsReport, not seconds to normalize again.
+    const history = Object.hasOwn(report.bosses, art.name) ? report.bosses[art.name] : null, clears = (history?.clears || []).map(percentagePoints => ({timeSeconds:percentagePoints}));
     return longest = Math.max(longest, clears.length), { art, index, clears, intervals: history?.intervals || [], color: art.background || "#aab3bd" };
   }), left = 62, right = 755, top = 16, bottom = 212, percent = new Intl.NumberFormat(getActiveLanguage(), {
     style: "percent",
@@ -37,6 +39,7 @@ function renderOverallProgress(report) {
                     <text x="${left - 8}" y="0" text-anchor="end">${historyPercent.format(0)}</text>
                 </g>
                 <g clip-path="url(#overall-plot-clip)"><g class="overall-boss-lines"></g></g>
+                <g class="overall-death-layer" clip-path="url(#overall-plot-clip)"><polyline class="death-rate-line"/></g>
                 <circle class="overall-hover-point" r="4" visibility="hidden"/>
                 <rect class="overall-plot-target" x="${left}" y="${top}" width="${right - left}" height="${bottom - top}" fill="transparent"/>
                 <text class="overall-first-clear" x="${left}" y="232" text-anchor="middle">0%</text>
@@ -45,18 +48,18 @@ function renderOverallProgress(report) {
             </svg><div class="chart-hover-tooltip" hidden></div></div>` : `<p class="history-empty">${t("autolog.no-clear-times")}</p>`}
         <div class="overall-boss-legend">
             ${entries.map(({ art, index, color }) => `
-                <span class="overall-boss-key" tabindex="0" data-series="${index}" title="${safeText(cupheadDisplayName(art.name))}" style="background:${safeText(color)};color:${safeText(art.color || "#121212")}">
+                <button type="button" class="overall-boss-key" aria-pressed="${selectedOverallBoss === index}" data-series="${index}" title="${safeText(cupheadDisplayName(art.name))}" style="background:${safeText(color)};color:${safeText(art.color || "#121212")}">
                     ${art.icon ? `<img src="${safeText(art.icon)}" alt="${safeText(cupheadDisplayName(art.name))}" loading="lazy">` : `<span aria-label="${safeText(cupheadDisplayName(art.name))}">${safeText(cupheadDisplayName(art.name).slice(0, 2))}</span>`}
-                </span>`).join("")}
+                </button>`).join("")}
         </div>`, !longest) return;
   const layer = chart.querySelector(".overall-boss-lines"), value = chart.querySelector("#overall-smoothing-value"), plot = chart.querySelector(".overall-plot-target"), zoomOut = chart.querySelector('[data-overall-zoom="out"]'), zoomIn = chart.querySelector('[data-overall-zoom="in"]'), firstClear = chart.querySelector(".overall-first-clear"), lastClear = chart.querySelector(".overall-last-clear"), fullSpan = longest, minSpan = 1;
-  let span = Math.min(fullSpan, overallViewport?.span ?? fullSpan), start = Math.min(fullSpan - span, overallViewport?.start ?? 0), frame = null, displayed, target, series = [], deathTrend, animationTime, curveAnimationStart, smoothingFrame = null, pointer;
+  let span = Math.min(fullSpan, overallViewport?.span ?? fullSpan), start = Math.min(fullSpan - span, overallViewport?.start ?? 0), displayed, rangeMotion = null, series = [], deathTrend, smoothingFrame = null, navigationTimer = null, hoverTimer = null, pointer, released = false;
   const ticksY = [...chart.querySelectorAll(".overall-y-tick")], zeroReference = chart.querySelector(".overall-zero-reference"), tooltip = chart.querySelector(".chart-hover-tooltip"), marker = chart.querySelector(".overall-hover-point");
   function showHover() {
     if (tooltip.hidden = !0, marker.setAttribute("visibility", "hidden"), !pointer || !displayed) return;
     const bounds = plot.getBoundingClientRect(), xRatio = (pointer.x - bounds.left) / bounds.width;
     if (xRatio < 0 || xRatio > 1) return;
-    const position = displayed.start + xRatio * displayed.span, average = series.find((trend) => trend.key === "average"), change = average ? sampleTrendAtX(average.shown, position) : series.reduce((sum, trend) => sum + sampleTrendAtX(trend.shown, position), 0) / series.length;
+    const position = displayed.start + xRatio * displayed.span, average = series.find(trend => trend.key === selectedOverallBoss) || series.find((trend) => trend.key === "average"), change = average ? sampleTrendAtX(average.shown, position) : series.reduce((sum, trend) => sum + sampleTrendAtX(trend.shown, position), 0) / series.length;
     if (average && change >= displayed.low && change <= displayed.high) {
       const yRatio = (displayed.high - change) / (displayed.high - displayed.low);
       marker.setAttribute("cx", left + xRatio * (right - left)), marker.setAttribute("cy", top + yRatio * (bottom - top)), marker.setAttribute("fill", average.color), marker.setAttribute("visibility", "visible");
@@ -69,7 +72,7 @@ function renderOverallProgress(report) {
   function fitRange() {
     let low = 0, high = 0;
     const end = start + span;
-    for (const { points } of series) {
+    for (const { points } of series.filter(trend => selectedOverallBoss === null || trend.key === selectedOverallBoss)) {
       const last = points.at(-1).x;
       if (last < start) continue;
       const from = sampleTrendAtX(points, start), to = sampleTrendAtX(points, Math.min(end, last));
@@ -82,34 +85,52 @@ function renderOverallProgress(report) {
   }
   function paint() {
     const xScale = (right - left) / displayed.span, yScale = (bottom - top) / (displayed.high - displayed.low), zeroY = bottom + displayed.low * yScale;
+    const deathPath = chart.querySelector(".overall-death-layer polyline");
+    deathPath.setAttribute("points", deathTrend.shown.map(point => `${left+(point.x-displayed.start)*xScale},${bottom-point.y/100*(bottom-top)}`).join(" "));
     layer.setAttribute("transform", `translate(${left - displayed.start * xScale},${zeroY}) scale(${xScale},${-yScale})`), zeroReference.setAttribute("transform", `translate(0,${zeroY})`), firstClear.textContent = historyPercent.format(displayed.start / fullSpan), lastClear.textContent = historyPercent.format((displayed.start + displayed.span) / fullSpan), ticksY.forEach((tick, index) => {
       const value2 = displayed.low + (displayed.high - displayed.low) * index / 4;
       tick.textContent = Math.abs(value2 * yScale) < 12 ? "" : percent.format(value2 / 100);
     }), showHover();
   }
-  function animate(now) {
-    if (frame = null, !layer.isConnected) return;
-    const blend = 1 - Math.exp(-Math.min(50, now - animationTime) / 48);
-    animationTime = now;
-    let moving = !1;
-    for (const key of Object.keys(target)) {
-      const delta = target[key] - displayed[key];
-      Math.abs(delta) < 1e-3 ? displayed[key] = target[key] : (displayed[key] += delta * blend, moving = !0);
-    }
-    if (curveAnimationStart !== void 0) {
-      const progress = Math.min(1, (now - curveAnimationStart) / 180), eased = 1 - (1 - progress) ** 3;
-      for (const trend of [...series, deathTrend])
-        trend?.tween && (trend.shown = progress === 1 ? trend.points : trend.tween.map((point) => ({
-          x: point.x,
-          y: point.fromY + (point.toY - point.fromY) * eased
-        })), trend.path?.setAttribute("points", pointMarkup(trend.shown)), progress === 1 && (trend.tween = null));
-      progress < 1 ? moving = !0 : curveAnimationStart = void 0;
-    }
-    paint(), moving && (frame = requestAnimationFrame(animate));
+  function advanceRange(now) {
+    if (!rangeMotion) return false;
+    const progress = graphTransitionProgress(rangeMotion.started,now);
+    for (const key of Object.keys(rangeMotion.target)) displayed[key] = rangeMotion.from[key]+(rangeMotion.target[key]-rangeMotion.from[key])*progress;
+    if (progress === 1) rangeMotion = null;
+    return progress < 1;
   }
-  function navigate(nextStart, nextSpan) {
-    span = Math.max(minSpan, Math.min(fullSpan, nextSpan)), start = Math.max(0, Math.min(fullSpan - span, nextStart)), overallViewport = span === fullSpan ? void 0 : { start, span }, target = fitRange(), displayed ? frame === null && (animationTime = performance.now(), frame = requestAnimationFrame(animate)) : (displayed = { ...target }, paint()), zoomOut.disabled = span === fullSpan, zoomIn.disabled = span === minSpan, plot.classList.toggle("can-pan", span < fullSpan);
+  function advanceTrend(trend,now) {
+    if (!trend?.tween) return false;
+    const progress = graphTransitionProgress(trend.started,now);
+    for (let i=0;i<trend.tween.length;i++) {const point=trend.tween[i];trend.shown[i].y=point.from+(point.to-point.from)*progress;}
+    if (progress === 1) {trend.shown=trend.points;trend.tween=null;}
+    return progress < 1;
   }
+  function queueAnimation() {
+    if (navigationTimer!==null || released) return;
+    navigationTimer=setTimeout(()=>{
+      navigationTimer=null;
+      if(released || !layer.isConnected)return;
+      const now=performance.now();let moving=advanceRange(now);
+      for(const trend of [...series,deathTrend]) {
+        const changed=!!trend?.tween;
+        moving=advanceTrend(trend,now)||moving;
+        if(changed)trend.path?.setAttribute("points",pointMarkup(trend.shown));
+      }
+      paint();if(moving)queueAnimation();
+    },33);
+  }
+  function navigate(nextStart,nextSpan) {
+    span=Math.max(minSpan,Math.min(fullSpan,nextSpan));start=Math.max(0,Math.min(fullSpan-span,nextStart));
+    overallViewport=span===fullSpan?undefined:{start,span};
+    zoomOut.disabled=span===fullSpan;zoomIn.disabled=span===minSpan;plot.classList.toggle("can-pan",span<fullSpan);
+    const target=fitRange(),now=performance.now();advanceRange(now);
+    if(!displayed) {displayed=target;rangeMotion=null;}
+    else if(Object.keys(target).some(key=>Math.abs(displayed[key]-target[key])>1e-7)) rangeMotion={started:now,from:{...displayed},target};
+    else rangeMotion=null;
+    queueAnimation();
+  }
+  disposeTimeChart=()=>{released=true;clearTimeout(navigationTimer);clearTimeout(hoverTimer);if(smoothingFrame!==null)cancelAnimationFrame(smoothingFrame);};
   function zoom(factor, anchor = 0.5) {
     const nextSpan = Math.max(minSpan, Math.min(fullSpan, span / factor));
     navigate(start + anchor * (span - nextSpan), nextSpan);
@@ -130,21 +151,24 @@ function renderOverallProgress(report) {
   plot.addEventListener("pointerdown", (event) => {
     event.button !== 0 || span === fullSpan || (pointer = void 0, drag = { id: event.pointerId, x: event.clientX, start }, plot.setPointerCapture(event.pointerId), plot.classList.add("is-panning"));
   }), plot.addEventListener("pointermove", (event) => {
-    drag?.id === event.pointerId ? navigate(drag.start - (event.clientX - drag.x) / plot.getBoundingClientRect().width * span, span) : (pointer = { x: event.clientX, y: event.clientY }, showHover());
+    if(drag?.id===event.pointerId) navigate(drag.start-(event.clientX-drag.x)/plot.getBoundingClientRect().width*span,span);
+    else {pointer={x:event.clientX,y:event.clientY};if(hoverTimer===null)hoverTimer=setTimeout(()=>{hoverTimer=null;showHover();},33);}
   }), plot.addEventListener("lostpointercapture", () => {
     drag = void 0, plot.classList.remove("is-panning");
   }), plot.addEventListener("pointerleave", () => {
     pointer = void 0, showHover();
   });
-  function makeTrend(key, name, color, points, previous = series.find((trend) => trend.key === key)) {
-    const tween = previous ? buildTrendTween(previous.shown, points) : null, shown = tween ? tween.map((point) => ({ x: point.x, y: point.fromY })) : points;
-    return { key, name, color, points, shown, tween };
+  function makeTrend(key,name,color,points,previous=series.find(trend=>trend.key===key)) {
+    const now=performance.now();advanceTrend(previous,now);
+    if(!previous || previous.points.length===points.length && points.every((point,i)=>point.x===previous.points[i].x && point.y===previous.points[i].y)) return {key,name,color,points,shown:points};
+    const tween=points.map(point=>({x:point.x,from:sampleTrendAtX(previous.shown,point.x),to:point.y}));
+    return {key,name,color,points,shown:tween.map(point=>({x:point.x,y:point.from})),tween,started:now};
   }
   function pointMarkup(points) {
     return points.map((point) => `${point.x.toFixed(4)},${point.y.toFixed(4)}`).join(" ");
   }
   function averagePoints(lines) {
-    return animationCoordinates(lines.flatMap((points) => points.map((point) => point.x))).map((x) => ({
+    return [...new Set(lines.flatMap(points=>points.map(point=>point.x)))].sort((a,b)=>a-b).map((x) => ({
       x,
       y: lines.reduce((sum, points) => sum + sampleTrendAtX(points, x), 0) / lines.length
     }));
@@ -155,21 +179,24 @@ function renderOverallProgress(report) {
       samples.length === 1 && samples.push(samples[0]);
       const position = (point) => fullSpan * point / (samples.length - 1), points = samples.map((sample, point) => ({
         x: position(point),
+        // C# already normalized clears to percentage points around the boss's
+        // average. Only offset the first sample; their mean is approximately zero.
         y: sample.timeSeconds - initialValue
       }));
-      return deathLines.push(samples.map((sample, point) => ({
+      return deathLines.push({index,points:samples.map((sample, point) => ({
         x: position(point),
         y: sample.deathRate
-      }))), makeTrend(index, cupheadDisplayName(art.name), color, points);
+      }))}), makeTrend(index, cupheadDisplayName(art.name), color, points);
     });
-    if (deathTrend = makeTrend("death", "", "", averagePoints(deathLines), deathTrend), showOverallAverage) {
+    if (deathTrend = makeTrend("death", "", "", averagePoints(deathLines.filter(line=>selectedOverallBoss===null||line.index===selectedOverallBoss).map(line=>line.points)), deathTrend), showOverallAverage) {
       const points = averagePoints(next.map((trend) => trend.points));
       next.push(makeTrend("average", t("autolog.overall-average-label"), "#fff", points));
     }
     series = next, layer.classList.toggle("show-overall-average", showOverallAverage), layer.innerHTML = series.map((trend) => `<g ${trend.key === "average" ? 'class="overall-average-line"' : `data-series="${trend.key}"`}
             style="color:${safeText(trend.color)}"><polyline points="${pointMarkup(trend.shown)}"/></g>`).join(""), layer.querySelectorAll("polyline").forEach((path, index) => {
       series[index].path = path;
-    }), curveAnimationStart = deathTrend.tween || series.some((trend) => trend.tween) ? performance.now() : void 0, navigate(start, span);
+    }), navigate(start, span);
+    for(const group of layer.children) group.classList.toggle("is-unselected",selectedOverallBoss!==null&&group.dataset.series!==String(selectedOverallBoss));
   }
   chart.querySelector("#overall-show-average").addEventListener("change", (event) => {
     showOverallAverage = event.target.checked, draw();
@@ -188,6 +215,7 @@ function renderOverallProgress(report) {
     }, reset = () => {
       for (const series2 of layer.children) series2.classList.remove("is-muted");
     };
+    key.addEventListener("click",()=>{const index=Number(key.dataset.series);selectedOverallBoss=selectedOverallBoss===index?null:index;for(const control of chart.querySelectorAll(".overall-boss-key"))control.setAttribute("aria-pressed",String(Number(control.dataset.series)===selectedOverallBoss));draw();});
     key.addEventListener("mouseenter", highlight), key.addEventListener("focus", highlight), key.addEventListener("mouseleave", reset), key.addEventListener("blur", reset);
   }
   draw();

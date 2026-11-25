@@ -4,7 +4,7 @@ saveCategorySelection();
 let autologRows = [], selectedLogCategory = getSelectedCategoryKey();
 ["1-1", "legacy", "DLC:lobber", "DLC:charge"].includes(selectedLogCategory) || (selectedLogCategory = "1-1");
 let selectedBossName = null, logView = "bosses", selectedDetailTab = "progress", selectedAverageWindow = 10, lastBossDetailSignature = null;
-const chartZoomLevels = /* @__PURE__ */ new Map(), chartAnimationFrames = /* @__PURE__ */ new Map(), timeTrendCache = /* @__PURE__ */ new WeakMap();
+const chartZoomLevels = new Map(), timeTrendCache = new WeakMap();
 const ATTEMPT_PAGE_SIZE = 20;
 let selectedBossAttemptLimit = ATTEMPT_PAGE_SIZE;
 let recentHasMore = false, recentLoading = false, recentRequestId = 0;
@@ -13,8 +13,8 @@ let lastSummaryMarkup = null, lastSidebarMarkup = null;
 let timeChartResizeObserver = null, disposeTimeChart = null, pendingSmoothingFrame = null;
 window.stopAutologWork = function() {
   disposeTimeChart?.(), disposeTimeChart = null, timeChartResizeObserver?.disconnect(), timeChartResizeObserver = null;
-  for (const frame of chartAnimationFrames.values()) cancelAnimationFrame(frame);
-  chartAnimationFrames.clear(), pendingSmoothingFrame !== null && cancelAnimationFrame(pendingSmoothingFrame), pendingSmoothingFrame = null;
+  if (pendingSmoothingFrame !== null) cancelAnimationFrame(pendingSmoothingFrame);
+  pendingSmoothingFrame = null;
 }, window.releaseAutologPage = function() {
   recentRequestId++; recentHasMore = recentLoading = false;
   document.getElementById("load-more-recent").hidden = true;
@@ -22,7 +22,7 @@ window.stopAutologWork = function() {
   document.getElementById("boss-log-sidebar").replaceChildren();
   document.getElementById("overall-progress-chart").replaceChildren();
   overallProgressBosses = undefined;
-  window.stopAutologWork(), document.getElementById("autolog-detail-view").replaceChildren(), document.getElementById("autolog-summary").replaceChildren(), document.getElementById("autolog-recent").replaceChildren(), document.getElementById("projection-splits").replaceChildren(), document.getElementById("projection-summary").replaceChildren(), document.getElementById("projection-target-result").replaceChildren(), autologRows = [], autologRecentRows = [], lastBossDetailSignature = null;
+  window.stopAutologWork(), document.getElementById("autolog-detail-view").replaceChildren(), document.getElementById("autolog-summary").replaceChildren(), document.getElementById("autolog-recent").replaceChildren(), autologRows = [], autologRecentRows = [], lastBossDetailSignature = null;
 };
 const bossArt = /* @__PURE__ */ new Map();
 function getLogCategoryData() {
@@ -47,24 +47,38 @@ function showBossDetail(name) {
 function getTimeChartZoom(bossName) {
   return chartZoomLevels.get(`${bossName}:trend`)?.zoom || 1;
 }
+function renderBossAverages(clears, art) {
+  // History is chronological. Sum once from the newest clear so all windows
+  // use the same records, exclude failures, and never show partial averages.
+  const sums = [0];
+  for (let i=clears.length-1;i>=0;i--) sums.push(sums.at(-1)+clears[i].timeSeconds);
+  const thresholds = timeChartThresholds(art), count = clears.length;
+  const rows = [10,20,50,100,200].filter(size=>size<=count).map(size=>({size,label:String(size)}));
+  if (count) rows.push({size:count,label:`${count} (${t("header.total")})`,total:true});
+  return `<div class="boss-averages"><h3>${t("autolog.averages")}</h3><table class="boss-averages-table"><thead><tr><th scope="col">${t("autolog.clears-label")}</th><th scope="col">${t("autolog.average-time")}</th></tr></thead><tbody>${rows.map(row=>{
+    const seconds = sums[row.size]/row.size;
+    const rank = getRankIndexForTime(seconds,thresholds), style = getRankStyle(rank);
+    return `<tr data-average-count="${row.size}"${row.total ? ' data-total-average' : ""}><th scope="row">${safeText(row.label)}</th><td><span class="average-rank-time" style="--average-bg:${safeText(style.background)};--average-text:${safeText(style.color)}" title="${safeText(ranks[rank])}" data-average-seconds="${seconds}" data-rank-index="${rank}">${safeText(formatTime(seconds))}</span></td></tr>`;
+  }).join("")}</tbody></table></div>`;
+}
 function renderBossDetail() {
   const boss = autologRows.find((r) => r.level === selectedBossName), detail = document.getElementById("autolog-detail-view");
   if (!boss || !detail) return;
   document.getElementById("autolog-list-view").hidden = !0, detail.hidden = !1;
-  const history = boss.history || [], clearCount = history.filter((a) => a.cleared).length;
+  const history = boss.history || [], clears = history.filter(a=>a.cleared), clearCount = clears.length;
   selectedAverageWindow = Math.max(1, Math.min(selectedAverageWindow, maxSmoothing(clearCount)));
-  const art = { ...bossArt.get(boss.level), icon: BOSS_CARD_ASSETS[boss.level]?.src || bossArt.get(boss.level)?.icon }, outcomeHistory = boss.outcomeHistory || [], signature = JSON.stringify({ level: boss.level, attempts: boss.attempts, clears: boss.clears, deaths: boss.deaths, best: boss.best, totalPlaytime: boss.totalPlaytime, history, outcomeHistory, avg10: boss.avg10, avg20: boss.avg20, avg50: boss.avg50, selectedDetailTab, selectedAverageWindow, selectedBossAttemptLimit, fRankTime: art.fRankTime });
+  const art = { ...bossArt.get(boss.level), icon: BOSS_CARD_ASSETS[boss.level]?.src || bossArt.get(boss.level)?.icon }, outcomeHistory = boss.outcomeHistory || [], signature = JSON.stringify({ level: boss.level, attempts: boss.attempts, clears: boss.clears, deaths: boss.deaths, best: boss.best, totalPlaytime: boss.totalPlaytime, history, outcomeHistory, selectedDetailTab, selectedAverageWindow, selectedBossAttemptLimit, fRankTime: art.fRankTime });
   if (signature === lastBossDetailSignature) return;
   lastBossDetailSignature = signature, window.stopAutologWork(), detail.innerHTML = `<div class="boss-detail-main">
-        <div class="boss-detail-heading"><div class="boss-detail-title"><p class="attempt-eyebrow">${t("autolog.boss-progress")}</p><div class="boss-detail-bossbar" style="background:${safeText(art.background || "#493576")};color:${safeText(art.color || "#ffffff")}"><h2>${safeText(cupheadDisplayName(boss.level))}</h2>${art.icon ? `<img src="${safeText(art.icon)}" alt="" loading="lazy">` : ""}</div><p>${t("autolog.clears-label")}: ${boss.clears}</p></div>
-        <div class="detail-tabs"><button class="is-active" type="button" data-detail-tab="progress">${t("autolog.progress")}</button><button type="button" data-detail-tab="attempts">${t("autolog.attempts")}</button></div></div>
+        <div class="boss-detail-heading"><div class="boss-detail-bossbar" style="background:${safeText(art.background || "#493576")};color:${safeText(art.color || "#ffffff")}"><h2>${safeText(cupheadDisplayName(boss.level))}</h2>${art.icon ? `<img src="${safeText(art.icon)}" alt="" loading="lazy">` : ""}</div>
+        <div class="detail-tabs"><button class="is-active" type="button" data-detail-tab="progress">${t("autolog.progress")}</button><button type="button" data-detail-tab="attempts">${t("autolog.attempts")}</button></div>
+        <div class="boss-outcomes"><span>${t("autolog.clears-label")}: <strong>${boss.clears}</strong></span><span>${t("autolog.total-deaths")}: <strong>${boss.deaths}</strong></span></div></div>
         <div class="detail-tab-content" data-panel="progress" ${selectedDetailTab === "progress" ? "" : "hidden"}>
-            <div class="improvement-cards"><div><span>${t("autolog.total-playtime")}</span><strong>${safeText(boss.totalPlaytime || "0s")}</strong></div><div><span>${t("autolog.best-clear")}</span><strong>${safeText(boss.best)}</strong></div><div><span>${t("autolog.total-deaths")}</span><strong>${boss.deaths}</strong></div><div><span>${t("autolog.avg-10")}</span><strong>${safeText(completeAverage(boss.avg10, boss.clears, 10))}</strong></div><div><span>${t("autolog.avg-20")}</span><strong>${safeText(completeAverage(boss.avg20, boss.clears, 20))}</strong></div><div><span>${t("autolog.avg-50")}</span><strong>${safeText(completeAverage(boss.avg50, boss.clears, 50))}</strong></div></div>
-            <div class="history-chart-grid combined-history-grid">
+
+            <div class="boss-progress-layout"><div class="history-chart-grid combined-history-grid">
                 <article class="history-card time-history-card">
                     <div class="time-chart-heading">
                         <h3>${t("autolog.clear-times")}</h3>
-                        ${clearCount ? `<label class="graph-color-setting"><input id="muted-graph-colors" type="checkbox"> ${t("ui.muted-graph-colors")}</label>` : ""}
                     </div>
                     <label class="average-slider-label" for="time-average-slider"><span>${t("autolog.average-window")}</span><output id="time-average-value">${selectedAverageWindow}</output></label>
                     <input id="time-average-slider" class="average-window-slider" type="range" min="1" max="${maxSmoothing(clearCount)}" step="1" value="${selectedAverageWindow}" aria-label="${t("autolog.average-window-aria")}">
@@ -72,17 +86,10 @@ function renderBossDetail() {
                     <div class="time-chart-content" data-boss="${safeText(boss.level)}" data-limit="${selectedAverageWindow}" data-zoom="${getTimeChartZoom(boss.level)}">${drawTimeChart(history, art, selectedAverageWindow, getTimeChartZoom(boss.level))}</div>
                 </article>
 
-            </div>
+            </div><aside class="boss-statistics"><div class="improvement-cards"><div class="playtime-summary"><span>${t("autolog.total-playtime")}</span><strong>${safeText(boss.totalPlaytime || "0s")}</strong></div><div class="best-clear-summary"><span>${t("autolog.best-clear")}</span><strong>${safeText(boss.best)}</strong></div>${renderBossAverages(clears,art)}</div></aside></div>
         </div>
         <div class="detail-tab-content" data-panel="attempts" ${selectedDetailTab === "attempts" ? "" : "hidden"}></div></div>
         `, detail.querySelectorAll(".time-chart-content").forEach((holder) => bindTimeChartControls(holder, history, art));
-  const mutedColors = detail.querySelector("#muted-graph-colors");
-  if (mutedColors) {
-    const chart = mutedColors.closest(".time-history-card");
-    mutedColors.checked = localStorage.getItem("cupheadMutedGraphs") === "true", chart.classList.toggle("muted-graphs", mutedColors.checked), mutedColors.addEventListener("change", () => {
-      localStorage.setItem("cupheadMutedGraphs", String(mutedColors.checked)), chart.classList.toggle("muted-graphs", mutedColors.checked);
-    });
-  }
   const averageSlider = detail.querySelector("#time-average-slider");
   averageSlider?.addEventListener("input", () => {
     selectedAverageWindow = Number(averageSlider.value), detail.querySelector("#time-average-value").value = selectedAverageWindow, pendingSmoothingFrame === null && (pendingSmoothingFrame = requestAnimationFrame(() => {
@@ -126,11 +133,7 @@ function renderBossSidebar() {
   }).join("");
   if (markup === lastSidebarMarkup) return;
   sidebar.innerHTML = markup; lastSidebarMarkup = markup;
-  const count = sidebar.children.length, height = Math.max(400, count * 22);
-  sidebar.style.setProperty("--sidebar-count", count);
-  sidebar.style.marginTop = "0px";
-  sidebar.style.setProperty("--sidebar-height", height + "px");
-  sidebar.style.setProperty("--sidebar-row-height", (height - (count - 1) * 2) / count + "px");
+  sidebar.style.setProperty("--sidebar-count", sidebar.children.length);
 }
 document.getElementById("boss-log-sidebar").addEventListener("click", event => {
   const boss = event.target.closest("[data-select-boss]");
@@ -167,22 +170,16 @@ window.receiveOverallProgress = function(bosses, categoryKey) {
       categoryKey ? window.cupheadHost?.postToHost({ cmd: "getOverallProgress" }) : renderOverallProgress(overallProgressBosses);
       return;
     }
-    if (logView !== "recap") {
-      if (logView === "projection") {
-        renderRunProjection(rows, selectedLogCategory);
-        return;
-      }
-      const summaryMarkup = rows.map(renderBossCard).join("");
-      if (summaryMarkup !== lastSummaryMarkup) {
-        lastSummaryMarkup = summaryMarkup; summary.innerHTML = summaryMarkup;
-        summary.querySelectorAll(".boss-stat-card").forEach(button => button.addEventListener("click", () => showBossDetail(button.dataset.boss)));
-      }
-      renderRecentAttempts();
-      if (selectedBossName) renderBossDetail();
+    const summaryMarkup = rows.map(renderBossCard).join("");
+    if (summaryMarkup !== lastSummaryMarkup) {
+      lastSummaryMarkup = summaryMarkup; summary.innerHTML = summaryMarkup;
+      summary.querySelectorAll(".boss-stat-card").forEach(button => button.addEventListener("click", () => showBossDetail(button.dataset.boss)));
     }
+    renderRecentAttempts();
+    if (selectedBossName) renderBossDetail();
   }
 }, window.refreshAutologLanguage = function() {
-  lastBossDetailSignature = null, window.renderAutologStats(autologRows, autologRecentRows), logView === "recap" && refreshRunRecap();
+  lastBossDetailSignature = null, window.renderAutologStats(autologRows, autologRecentRows);
 };
 function renderAttemptCollection(container, attempts, {includeBoss = true, hasMore = false, loading = false, onLoadMore, button} = {}) {
   const markup = renderAttempts(attempts, includeBoss);
@@ -225,26 +222,45 @@ document.getElementById("back-all-bosses").addEventListener("click", () => {
   selectLogView("bosses");
 });
 function selectLogView(view) {
-  window.stopAutologWork(), logView = view, selectedBossName = null, lastBossDetailSignature = null;
-  document.getElementById("boss-log-workspace").hidden = !["bosses", "overall"].includes(view);
+  window.stopAutologWork(); logView = view; selectedBossName = null; lastBossDetailSignature = null;
   const detail = document.getElementById("autolog-detail-view");
-  detail.hidden = !0, detail.replaceChildren(), document.getElementById("autolog-list-view").hidden = view !== "bosses", document.getElementById("overall-progress").hidden = view !== "overall", document.getElementById("run-projection").hidden = view !== "projection", document.getElementById("run-recap").hidden = view !== "recap", document.getElementById("category-tabs").hidden = view === "recap", document.getElementById("clear-all-attempts").hidden = view !== "bosses";
-  for (const [id, active] of [["show-boss-log", view === "bosses"], ["show-run-projection", view === "projection"], ["show-run-recap", view === "recap"]]) {
-    const button = document.getElementById(id);
-    button.classList.toggle("is-active", active), button.setAttribute("aria-pressed", String(active));
-  }
-  window.renderAutologStats(autologRows, autologRecentRows), view === "overall" && window.cupheadHost?.postToHost({ cmd: "getOverallProgress" }), (view === "projection" || view === "recap") && openRunRecap();
+  detail.hidden = true; detail.replaceChildren();
+  document.getElementById("autolog-list-view").hidden = view !== "bosses";
+  document.getElementById("overall-progress").hidden = view !== "overall";
+  window.renderAutologStats(autologRows, autologRecentRows);
+  if (view === "overall") window.cupheadHost?.postToHost({ cmd: "getOverallProgress" });
 }
-window.refreshRecapProjection = () => {
-  logView === "projection" && renderRunProjection(autologRows, selectedLogCategory);
-}, document.getElementById("show-boss-log").addEventListener("click", () => selectLogView("bosses")), document.getElementById("show-run-projection").addEventListener("click", () => selectLogView("projection")), document.getElementById("show-run-recap").addEventListener("click", () => selectLogView("recap")), document.getElementById("clear-all-attempts").addEventListener("click", () => {
+document.getElementById("clear-all-attempts").addEventListener("click", () => {
   if (!confirm(t("autolog.delete-all-confirm"))) return;
   const answer = prompt(tf("autolog.delete-all-verify", { word: t("autolog.delete-all-word") }));
   if (answer?.trim() !== t("autolog.delete-all-word")) return;
-  selectedDetailTab = "progress";
-  selectLogView("bosses");
+  document.getElementById("delete-history-acknowledge").checked = false;
+  document.getElementById("confirm-clear").disabled = true;
+  document.getElementById("delete-history-dialog").showModal();
+});
+const deleteDialog = document.getElementById("delete-history-dialog");
+document.getElementById("backup-before-clear").addEventListener("click", () => window.cupheadHost?.exportBackup());
+document.getElementById("cancel-clear").addEventListener("click", () => deleteDialog.close());
+document.getElementById("delete-history-acknowledge").addEventListener("change", event => {
+  document.getElementById("confirm-clear").disabled = !event.target.checked;
+});
+document.getElementById("confirm-clear").addEventListener("click", () => {
+  if (!document.getElementById("delete-history-acknowledge").checked) return;
+  deleteDialog.close(); selectedDetailTab = "progress"; selectLogView("bosses");
   window.cupheadHost?.clearAttempts();
 });
+const logHeader = document.querySelector(".app-header");
+let sidebarLayoutFrame = null;
+function updateSidebarBounds() {
+  if (sidebarLayoutFrame !== null) return;
+  sidebarLayoutFrame = requestAnimationFrame(() => {
+    sidebarLayoutFrame = null;
+    const top = Math.max(0, Math.ceil(logHeader.getBoundingClientRect().bottom + 12));
+    document.documentElement.style.setProperty("--log-sidebar-top", top + "px");
+  });
+}
+new ResizeObserver(updateSidebarBounds).observe(logHeader);
+window.addEventListener("scroll", updateSidebarBounds, {passive:true});
 function renderLogCategoryControls() {
   renderCategoryControls({
     categories: categories.filter((category) => ["1-1", "legacy", "DLC"].includes(category.id)),
@@ -254,6 +270,6 @@ function renderLogCategoryControls() {
 function selectLogCategory(categoryId, subOption = null) {
   selectedBossAttemptLimit = ATTEMPT_PAGE_SIZE;
   recentRequestId++; recentHasMore = recentLoading = false;
-  window.stopAutologWork(), activeCategory = categories.find((category) => category.id === categoryId), activeSubOption = categoryId === "DLC" ? getInitialSubOption(activeCategory, subOption) : null, selectedLogCategory = categoryId === "DLC" ? `DLC:${activeSubOption}` : categoryId, overallProgressBosses = void 0, overallViewport = void 0, saveCategorySelection(), selectedBossName = null, lastBossDetailSignature = null, document.getElementById("autolog-detail-view").hidden = !0, document.getElementById("autolog-detail-view").replaceChildren(), document.getElementById("autolog-list-view").hidden = logView !== "bosses", refreshBossArt(), renderLogCategoryControls(), window.renderAutologStats([], []), window.cupheadHost?.requestStats(selectedLogCategory);
+  window.stopAutologWork(), activeCategory = categories.find((category) => category.id === categoryId), activeSubOption = categoryId === "DLC" ? getInitialSubOption(activeCategory, subOption) : null, selectedLogCategory = categoryId === "DLC" ? `DLC:${activeSubOption}` : categoryId, overallProgressBosses = void 0, overallViewport = void 0, selectedOverallBoss = null, saveCategorySelection(), selectedBossName = null, lastBossDetailSignature = null, document.getElementById("autolog-detail-view").hidden = !0, document.getElementById("autolog-detail-view").replaceChildren(), document.getElementById("autolog-list-view").hidden = logView !== "bosses", refreshBossArt(), renderLogCategoryControls(), window.renderAutologStats([], []), window.cupheadHost?.requestStats(selectedLogCategory);
 }
 activeCategory = categories.find((category) => category.id === (selectedLogCategory.startsWith("DLC:") ? "DLC" : selectedLogCategory)), activeSubOption = selectedLogCategory.split(":")[1] || null, updateReferenceTimes(), renderLogCategoryControls(), window.cupheadHost && window.cupheadHost.isDesktopApp ? window.cupheadHost.requestStats(selectedLogCategory) : (renderAutologStats([], []), document.getElementById("autolog-summary").innerHTML = `<p class='attempt-empty'>${t("autolog.no-live-stats")}</p>`);

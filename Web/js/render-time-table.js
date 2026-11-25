@@ -1,3 +1,7 @@
+function createRankHeader(rank, index) {
+  const style = getRankStyle(index);
+  return `<th class="rank-col rank-${index}" style="--rank-border:${getRankBorderColor(index)};background:${style.background};color:${style.color}">${rank}</th>`;
+}
 function renderTimeTablePage() {
   if (!getActiveLevels().length) {
     renderPlaceholderTable();
@@ -10,7 +14,7 @@ function renderTimeTablePage() {
 <tr>
     <th class="island sticky-col-1">${t("header.islands")}</th>
     <th class="boss sticky-col-2">${t("header.levels")}</th>
-    ${ranks.map((rank, index) => `<th class="rank-col rank-${index}" style="--rank-border:${getRankBorderColor(index)};color:${getRankStyle(index).background}">${rank}</th>`).join("")}
+    ${ranks.map(createRankHeader).join("")}
 </tr>
 </thead>
 <tbody>
@@ -48,7 +52,7 @@ function renderTimeTableTotals() {
 <thead>
 <tr>
     <th class="island sticky-col-1">${t("header.isle-times")}</th>
-    ${ranks.map((rank, index) => `<th class="rank-col rank-${index}" style="--rank-border:${getRankBorderColor(index)};color:${getRankStyle(index).background}">${rank}</th>`).join("")}
+    ${ranks.map(createRankHeader).join("")}
 </tr>
 </thead>
 <tbody>
